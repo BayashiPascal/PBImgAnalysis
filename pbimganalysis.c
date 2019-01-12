@@ -11,16 +11,29 @@
 
 // ================ Functions declaration ====================
 
+// Get the input values for the pixel at position 'pos' according to
+// the cell size of the ImgKMeansClusters 'that'
+// The return is a VecFloat made of the sizeCell^2 pixels' value 
+// around pos ordered by (((r*256+g)*256+b)*256+a) 
+VecFloat* IKMCGetInputOverCell(const ImgKMeansClusters* const that, 
+  const VecShort2D* const pos);
+
 // ================ Functions implementation ====================
 
 // Create a new ImgKMeansClusters for the image 'img' and with seed 'seed'
-// and type 'type'
+// and type 'type' and a cell size equal to 2*'size'+1
 ImgKMeansClusters ImgKMeansClustersCreateStatic(
-  const GenBrush* const img, const KMeansClustersSeed seed) {
+  const GenBrush* const img, const KMeansClustersSeed seed, 
+  const int size) {
 #if BUILDMODE == 0
   if (img == NULL) {
     PBImgAnalysisErr->_type = PBErrTypeNullPointer;
     sprintf(PBImgAnalysisErr->_msg, "'img' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+  if (size < 0) {
+    PBImgAnalysisErr->_type = PBErrTypeInvalidArg;
+    sprintf(PBImgAnalysisErr->_msg, "'size' is invalid (%d>=0)", size);
     PBErrCatch(PBImgAnalysisErr);
   }
 #endif
@@ -29,6 +42,7 @@ ImgKMeansClusters ImgKMeansClustersCreateStatic(
   // Set properties
   that._img = img;
   that._kmeansClusters = KMeansClustersCreateStatic(seed);
+  that._size = size;
   // Return the new ImgKMeansClusters
   return that;
 }
@@ -46,7 +60,7 @@ void ImgKMeansClustersFreeStatic(ImgKMeansClusters* const that) {
   KMeansClustersFreeStatic((KMeansClusters*)IKMCKMeansClusters(that));
 }
 
-// Search for the 'K' clusters in the RGBA space of the image of the
+// Search for the 'K' clusters in the image of the
 // ImgKMeansClusters 'that'
 void IKMCSearch(ImgKMeansClusters* const that, const int K) {
 #if BUILDMODE == 0
@@ -61,27 +75,24 @@ void IKMCSearch(ImgKMeansClusters* const that, const int K) {
     PBErrCatch(PBImgAnalysisErr);
   }
 #endif
-  // Create a set to memorize the rgb values of the image
-  GSetVecFloat input = GSetVecFloatCreateStatic();
-  // Get the array of pixels
-  const GBPixel* pixels = GBSurfaceFinalPixels(GBSurf(IKMCImg(that)));
-  // Get the number of pixels
-  long nbPix = (long)GBSurfaceArea(GBSurf(IKMCImg(that)));
+  // Create a set to memorize the input over cells
+  GSetVecFloat inputOverCells = GSetVecFloatCreateStatic();
+  // Get the dimension of the image
+  VecShort2D dim = GBGetDim(IKMCImg(that));
   // Loop on pixels
-  for (long iPix = nbPix; iPix--;) {
-    // Convert the pixel values to float and add them to the 
-    // input set
-    VecFloat* pix = VecFloatCreate(4);
-    for (int i = 4; i--;)
-      VecSet(pix, i, (float)(pixels[iPix]._rgba[i]));
-    GSetAppend(&input, pix);
-  }
+  VecShort2D pos = VecShortCreateStatic2D();
+  do {
+    // Get the KMeansClusters input over the cell
+    VecFloat* inputOverCell = IKMCGetInputOverCell(that, &pos);
+    // Add it to the inputs for the search
+    GSetAppend(&inputOverCells, inputOverCell);
+  } while (VecStep(&pos, &dim));
   // Search the clusters
   KMeansClustersSearch((KMeansClusters*)IKMCKMeansClusters(that),
-    &input, K);
+    &inputOverCells, K);
   // Free the memory used by the input
-  while (GSetNbElem(&input) > 0) {
-    VecFloat* v = GSetPop(&input);
+  while (GSetNbElem(&inputOverCells) > 0) {
+    VecFloat* v = GSetPop(&inputOverCells);
     VecFree(&v);
   }
 }
@@ -105,67 +116,77 @@ void IKMCPrintln(const ImgKMeansClusters* const that,
   KMeansClustersPrintln(IKMCKMeansClusters(that), stream);
 }
 
-// Get the index of the cluster including the 'input' pixel for the 
+// Get the index of the cluster at position 'pos' for the 
 // ImgKMeansClusters 'that' 
 int IKMCGetId(const ImgKMeansClusters* const that, 
-  const GBPixel* const input) {
+  const VecShort2D* const pos) {
 #if BUILDMODE == 0
   if (that == NULL) {
     PBImgAnalysisErr->_type = PBErrTypeNullPointer;
     sprintf(PBImgAnalysisErr->_msg, "'that' is null");
     PBErrCatch(PBImgAnalysisErr);
   }
-  if (input == NULL) {
+  if (pos == NULL) {
     PBImgAnalysisErr->_type = PBErrTypeNullPointer;
-    sprintf(PBImgAnalysisErr->_msg, "'input' is null");
+    sprintf(PBImgAnalysisErr->_msg, "'pos' is null");
     PBErrCatch(PBImgAnalysisErr);
   }
 #endif  
-  // Convert the pixel values to float
-  VecFloat* pix = VecFloatCreate(4);
-  for (int i = 4; i--;)
-    VecSet(pix, i, (float)(input->_rgba[i]));
+  // Get the KMeansClusters input over the cell
+  VecFloat* inputOverCell = IKMCGetInputOverCell(that, pos);
   // Get the index of the cluster for this pixel
-  int id = KMeansClustersGetId(IKMCKMeansClusters(that), pix);
+  int id = KMeansClustersGetId(IKMCKMeansClusters(that), inputOverCell);
   // Free memory
-  VecFree(&pix);
+  VecFree(&inputOverCell);
   // Return the id
   return id;
 }
 
-// Get the GBPixel equivalent to the cluster including the 'input' 
-// pixel for the ImgKMeansClusters 'that' 
+// Get the GBPixel equivalent to the cluster at position 'pos' 
+// for the ImgKMeansClusters 'that' 
+// This is the average pixel over the pixel in the cell of the cluster
 GBPixel IKMCGetPixel(const ImgKMeansClusters* const that, 
-  const GBPixel* const input) {
+  const VecShort2D* const pos) {
 #if BUILDMODE == 0
   if (that == NULL) {
     PBImgAnalysisErr->_type = PBErrTypeNullPointer;
     sprintf(PBImgAnalysisErr->_msg, "'that' is null");
     PBErrCatch(PBImgAnalysisErr);
   }
-  if (input == NULL) {
+  if (pos == NULL) {
     PBImgAnalysisErr->_type = PBErrTypeNullPointer;
-    sprintf(PBImgAnalysisErr->_msg, "'input' is null");
+    sprintf(PBImgAnalysisErr->_msg, "'pos' is null");
     PBErrCatch(PBImgAnalysisErr);
   }
 #endif  
   // Declare the result pixel
   GBPixel pix;
   // Get the id of the cluster for the input pixel
-  int id = IKMCGetId(that, input);
+  int id = IKMCGetId(that, pos);
   // Get the 'id'-th cluster's center
   const VecFloat* center = 
     KMeansClustersCenter(IKMCKMeansClusters(that), id);
+  // Declare a variable to calculate the average pixel
+  VecFloat* avgPix = VecFloatCreate(4);
+  // Calculate the average pixel
+  for (int i = 0; i < VecGetDim(center); i += 4) {
+    for (int j = 4; j--;) {
+      VecSet(avgPix, j, VecGet(avgPix, j) + VecGet(center, i + j));
+    }
+  }
+  VecScale(avgPix, 1.0 / round((float)VecGetDim(center) / 4.0));
   // Update the returned pixel values and ensure the converted value 
   // from float to char is valid
   for (int i = 4; i--;) {
-    float v = VecGet(center, i);
+    float v = VecGet(avgPix, i);
     if (v < 0.0) 
       v = 0.0;
     else if (v > 255.0)
       v = 255.0;
     pix._rgba[i] = (unsigned char)v;
   }
+  // Free memory
+  VecFree(&avgPix);
   // Return the result pixel
   return pix;
 }
@@ -181,15 +202,81 @@ void IKMCCluster(const ImgKMeansClusters* const that) {
     PBErrCatch(PBImgAnalysisErr);
   }
 #endif
-  // Get the array of pixels
-  GBPixel* pixels = GBSurfaceFinalPixels(GBSurf(IKMCImg(that)));
-  // Get the number of pixels
-  long nbPix = (long)GBSurfaceArea(GBSurf(IKMCImg(that)));
+  // Get the dimension of the image
+  VecShort2D dim = GBGetDim(IKMCImg(that));
   // Loop on pixels
-  for (long iPix = nbPix; iPix--;) {
+  VecShort2D pos = VecShortCreateStatic2D();
+  do {
     // Get the clustered pixel for this pixel
-    GBPixel clustered = IKMCGetPixel(that, pixels + iPix);
+    GBPixel clustered = IKMCGetPixel(that, &pos);
     // Replace the original pixel
-    pixels[iPix] = clustered;
-  }
+    GBSetFinalPixel((GenBrush*)IKMCImg(that), &pos, &clustered);
+  } while (VecStep(&pos, &dim));
 }
+
+// Get the input values for the pixel at position 'pos' according to
+// the cell size of the ImgKMeansClusters 'that'
+// The return is a VecFloat made of the sizeCell^2 pixels' value 
+// around pos ordered by (((r*256+g)*256+b)*256+a) 
+VecFloat* IKMCGetInputOverCell(const ImgKMeansClusters* const that, 
+  const VecShort2D* const pos) {
+#if BUILDMODE == 0
+  if (that == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'that' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+  if (pos == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'pos' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+#endif
+  // Create two vectors to loop on the cell
+  VecShort2D from = VecShortCreateStatic2D();
+  VecSet(&from, 0, -that->_size);
+  VecSet(&from, 1, -that->_size);
+  VecShort2D to = VecShortCreateStatic2D();
+  VecSet(&to, 0, that->_size + 1);
+  VecSet(&to, 1, that->_size + 1);
+  // Get the pixel at the center of the cell, will be used as default
+  // if the cell goes over the border of the image
+  const GBPixel* defaultPixel = GBFinalPixel(IKMCImg(that), pos);
+  // Declare a set to memorize the pixels in the cell
+  GSet pixels = GSetCreateStatic();
+  // Loop over the pixels of the cell
+  VecShort2D posCell = from;
+  VecShort2D posImg = VecShortCreateStatic2D();
+  do {
+    // If the position in the cell is inside the radius of the cell
+    VecFloat2D posCellFloat = VecShortToFloat2D(&posCell);
+    if ((int)round(VecNorm(&posCellFloat)) <= that->_size) {
+      // Get the position in the image
+      posImg = VecGetOp(pos, 1, &posCell, 1);
+      // Get the pixel at this position
+      const GBPixel* pix = GBFinalPixelSafe(IKMCImg(that), &posImg);
+      if (pix == NULL)
+        pix = defaultPixel;
+      // Get the value to sort this pixel
+      float valPix = 0.0;
+      for (int iRgba = 4; iRgba--;)
+        valPix += 256.0 * valPix + (float)(pix->_rgba[iRgba]);
+      // Add the pixel to the set of pixels in the cell
+      GSetAddSort(&pixels, pix, valPix);
+    }
+  } while (VecShiftStep(&posCell, &from, &to));
+  // Declare the result vector
+  VecFloat* res = VecFloatCreate(GSetNbElem(&pixels) * 4);
+  // Loop over the sorted pixels of the cell
+  int iPix = 0;
+  while (GSetNbElem(&pixels)) {
+    const GBPixel* pix = GSetDrop(&pixels);
+    // Set the result value
+    for (int i = 0; i < 4; ++i)
+      VecSet(res, iPix * 4 + i, (float)(pix->_rgba[i]));
+    ++iPix;
+  }
+  // Return the result
+  return res;
+}
+

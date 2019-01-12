@@ -4,7 +4,7 @@ PBImgAnalysis is a C library providing structures and functions to perform vario
 
 It implements the following algorithms:
 \begin{itemize}
-\item K-means clustering on the RGBA space
+\item K-means clustering on the RGBA space of pixels in a user defined radius
 \end{itemize}
 
 It uses the \begin{ttfamily}PBErr\end{ttfamily}, \begin{ttfamily}PBDataAnalaysis\end{ttfamily}, \begin{ttfamily}GenBrush\end{ttfamily} libraries.\\
@@ -53,46 +53,107 @@ It uses the \begin{ttfamily}PBErr\end{ttfamily}, \begin{ttfamily}PBDataAnalaysis
 
 \subsection{K-Means clustering on RGBA space}
 
-imgkmeanscluster01.tga:\\
+imgkmeanscluster.tga:\\
 \begin{center}
 \begin{figure}[H]
-\centering\includegraphics[width=6cm]{./imgkmeanscluster01.png}\\
+\centering\includegraphics[width=6cm]{./imgkmeanscluster.png}\\
 \end{figure}
 \end{center}
 
-clustering for K equals 2 to 10:\\
+clustering for K equals 2 to 6 and radius equals 0 to 5:\\
+K=2:\\
 \begin{center}
 \begin{figure}[H]
-\centering\includegraphics[width=6cm]{./imgkmeanscluster01-02.png}
-\centering\includegraphics[width=6cm]{./imgkmeanscluster01-03.png}\\
-\centering\includegraphics[width=6cm]{./imgkmeanscluster01-04.png}
-\centering\includegraphics[width=6cm]{./imgkmeanscluster01-05.png}\\
-\centering\includegraphics[width=6cm]{./imgkmeanscluster01-06.png}
-\centering\includegraphics[width=6cm]{./imgkmeanscluster01-07.png}\\
-\centering\includegraphics[width=6cm]{./imgkmeanscluster01-08.png}
-\centering\includegraphics[width=6cm]{./imgkmeanscluster01-09.png}\\
-\centering\includegraphics[width=6cm]{./imgkmeanscluster01-10.png}\\
+\centering\includegraphics[width=6cm]{./imgkmeanscluster02-00.png}
+\centering\includegraphics[width=6cm]{./imgkmeanscluster02-01.png}\\
 \end{figure}
 \end{center}
-
-imgkmeanscluster02.tga:\\
-\begin{center}
-\begin{figure}[H]
-\centering\includegraphics[width=6cm]{./imgkmeanscluster02.png}\\
-\end{figure}
-\end{center}
-
-clustering for K equals 2 to 10:\\
 \begin{center}
 \begin{figure}[H]
 \centering\includegraphics[width=6cm]{./imgkmeanscluster02-02.png}
 \centering\includegraphics[width=6cm]{./imgkmeanscluster02-03.png}\\
-\centering\includegraphics[width=6cm]{./imgkmeanscluster02-04.png}
-\centering\includegraphics[width=6cm]{./imgkmeanscluster02-05.png}\\
-\centering\includegraphics[width=6cm]{./imgkmeanscluster02-06.png}
-\centering\includegraphics[width=6cm]{./imgkmeanscluster02-07.png}\\
-\centering\includegraphics[width=6cm]{./imgkmeanscluster02-08.png}
-\centering\includegraphics[width=6cm]{./imgkmeanscluster02-09.png}\\
-\centering\includegraphics[width=6cm]{./imgkmeanscluster02-10.png}
 \end{figure}
 \end{center}
+\begin{center}
+\begin{figure}[H]
+\centering\includegraphics[width=6cm]{./imgkmeanscluster02-04.png}
+\centering\includegraphics[width=6cm]{./imgkmeanscluster02-05.png}\\
+\end{figure}
+\end{center}
+K=3:\\
+\begin{center}
+\begin{figure}[H]
+\centering\includegraphics[width=6cm]{./imgkmeanscluster03-00.png}
+\centering\includegraphics[width=6cm]{./imgkmeanscluster03-01.png}\\
+\end{figure}
+\end{center}
+\begin{center}
+\begin{figure}[H]
+\centering\includegraphics[width=6cm]{./imgkmeanscluster03-02.png}
+\centering\includegraphics[width=6cm]{./imgkmeanscluster03-03.png}\\
+\end{figure}
+\end{center}
+\begin{center}
+\begin{figure}[H]
+\centering\includegraphics[width=6cm]{./imgkmeanscluster03-04.png}
+\centering\includegraphics[width=6cm]{./imgkmeanscluster03-05.png}\\
+\end{figure}
+\end{center}
+K=4:\\
+\begin{center}
+\begin{figure}[H]
+\centering\includegraphics[width=6cm]{./imgkmeanscluster04-00.png}
+\centering\includegraphics[width=6cm]{./imgkmeanscluster04-01.png}\\
+\end{figure}
+\end{center}
+\begin{center}
+\begin{figure}[H]
+\centering\includegraphics[width=6cm]{./imgkmeanscluster04-02.png}
+\centering\includegraphics[width=6cm]{./imgkmeanscluster04-03.png}\\
+\end{figure}
+\end{center}
+\begin{center}
+\begin{figure}[H]
+\centering\includegraphics[width=6cm]{./imgkmeanscluster04-04.png}
+\centering\includegraphics[width=6cm]{./imgkmeanscluster04-05.png}\\
+\end{figure}
+\end{center}
+K=5:\\
+\begin{center}
+\begin{figure}[H]
+\centering\includegraphics[width=6cm]{./imgkmeanscluster05-00.png}
+\centering\includegraphics[width=6cm]{./imgkmeanscluster05-01.png}\\
+\end{figure}
+\end{center}
+\begin{center}
+\begin{figure}[H]
+\centering\includegraphics[width=6cm]{./imgkmeanscluster05-02.png}
+\centering\includegraphics[width=6cm]{./imgkmeanscluster05-03.png}\\
+\end{figure}
+\end{center}
+\begin{center}
+\begin{figure}[H]
+\centering\includegraphics[width=6cm]{./imgkmeanscluster05-04.png}
+\centering\includegraphics[width=6cm]{./imgkmeanscluster05-05.png}\\
+\end{figure}
+\end{center}
+K=6:\\
+\begin{center}
+\begin{figure}[H]
+\centering\includegraphics[width=6cm]{./imgkmeanscluster06-00.png}
+\centering\includegraphics[width=6cm]{./imgkmeanscluster06-01.png}\\
+\end{figure}
+\end{center}
+\begin{center}
+\begin{figure}[H]
+\centering\includegraphics[width=6cm]{./imgkmeanscluster06-02.png}
+\centering\includegraphics[width=6cm]{./imgkmeanscluster06-03.png}\\
+\end{figure}
+\end{center}
+\begin{center}
+\begin{figure}[H]
+\centering\includegraphics[width=6cm]{./imgkmeanscluster06-04.png}
+\centering\includegraphics[width=6cm]{./imgkmeanscluster06-05.png}\\
+\end{figure}
+\end{center}
+

@@ -55,3 +55,55 @@ const KMeansClusters* IKMCKMeansClusters(
   return &(that->_kmeansClusters);
 }
 
+// Set the size of the cells of the ImgKMeansClusters 'that' to 
+// 2*'size'+1
+#if BUILDMODE != 0
+inline
+#endif 
+void IKMCSetSizeCell(ImgKMeansClusters* const that, const int size) {
+#if BUILDMODE == 0
+  if (that == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'that' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+  if (size < 0) {
+    PBImgAnalysisErr->_type = PBErrTypeInvalidArg;
+    sprintf(PBImgAnalysisErr->_msg, "'size' is invalid (%d>=0)", size);
+    PBErrCatch(PBImgAnalysisErr);
+  }
+#endif
+  that->_size = size;
+}
+
+// Get the size of the cells of the ImgKMeansClusters 'that'
+#if BUILDMODE != 0
+inline
+#endif 
+int IKMCGetSizeCell(const ImgKMeansClusters* const that) {
+#if BUILDMODE == 0
+  if (that == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'that' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+#endif
+  return 2 * that->_size + 1;
+}
+
+// Get the number of cluster of the ImgKMeansClusters 'that'
+#if BUILDMODE != 0
+inline
+#endif 
+int IKMCGetK(const ImgKMeansClusters* const that) {
+#if BUILDMODE == 0
+  if (that == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'that' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+#endif
+  return KMeansClustersGetK(&(that->_kmeansClusters));
+}
+
+
