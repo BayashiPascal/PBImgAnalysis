@@ -102,6 +102,26 @@ GBPixel IKMCGetPixel(const ImgKMeansClusters* const that,
 // IKMCSearch must have been called previously 
 void IKMCCluster(const ImgKMeansClusters* const that);
 
+// Load the IKMC 'that' from the stream 'stream'
+// There is no associated GenBrush object saved
+// Return true upon success else false
+bool IKMCLoad(ImgKMeansClusters* that, FILE* const stream);
+
+// Save the IKMC 'that' to the stream 'stream'
+// If 'compact' equals true it saves in compact form, else it saves in 
+// readable form
+// There is no associated GenBrush object saved
+// Return true upon success else false
+bool IKMCSave(const ImgKMeansClusters* const that, 
+  FILE* const stream, const bool compact);
+
+// Function which return the JSON encoding of 'that' 
+JSONNode* IKMCEncodeAsJSON(const ImgKMeansClusters* const that);
+
+// Function which decode from JSON encoding 'json' to 'that'
+bool IKMCDecodeAsJSON(ImgKMeansClusters* that, 
+  const JSONNode* const json);
+
 // ================= Polymorphism ==================
 
 // ================ Inliner ====================

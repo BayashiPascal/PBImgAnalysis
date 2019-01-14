@@ -9,17 +9,35 @@ void UnitTestImgKMeansClusters() {
   srandom(1);
   for (int size = 0; size < 6; ++size) {
     for (int K = 2; K <= 6; ++K) {
-      char* fileName = "./imgkmeanscluster.tga";
+      char* fileName = "./ImgKMeansClustersTest/imgkmeanscluster.tga";
       GenBrush* img = GBCreateFromFile(fileName);
       ImgKMeansClusters clusters = ImgKMeansClustersCreateStatic(
         img, KMeansClustersSeed_Forgy, size);
       IKMCSearch(&clusters, K);
+      
+      FILE* fd = fopen("./imgkmeanscluster.txt", "w");
+      if (!IKMCSave(&clusters, fd, false)) {
+        PBImgAnalysisErr->_type = PBErrTypeUnitTestFailed;
+        sprintf(PBImgAnalysisErr->_msg, "IKMCSave NOK");
+        PBErrCatch(PBImgAnalysisErr);
+      }
+      fclose(fd);
+      fd = fopen("./imgkmeanscluster.txt", "r");
+      if (!IKMCLoad(&clusters, fd)) {
+        PBImgAnalysisErr->_type = PBErrTypeUnitTestFailed;
+        sprintf(PBImgAnalysisErr->_msg, "IKMCLoad NOK");
+        PBErrCatch(PBImgAnalysisErr);
+      }
+      IKMCSetImg(&clusters, img);
+      fclose(fd);
+      
       printf("%s size K=%d cell=%d:\n", 
         fileName, K, IKMCGetSizeCell(&clusters));
       IKMCPrintln(&clusters, stdout);
       IKMCCluster(&clusters);
       char fileNameOut[50] = {'\0'};
-      sprintf(fileNameOut, "./imgkmeanscluster%02d-%02d.tga", K, size);
+      sprintf(fileNameOut, 
+        "./ImgKMeansClustersTest/imgkmeanscluster%02d-%02d.tga", K, size);
       GBSetFileName(img, fileNameOut);
       GBRender(img);
       GBFree(&img);

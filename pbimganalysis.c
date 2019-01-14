@@ -56,6 +56,8 @@ void ImgKMeansClustersFreeStatic(ImgKMeansClusters* const that) {
     PBErrCatch(PBImgAnalysisErr);
   }
 #endif
+  // Reset the GenBrush associated to the IKMC
+  that->_img = NULL;
   // Free the memory used by the KMeansClusters
   KMeansClustersFreeStatic((KMeansClusters*)IKMCKMeansClusters(that));
 }
@@ -280,3 +282,124 @@ VecFloat* IKMCGetInputOverCell(const ImgKMeansClusters* const that,
   return res;
 }
 
+// Load the IKMC 'that' from the stream 'stream'
+// There is no associated GenBrush object saved
+// Return true upon success else false
+bool IKMCLoad(ImgKMeansClusters* that, FILE* const stream) {
+#if BUILDMODE == 0
+  if (that == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'that' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+  if (stream == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'stream' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+#endif
+  // Declare a json to load the encoded data
+  JSONNode* json = JSONCreate();
+  // Load the whole encoded data
+  if (!JSONLoad(json, stream)) {
+    return false;
+  }
+  // Decode the data from the JSON
+  if (!IKMCDecodeAsJSON(that, json)) {
+    return false;
+  }
+  // Free the memory used by the JSON
+  JSONFree(&json);
+  // Return success code
+  return true;
+}
+
+// Save the IKMC 'that' to the stream 'stream'
+// If 'compact' equals true it saves in compact form, else it saves in 
+// readable form
+// There is no associated GenBrush object saved
+// Return true upon success else false
+bool IKMCSave(const ImgKMeansClusters* const that, 
+  FILE* const stream, const bool compact) {
+#if BUILDMODE == 0
+  if (that == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'that' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+  if (stream == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'stream' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+#endif
+  // Get the JSON encoding
+  JSONNode* json = IKMCEncodeAsJSON(that);
+  // Save the JSON
+  if (!JSONSave(json, stream, compact)) {
+    return false;
+  }
+  // Free memory
+  JSONFree(&json);
+  // Return success code
+  return true;
+}
+
+// Function which return the JSON encoding of 'that' 
+JSONNode* IKMCEncodeAsJSON(const ImgKMeansClusters* const that) {
+#if BUILDMODE == 0
+  if (that == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'that' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+#endif
+  // Create the JSON structure
+  JSONNode* json = JSONCreate();
+  // Declare a buffer to convert value into string
+  char val[100];
+  // Encode the size
+  sprintf(val, "%d", that->_size);
+  JSONAddProp(json, "_size", val);
+  // Encode the KMeansClusters
+  JSONAddProp(json, "_clusters", 
+    KMeansClustersEncodeAsJSON(IKMCKMeansClusters(that)));
+  // Return the created JSON 
+  return json;
+}
+
+// Function which decode from JSON encoding 'json' to 'that'
+bool IKMCDecodeAsJSON(ImgKMeansClusters* that, 
+  const JSONNode* const json) {
+#if BUILDMODE == 0
+  if (that == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'that' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+  if (json == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'json' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+#endif
+  // Free the memory eventually used by the IKMC
+  ImgKMeansClustersFreeStatic(that);
+  // Get the size from the JSON
+  JSONNode* prop = JSONProperty(json, "_size");
+  if (prop == NULL) {
+    return false;
+  }
+  that->_size = atoi(JSONLabel(JSONValue(prop, 0)));
+  if (that->_size < 0) {
+    return false;
+  }
+  // Decode the KMeansClusters
+  prop = JSONProperty(json, "_clusters");
+  if (!KMeansClustersDecodeAsJSON(
+    (KMeansClusters*)IKMCKMeansClusters(that), prop)) {
+    return false;
+  }
+  // Return the success code
+  return true;
+}
