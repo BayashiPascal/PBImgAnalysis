@@ -47,8 +47,26 @@ void UnitTestImgKMeansClusters() {
   printf("UnitTestImgKMeansClusters OK\n");
 }
 
+void UnitTestIntersectionOverUnion() {
+  char* fileNameA = "./iou1.tga";
+  GenBrush* imgA = GBCreateFromFile(fileNameA);
+  char* fileNameB = "./iou2.tga";
+  GenBrush* imgB = GBCreateFromFile(fileNameB);
+  GBPixel rgba = GBColorBlack;
+  float iou = IntersectionOverUnion(imgA, imgB, &rgba);
+  if (!ISEQUALF(iou, 6.0 / 10.0)) {
+    PBImgAnalysisErr->_type = PBErrTypeUnitTestFailed;
+    sprintf(PBImgAnalysisErr->_msg, "IntersectionOverUnion failed");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+  GBFree(&imgA);
+  GBFree(&imgB);
+  printf("UnitTestIntersectionOverUnion OK\n");
+}
+
 void UnitTestAll() {
   UnitTestImgKMeansClusters();
+  UnitTestIntersectionOverUnion();
 }
 
 int main(void) {

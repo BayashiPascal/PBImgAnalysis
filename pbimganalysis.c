@@ -7,6 +7,8 @@
 #include "pbimganalysis-inline.c"
 #endif
 
+// ------------------ ImgKMeansClusters ----------------------
+
 // ================= Define ==================
 
 // ================ Functions declaration ====================
@@ -402,4 +404,63 @@ bool IKMCDecodeAsJSON(ImgKMeansClusters* that,
   }
   // Return the success code
   return true;
+}
+
+// ------------------ General functions ----------------------
+
+// ================ Functions implementation ====================
+
+// Return the Jaccard index (aka intersection over union) of the 
+// image 'that' and 'tho' for pixels of color 'rgba'
+// 'that' and 'tho' must have same dimensions
+float IntersectionOverUnion(const GenBrush* const that, 
+  const GenBrush* const tho, const GBPixel* const rgba) {
+#if BUILDMODE == 0
+  if (that == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'that' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+  if (tho == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'tho' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+  if (rgba == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'rgba' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+  if (!VecIsEqual(GBDim(that), GBDim(tho))) {
+    PBImgAnalysisErr->_type = PBErrTypeInvalidArg;
+    sprintf(PBImgAnalysisErr->_msg, 
+      "'that' and 'tho' have different dimensions");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+#endif
+  // Declare two variables to count the number of pixels in 
+  // intersection and union
+  long nbUnion = 0;
+  long nbInter = 0;
+  // Declare a variable to loop through pixels
+  VecShort2D pos = VecShortCreateStatic2D();
+  // Loop through pixels
+  do {
+    // If the pixel is in the intersection
+    if (GBPixelIsSame(GBFinalPixel(that, &pos), rgba) &&
+      GBPixelIsSame(GBFinalPixel(tho, &pos), rgba)) {
+      // Increment the number of pixels in intersection
+      ++nbInter;
+    }
+    // If the pixel is in the union
+    if (GBPixelIsSame(GBFinalPixel(that, &pos), rgba) ||
+      GBPixelIsSame(GBFinalPixel(tho, &pos), rgba)) {
+      // Increment the number of pixels in union
+      ++nbUnion;
+    }
+  } while (VecStep(&pos, GBDim(that)));
+  // Calcaulte the intersection over union
+  float iou = (float)nbInter / (float)nbUnion;
+  // Return the result
+  return iou;
 }

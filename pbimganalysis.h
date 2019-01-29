@@ -15,6 +15,8 @@
 #include "pbdataanalysis.h"
 #include "genbrush.h"
 
+// ------------------ ImgKMeansClusters ----------------------
+
 // ================= Define ==================
 
 // ================= Data structure ===================
@@ -123,6 +125,14 @@ bool IKMCDecodeAsJSON(ImgKMeansClusters* that,
   const JSONNode* const json);
 
 // ================= Polymorphism ==================
+
+// ------------------ General functions ----------------------
+
+// Return the Jaccard index (aka intersection over union) of the 
+// image 'that' and 'tho' for pixels of color 'rgba'
+// 'that' and 'tho' must have same dimensions
+float IntersectionOverUnion(const GenBrush* const that, 
+  const GenBrush* const tho, const GBPixel* const rgba);
 
 // ================ Inliner ====================
 
