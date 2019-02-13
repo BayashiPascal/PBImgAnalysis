@@ -64,13 +64,45 @@ void UnitTestIntersectionOverUnion() {
   printf("UnitTestIntersectionOverUnion OK\n");
 }
 
+void UnitTestImgSegmentorRGB() {
+  int nbClass = 2;
+  ImgSegmentorCriteriaRGB* criteria = 
+    ImgSegmentorCriteriaRGBCreate(nbClass);
+  if (ISCGetNbClass(criteria) != nbClass) {
+    PBImgAnalysisErr->_type = PBErrTypeUnitTestFailed;
+    sprintf(PBImgAnalysisErr->_msg, 
+      "ImgSegmentorCriteriaRGBCreate failed");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+  int imgArea = 4;
+  VecFloat* input = VecFloatCreate(imgArea * 3);
+  VecFloat* output = ISCRGBPredict(criteria, input);
+  if (VecGetDim(output) != imgArea * nbClass) {
+    PBImgAnalysisErr->_type = PBErrTypeUnitTestFailed;
+    sprintf(PBImgAnalysisErr->_msg, "ISCRGBPredict failed");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+  VecFree(&input);
+  VecFree(&output);
+  ImgSegmentorCriteriaRGBFree(&criteria);
+  printf("UnitTestImgSegmentorRGB OK\n");
+}
+
+void UnitTestImgSegmentor() {
+  
+  printf("UnitTestImgSegmentor OK\n");
+}
+
 void UnitTestAll() {
   UnitTestImgKMeansClusters();
   UnitTestIntersectionOverUnion();
+  UnitTestImgSegmentorRGB();
+  UnitTestImgSegmentor();
 }
 
 int main(void) {
-  UnitTestAll();
+  //UnitTestAll();
+  UnitTestImgSegmentor();
   return 0;
 }
 

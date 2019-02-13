@@ -406,6 +406,141 @@ bool IKMCDecodeAsJSON(ImgKMeansClusters* that,
   return true;
 }
 
+// ------------------ ImgSegmentor ----------------------
+
+// ================ Functions implementation ====================
+
+// Create a new static ImgSegmentorCriteria with 'nbClass' output 
+// and the type of criteria 'type'
+ImgSegmentorCriteria ImgSegmentorCriteriaCreateStatic(int nbClass,
+  ISCType type) {
+#if BUILDMODE == 0
+  if (nbClass == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeInvalidArg;
+    sprintf(PBImgAnalysisErr->_msg, "'nbClass' is invalid (%d>0)",
+      nbClass);
+    PBErrCatch(PBImgAnalysisErr);
+  }
+#endif
+  // Declare the new ImgSegmentorCriteria
+  ImgSegmentorCriteria that;
+  // Set the properties
+  that._nbClass = nbClass;
+  that._type = type;
+  // Return the new ImgSegmentorCriteria
+  return that;
+}
+
+// Free the memory used by the static ImgSegmentorCriteria 'that'
+void ImgSegmentorCriteriaFreeStatic(ImgSegmentorCriteria* that) {
+  if (that == NULL)
+    return;
+  // Nothing to do
+}
+
+// Make the prediction on the 'input' values by calling the appropriate
+// function according to the type of criteria
+// 'input' 's format is height*width*3, values in [0.0, 1.0]
+// Return values are height*width*nbClass, values in [-1.0, 1.0]
+VecFloat* ISCPredict(const ImgSegmentorCriteria* const that,
+  const VecFloat* input) {
+#if BUILDMODE == 0
+  if (that == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'that' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+  if (input == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'input' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+#endif
+  // Declare a variable to memorize the result
+  VecFloat* res = NULL;
+  // Call the appropriate function based on the type
+  switch(that->_type) {
+    case ISCType_RGB:
+      res = ISCRGBPredict((const ImgSegmentorCriteriaRGB*)that, input);
+      break;
+    default:
+      break;
+  }
+  // Return the result
+  return res;
+}
+
+// Create a new ImgSegmentorCriteriaRGB with 'nbClass' output
+ImgSegmentorCriteriaRGB* ImgSegmentorCriteriaRGBCreate(int nbClass) {
+#if BUILDMODE == 0
+  if (nbClass == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeInvalidArg;
+    sprintf(PBImgAnalysisErr->_msg, "'nbClass' is invalid (%d>0)",
+      nbClass);
+    PBErrCatch(PBImgAnalysisErr);
+  }
+#endif
+  // Allocate memory for the new ImgSegmentorCriteriaRGB
+  ImgSegmentorCriteriaRGB* that = PBErrMalloc(PBImgAnalysisErr,
+    sizeof(ImgSegmentorCriteriaRGB));
+  // Create the parent ImgSegmentorCriteria
+  that->_criteria = ImgSegmentorCriteriaCreateStatic(nbClass, 
+    ISCType_RGB);
+  // Create the NeuraNet
+  const int nbInput = 3;
+  const int nbMaxHidden = nbInput * 9;
+  const int nbMaxLinks = nbInput * nbMaxHidden * nbClass * 3;
+  const int nbMaxBases = nbMaxLinks;
+  that->_nn = NeuraNetCreate(nbInput, nbClass, nbMaxHidden, nbMaxBases, 
+    nbMaxLinks);
+  // Return the new ImgSegmentorCriteriaRGB
+  return that;
+}
+
+// Free the memory used by the ImgSegmentorCriteriaRGB 'that'
+void ImgSegmentorCriteriaRGBFree(ImgSegmentorCriteriaRGB** that) {
+  if (that == NULL || *that == NULL)
+    return;
+  // Free memory
+  ImgSegmentorCriteriaFreeStatic((ImgSegmentorCriteria*)(*that));
+  NeuraNetFree(&((*that)->_nn));
+  free(*that);
+}
+
+// Make the prediction on the 'input' values with the 
+// ImgSegmentorCriteriaRGB that
+// 'input' 's format is height*width*3, values in [0.0, 1.0]
+// Return values are height*width*nbClass, values in [-1.0, 1.0]
+VecFloat* ISCRGBPredict(const ImgSegmentorCriteriaRGB* const that,
+  const VecFloat* input) {
+#if BUILDMODE == 0
+  if (that == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'that' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+  if (input == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'input' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+  if ((VecGetDim(input) % 3) != 0) {
+    PBImgAnalysisErr->_type = PBErrTypeInvalidArg;
+    sprintf(PBImgAnalysisErr->_msg, 
+      "'input' 's dim is not multiple of 3 (%d)", VecGetDim(input));
+    PBErrCatch(PBImgAnalysisErr);
+  }
+#endif
+  // Calculate the area of the input image
+  long area = VecGetDim(input) / 3;
+  // Allocate memory for the result
+  VecFloat* res = VecFloatCreate(area * ISCGetNbClass(that));
+  // Apply the NeuraNet on inputs
+  NNEval(that->_nn, input, res);
+  // Return the result
+  return res;
+}
+  
 // ------------------ General functions ----------------------
 
 // ================ Functions implementation ====================

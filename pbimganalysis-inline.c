@@ -106,4 +106,18 @@ int IKMCGetK(const ImgKMeansClusters* const that) {
   return KMeansClustersGetK(&(that->_kmeansClusters));
 }
 
+// Return the nb of class of the ImgSegmentorCriteria 'that'
+#if BUILDMODE != 0
+inline
+#endif
+int _ISCGetNbClass(const ImgSegmentorCriteria* const that) {
+#if BUILDMODE == 0
+  if (that == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'that' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+#endif
+  return that->_nbClass;
+}
 
