@@ -66,9 +66,9 @@ void UnitTestIntersectionOverUnion() {
 
 void UnitTestImgSegmentorRGB() {
   int nbClass = 2;
-  ImgSegmentorCriterionRGB* criteria = 
+  ImgSegmentorCriterionRGB* criterion = 
     ImgSegmentorCriterionRGBCreate(nbClass);
-  if (ISCGetNbClass(criteria) != nbClass) {
+  if (ISCGetNbClass(criterion) != nbClass) {
     PBImgAnalysisErr->_type = PBErrTypeUnitTestFailed;
     sprintf(PBImgAnalysisErr->_msg, 
       "ImgSegmentorCriterionRGBCreate failed");
@@ -76,7 +76,7 @@ void UnitTestImgSegmentorRGB() {
   }
   int imgArea = 4;
   VecFloat* input = VecFloatCreate(imgArea * 3);
-  VecFloat* output = ISCRGBPredict(criteria, input);
+  VecFloat* output = ISCRGBPredict(criterion, input);
   if (VecGetDim(output) != imgArea * nbClass) {
     PBImgAnalysisErr->_type = PBErrTypeUnitTestFailed;
     sprintf(PBImgAnalysisErr->_msg, "ISCRGBPredict failed");
@@ -84,7 +84,7 @@ void UnitTestImgSegmentorRGB() {
   }
   VecFree(&input);
   VecFree(&output);
-  ImgSegmentorCriterionRGBFree(&criteria);
+  ImgSegmentorCriterionRGBFree(&criterion);
   printf("UnitTestImgSegmentorRGB OK\n");
 }
 
@@ -103,6 +103,11 @@ void UnitTestImgSegmentorCreateFree() {
 void UnitTestImgSegmentorAddCriterionGet() {
   int nbClass = 2;
   ImgSegmentor segmentor = ImgSegmentorCreateStatic(nbClass);
+  if (ISCriteria(&segmentor) != &(segmentor._criteria)) {
+    PBImgAnalysisErr->_type = PBErrTypeUnitTestFailed;
+    sprintf(PBImgAnalysisErr->_msg, "ISCriteria failed");
+    PBErrCatch(PBImgAnalysisErr);
+  }
   if (ISGetNbClass(&segmentor) != nbClass) {
     PBImgAnalysisErr->_type = PBErrTypeUnitTestFailed;
     sprintf(PBImgAnalysisErr->_msg, "ISGetNbClass failed");
@@ -113,7 +118,7 @@ void UnitTestImgSegmentorAddCriterionGet() {
     sprintf(PBImgAnalysisErr->_msg, "ISGetNbCriterion failed");
     PBErrCatch(PBImgAnalysisErr);
   }
-  ISAddCriterion(&segmentor, ISCType_RGB);
+  ISAddCriterionRGB(&segmentor);
   if (GSetNbElem(&(segmentor._criteria)) != 1 ||
     ((ImgSegmentorCriterion*)GSetGet(&(segmentor._criteria), 
       0))->_type != ISCType_RGB) {
@@ -130,9 +135,31 @@ void UnitTestImgSegmentorAddCriterionGet() {
   printf("UnitTestImgSegmentorAddCriterionGet OK\n");
 }
 
+void UnitTestImgSegmentorPredict() {
+  int nbClass = 2;
+  ImgSegmentor segmentor = ImgSegmentorCreateStatic(nbClass);
+  ISAddCriterionRGB(&segmentor);
+  char* fileNameIn = "ISPredict-in.tga";
+  char fileNameOut[20];
+  GenBrush* img = GBCreateFromFile(fileNameIn);
+  GenBrush** res = ISPredict(&segmentor, img);
+  for (int iClass = nbClass; iClass--;) {
+    sprintf(fileNameOut, "ISPredict-out%02d.tga", iClass);
+    GBSetFileName(res[iClass], fileNameOut);
+    GBRender(res[iClass]);
+  }
+  ImgSegmentorFreeStatic(&segmentor);
+  for (int iClass = nbClass; iClass--;)
+    GBFree(res + iClass);
+  free(res);
+  GBFree(&img);
+  printf("UnitTestImgSegmentorPredict OK\n");
+}
+
 void UnitTestImgSegmentor() {
   UnitTestImgSegmentorCreateFree();
   UnitTestImgSegmentorAddCriterionGet();
+  UnitTestImgSegmentorPredict();
   printf("UnitTestImgSegmentor OK\n");
 }
 

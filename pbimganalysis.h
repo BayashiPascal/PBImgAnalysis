@@ -190,8 +190,11 @@ inline
 #endif
 long ISGetNbCriterion(const ImgSegmentor* const that);
 
-// Add a new criterion of the type 'type' to the ImgSegmentor 'that'
-void ISAddCriterion(ImgSegmentor* const that, const ISCType type);
+// Add a new ImageSegmentorCriterionRGB to the ImgSegmentor 'that'
+#if BUILDMODE != 0
+inline
+#endif
+void ISAddCriterionRGB(ImgSegmentor* const that);
 
 // Return the nb of classes of the ImgSegmentor 'that'
 #if BUILDMODE != 0
@@ -207,6 +210,12 @@ int ISGetNbClass(const ImgSegmentor* const that);
 GenBrush** ISPredict(const ImgSegmentor* const that, 
   const GenBrush* const img);
 
+// Return the nb of criterion of the ImgSegmentor 'that'
+#if BUILDMODE != 0
+inline
+#endif
+const GSet* ISCriteria(const ImgSegmentor* const that);
+
 // Create a new static ImgSegmentorCriterion with 'nbClass' output
 // and the type of criterion 'type'
 ImgSegmentorCriterion ImgSegmentorCriterionCreateStatic(int nbClass,
@@ -217,8 +226,8 @@ void ImgSegmentorCriterionFreeStatic(ImgSegmentorCriterion* that);
 
 // Make the prediction on the 'input' values by calling the appropriate
 // function according to the type of criterion
-// 'input' 's format is height*width*3, values in [0.0, 1.0]
-// Return values are height*width*nbClass, values in [-1.0, 1.0]
+// 'input' 's format is width*height*3, values in [0.0, 1.0]
+// Return values are width*height*nbClass, values in [-1.0, 1.0]
 VecFloat* ISCPredict(const ImgSegmentorCriterion* const that,
   const VecFloat* input);
 
@@ -236,8 +245,8 @@ void ImgSegmentorCriterionRGBFree(ImgSegmentorCriterionRGB** that);
 
 // Make the prediction on the 'input' values with the 
 // ImgSegmentorCriterionRGB that
-// 'input' 's format is height*width*3, values in [0.0, 1.0]
-// Return values are height*width*nbClass, values in [-1.0, 1.0]
+// 'input' 's format is width*height*3, values in [0.0, 1.0]
+// Return values are width*height*nbClass, values in [-1.0, 1.0]
 VecFloat* ISCRGBPredict(const ImgSegmentorCriterionRGB* const that,
   const VecFloat* input);
 

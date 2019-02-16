@@ -450,31 +450,6 @@ void ImgSegmentorFreeStatic(ImgSegmentor* that) {
   }
 }
 
-// Add a new criterion of the type 'type' to the ImgSegmentor 'that'
-void ISAddCriterion(ImgSegmentor* const that, const ISCType type) {
-#if BUILDMODE == 0
-  if (that == NULL) {
-    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
-    sprintf(PBImgAnalysisErr->_msg, "'that' is null");
-    PBErrCatch(PBImgAnalysisErr);
-  }
-#endif
-  // Create and add the appropriate criterion and add it to the set of
-  // criteria
-  switch (type) {
-    case ISCType_RGB:
-      GSetAppend(&(that->_criteria), 
-        ImgSegmentorCriterionRGBCreate(ISGetNbClass(that)));
-      break;
-    default:
-      PBImgAnalysisErr->_type = PBErrTypeNotYetImplemented;
-      sprintf(PBImgAnalysisErr->_msg, 
-        "Not yet implemented type of criterion");
-      PBErrCatch(PBImgAnalysisErr);
-      break;
-  }
-}
-
 // Make a prediction on the GenBrush 'img' with the ImgSegmentor 'that'
 // Return an array of pointer to GenBrush, one per output class, in 
 // greyscale, where the color of each pixel indicates the detection of 
@@ -498,20 +473,72 @@ GenBrush** ISPredict(const ImgSegmentor* const that,
   VecShort2D dim = GBGetDim(img);
   // Calculate the area of the image
   long area = VecGet(&dim, 0) * VecGet(&dim, 1);
-  // Create temporary vectors for computation
+  // Create a temporary vector to convert the image into the input
+  // of a criterion
+  VecFloat* input = VecFloatCreate(area * 3);
+  // Declare a vector to loop on position in the image
+  VecShort2D pos = VecShortCreateStatic2D();
+  // Convert the image's pixels into the input VecFloat
+  do {
+    GBPixel pix = GBGetFinalPixel(img, &pos);
+    long iPos = GBPosIndex(&pos, &dim);
+    for (int iRGB = 3; iRGB--;)
+      VecSet(input, iPos * 3 + iRGB, (float)(pix._rgba[iRGB]) / 255.0);
+  } while (VecStep(&pos, &dim));
+  // Create temporary vectors to memorize the prediction of each criterion
   VecFloat** pred = PBErrMalloc(PBImgAnalysisErr, 
-    sizeof(VecFloat*) * ISGetNbClass(that));
-  for (int iClass = ISGetNbClass(that); iClass--;) {
-    pred[iClass] = VecFloatCreate(area);
+    sizeof(VecFloat*) * ISGetNbCriterion(that));
+  // Loop on criteria
+  int iCrit = 0;
+  GSetIterForward iter = GSetIterForwardCreateStatic(ISCriteria(that));
+  do {
+    ImgSegmentorCriterion* criterion = GSetIterGet(&iter);
+    pred[iCrit] = ISCPredict(criterion, input);
+    ++iCrit;
+  } while(GSetIterStep(&iter));
+  // Create temporary vectors to memorize the combined predictions
+  VecFloat* combPred = VecFloatCreate(area * ISGetNbClass(that));
+  VecFloat* finalPred = VecFloatCreate(area * ISGetNbClass(that));
+  // Combine the predictions over criteria
+  // The combination is the weighted average of prediction over criteria
+  // where the weight is the absolute value of the prediction
+  for (long i = area * (long)ISGetNbClass(that); i--;) {
+    float sumWeight = 0.0;
+    for (iCrit = ISGetNbCriterion(that); iCrit--;) {
+      float v = VecGet(pred[iCrit], i);
+      VecSetAdd(combPred, i, v * fabs(v));
+      sumWeight += fabs(v);
+    }
+    if (sumWeight > PBMATH_EPSILON)
+      VecSet(combPred, i, VecGet(combPred, i) / sumWeight);
+    else
+      VecSet(combPred, i, 0.0);
   }
-  
-  
-  
-  // Combine the predictions
-  float scale = 1.0 / (float)ISGetNbCriterion(that);
-  for (int iClass = ISGetNbClass(that); iClass--;) {
-    VecScale(pred[iClass], scale);
-  }
+  // Combine the predictions over classes
+  // The combination is calculated as follow:
+  // finalPred(i) = (pred(i)*abs(combPred(i) - sum_{j!=i} 
+  //   combPred(j)*abs(combPred(j)) / (sum_i abs(combPred(i))
+  VecSetNull(&pos);
+  do {
+    for (long iClass = ISGetNbClass(that); iClass--;) {
+      float sumWeight = 0.0;
+      long iPos = GBPosIndex(&pos, &dim) * ISGetNbClass(that) + iClass;
+      for (long jClass = ISGetNbClass(that); jClass--;) {
+        long jPos = GBPosIndex(&pos, &dim) * ISGetNbClass(that) + jClass;
+        float v = VecGet(combPred, jPos);
+        if (iClass == jClass) {
+          VecSetAdd(finalPred, iPos, v * fabs(v));
+        } else {
+          VecSetAdd(finalPred, iPos, -1.0 * v * fabs(v));
+        }
+        sumWeight += fabs(v);
+      }
+      if (sumWeight > PBMATH_EPSILON)
+        VecSet(finalPred, iPos, VecGet(finalPred, iPos) / sumWeight);
+      else
+        VecSet(finalPred, iPos, 0.0);
+    }
+  } while(VecStep(&pos, &dim));
   // Create the results GenBrush
   GenBrush** res = PBErrMalloc(PBImgAnalysisErr, 
     sizeof(GenBrush*) * ISGetNbClass(that));
@@ -523,22 +550,28 @@ GenBrush** ISPredict(const ImgSegmentor* const that,
   // Loop on classes
   for (int iClass = ISGetNbClass(that); iClass--;) {
     // Loop on position in the image
-    VecShort2D pos = VecShortCreateStatic2D();
+    VecSetNull(&pos);
     do {
       // Get the prediction value for this class and this position
-      float p = (0) * 0.5 + 0.5;
+      // and convert it to rgb value
+      long iPos = GBPosIndex(&pos, &dim);
+      float p = VecGet(finalPred, iPos * ISGetNbClass(that) + iClass);
+      unsigned char pChar = 255 - 
+        (unsigned char)round(255.0 * (p * 0.5 + 0.5));
       // Convert the prediction to a pixel
       pix._rgba[GBPixelRed] = pix._rgba[GBPixelGreen] = 
-        pix._rgba[GBPixelBlue] = 255 - (unsigned char)round(255.0 * p);
+        pix._rgba[GBPixelBlue] = pChar;
       // Set the pixel in the result image
       GBSetFinalPixel(res[iClass], &pos, &pix);
     } while (VecStep(&pos, &dim));
   }
   // Free memory
-  for (int iClass = ISGetNbClass(that); iClass--;) {
-    VecFree(pred + iClass);
+  for (int iCrit = ISGetNbCriterion(that); iCrit--;) {
+    VecFree(pred + iCrit);
   }
   free(pred);
+  VecFree(&input);
+  VecFree(&finalPred);
   // Return the result
   return res;
 }
@@ -573,8 +606,8 @@ void ImgSegmentorCriterionFreeStatic(ImgSegmentorCriterion* that) {
 
 // Make the prediction on the 'input' values by calling the appropriate
 // function according to the type of criteria
-// 'input' 's format is height*width*3, values in [0.0, 1.0]
-// Return values are height*width*nbClass, values in [-1.0, 1.0]
+// 'input' 's format is width*height*3, values in [0.0, 1.0]
+// Return values are width*height*nbClass, values in [-1.0, 1.0]
 VecFloat* ISCPredict(const ImgSegmentorCriterion* const that,
   const VecFloat* input) {
 #if BUILDMODE == 0
@@ -621,11 +654,11 @@ ImgSegmentorCriterionRGB* ImgSegmentorCriterionRGBCreate(int nbClass) {
     ISCType_RGB);
   // Create the NeuraNet
   const int nbInput = 3;
-  const int nbMaxHidden = nbInput * 9;
-  const int nbMaxLinks = nbInput * nbMaxHidden * nbClass * 3;
-  const int nbMaxBases = nbMaxLinks;
-  that->_nn = NeuraNetCreate(nbInput, nbClass, nbMaxHidden, nbMaxBases, 
-    nbMaxLinks);
+  const int nbHidden = fsquare(nbInput) * nbClass;
+  VecLong* hidden = VecLongCreate(1);
+  VecSet(hidden, 0, nbHidden);
+  that->_nn = NeuraNetCreateFullyConnected(nbInput, nbClass, hidden);
+  VecFree(&hidden);
   // Return the new ImgSegmentorCriterionRGB
   return that;
 }
@@ -642,8 +675,8 @@ void ImgSegmentorCriterionRGBFree(ImgSegmentorCriterionRGB** that) {
 
 // Make the prediction on the 'input' values with the 
 // ImgSegmentorCriterionRGB that
-// 'input' 's format is height*width*3, values in [0.0, 1.0]
-// Return values are height*width*nbClass, values in [-1.0, 1.0]
+// 'input' 's format is width*height*3, values in [0.0, 1.0]
+// Return values are width*height*nbClass, values in [-1.0, 1.0]
 VecFloat* ISCRGBPredict(const ImgSegmentorCriterionRGB* const that,
   const VecFloat* input) {
 #if BUILDMODE == 0
@@ -667,9 +700,21 @@ VecFloat* ISCRGBPredict(const ImgSegmentorCriterionRGB* const that,
   // Calculate the area of the input image
   long area = VecGetDim(input) / 3;
   // Allocate memory for the result
-  VecFloat* res = VecFloatCreate(area * ISCGetNbClass(that));
+  VecFloat* res = VecFloatCreate(area * (long)ISCGetNbClass(that));
+  // Declare variables to memorize the input/output of the NeuraNet
+  VecFloat3D in = VecFloatCreateStatic3D();
+  VecFloat* out = VecFloatCreate(ISCGetNbClass(that));
   // Apply the NeuraNet on inputs
-  NNEval(that->_nn, input, res);
+  for (long iInput = area; iInput--;) {
+    for (long i = 3; i--;)
+      VecSet(&in, i, VecGet(input, iInput * 3L + i));
+    NNEval(that->_nn, (VecFloat*)&in, out);
+    for (long i = ISCGetNbClass(that); i--;)
+      VecSet(res, iInput * (long)ISCGetNbClass(that) + i,
+        VecGet(out, i));
+  }
+  // Free memory
+  VecFree(&out);
   // Return the result
   return res;
 }
