@@ -410,29 +410,162 @@ bool IKMCDecodeAsJSON(ImgKMeansClusters* that,
 
 // ================ Functions implementation ====================
 
-// Create a new static ImgSegmentorCriteria with 'nbClass' output 
-// and the type of criteria 'type'
-ImgSegmentorCriteria ImgSegmentorCriteriaCreateStatic(int nbClass,
-  ISCType type) {
+// Create a new static ImgSegmentor with 'nbClass' output
+ImgSegmentor ImgSegmentorCreateStatic(int nbClass) {
 #if BUILDMODE == 0
-  if (nbClass == NULL) {
+  if (nbClass <= 0) {
     PBImgAnalysisErr->_type = PBErrTypeInvalidArg;
     sprintf(PBImgAnalysisErr->_msg, "'nbClass' is invalid (%d>0)",
       nbClass);
     PBErrCatch(PBImgAnalysisErr);
   }
 #endif
-  // Declare the new ImgSegmentorCriteria
-  ImgSegmentorCriteria that;
-  // Set the properties
+  // Declare the new ImgSegmentor
+  ImgSegmentor that;
+  // Init properties
   that._nbClass = nbClass;
-  that._type = type;
-  // Return the new ImgSegmentorCriteria
+  that._criteria = GSetCreateStatic();
+  // Return the new ImgSegmentor
   return that;
 }
 
-// Free the memory used by the static ImgSegmentorCriteria 'that'
-void ImgSegmentorCriteriaFreeStatic(ImgSegmentorCriteria* that) {
+// Free the memory used by the static ImgSegmentor 'that'
+void ImgSegmentorFreeStatic(ImgSegmentor* that) {
+  if (that == NULL)
+    return;
+  while (ISGetNbCriterion(that) > 0) {
+    ImgSegmentorCriterion* criterion = GSetPop(&(that->_criteria));
+    switch (criterion->_type) {
+      case ISCType_RGB:
+        ImgSegmentorCriterionRGBFree(
+          (ImgSegmentorCriterionRGB**)&criterion);
+        break;
+      default:
+        PBImgAnalysisErr->_type = PBErrTypeNotYetImplemented;
+        sprintf(PBImgAnalysisErr->_msg, 
+          "Not yet implemented type of criterion");
+        PBErrCatch(PBImgAnalysisErr);
+        break;
+    }
+  }
+}
+
+// Add a new criterion of the type 'type' to the ImgSegmentor 'that'
+void ISAddCriterion(ImgSegmentor* const that, const ISCType type) {
+#if BUILDMODE == 0
+  if (that == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'that' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+#endif
+  // Create and add the appropriate criterion and add it to the set of
+  // criteria
+  switch (type) {
+    case ISCType_RGB:
+      GSetAppend(&(that->_criteria), 
+        ImgSegmentorCriterionRGBCreate(ISGetNbClass(that)));
+      break;
+    default:
+      PBImgAnalysisErr->_type = PBErrTypeNotYetImplemented;
+      sprintf(PBImgAnalysisErr->_msg, 
+        "Not yet implemented type of criterion");
+      PBErrCatch(PBImgAnalysisErr);
+      break;
+  }
+}
+
+// Make a prediction on the GenBrush 'img' with the ImgSegmentor 'that'
+// Return an array of pointer to GenBrush, one per output class, in 
+// greyscale, where the color of each pixel indicates the detection of 
+// the corresponding class at the given pixel, white equals no 
+// detection, black equals detection, 50% grey equals "don't know"
+GenBrush** ISPredict(const ImgSegmentor* const that, 
+  const GenBrush* const img) {
+#if BUILDMODE == 0
+  if (that == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'that' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+  if (img == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'img' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+#endif
+  // Get the dimension of the input image
+  VecShort2D dim = GBGetDim(img);
+  // Calculate the area of the image
+  long area = VecGet(&dim, 0) * VecGet(&dim, 1);
+  // Create temporary vectors for computation
+  VecFloat** pred = PBErrMalloc(PBImgAnalysisErr, 
+    sizeof(VecFloat*) * ISGetNbClass(that));
+  for (int iClass = ISGetNbClass(that); iClass--;) {
+    pred[iClass] = VecFloatCreate(area);
+  }
+  
+  
+  
+  // Combine the predictions
+  float scale = 1.0 / (float)ISGetNbCriterion(that);
+  for (int iClass = ISGetNbClass(that); iClass--;) {
+    VecScale(pred[iClass], scale);
+  }
+  // Create the results GenBrush
+  GenBrush** res = PBErrMalloc(PBImgAnalysisErr, 
+    sizeof(GenBrush*) * ISGetNbClass(that));
+  for (int iClass = ISGetNbClass(that); iClass--;) {
+    res[iClass] = GBCreateImage(&dim);
+  }
+  // Declare a variable to convert the prediction into pixel
+  GBPixel pix = GBColorWhite;
+  // Loop on classes
+  for (int iClass = ISGetNbClass(that); iClass--;) {
+    // Loop on position in the image
+    VecShort2D pos = VecShortCreateStatic2D();
+    do {
+      // Get the prediction value for this class and this position
+      float p = (0) * 0.5 + 0.5;
+      // Convert the prediction to a pixel
+      pix._rgba[GBPixelRed] = pix._rgba[GBPixelGreen] = 
+        pix._rgba[GBPixelBlue] = 255 - (unsigned char)round(255.0 * p);
+      // Set the pixel in the result image
+      GBSetFinalPixel(res[iClass], &pos, &pix);
+    } while (VecStep(&pos, &dim));
+  }
+  // Free memory
+  for (int iClass = ISGetNbClass(that); iClass--;) {
+    VecFree(pred + iClass);
+  }
+  free(pred);
+  // Return the result
+  return res;
+}
+
+// Create a new static ImgSegmentorCriterion with 'nbClass' output 
+// and the type of criteria 'type'
+ImgSegmentorCriterion ImgSegmentorCriterionCreateStatic(int nbClass,
+  ISCType type) {
+#if BUILDMODE == 0
+  if (nbClass <= 0) {
+    PBImgAnalysisErr->_type = PBErrTypeInvalidArg;
+    sprintf(PBImgAnalysisErr->_msg, "'nbClass' is invalid (%d>0)",
+      nbClass);
+    PBErrCatch(PBImgAnalysisErr);
+  }
+#endif
+  // Declare the new ImgSegmentorCriterion
+  ImgSegmentorCriterion that;
+  // Set the properties
+  that._nbClass = nbClass;
+  that._type = type;
+  // Return the new ImgSegmentorCriterion
+  return that;
+}
+
+// Free the memory used by the static ImgSegmentorCriterion 'that'
+void ImgSegmentorCriterionFreeStatic(ImgSegmentorCriterion* that) {
   if (that == NULL)
     return;
   // Nothing to do
@@ -442,7 +575,7 @@ void ImgSegmentorCriteriaFreeStatic(ImgSegmentorCriteria* that) {
 // function according to the type of criteria
 // 'input' 's format is height*width*3, values in [0.0, 1.0]
 // Return values are height*width*nbClass, values in [-1.0, 1.0]
-VecFloat* ISCPredict(const ImgSegmentorCriteria* const that,
+VecFloat* ISCPredict(const ImgSegmentorCriterion* const that,
   const VecFloat* input) {
 #if BUILDMODE == 0
   if (that == NULL) {
@@ -461,7 +594,7 @@ VecFloat* ISCPredict(const ImgSegmentorCriteria* const that,
   // Call the appropriate function based on the type
   switch(that->_type) {
     case ISCType_RGB:
-      res = ISCRGBPredict((const ImgSegmentorCriteriaRGB*)that, input);
+      res = ISCRGBPredict((const ImgSegmentorCriterionRGB*)that, input);
       break;
     default:
       break;
@@ -470,21 +603,21 @@ VecFloat* ISCPredict(const ImgSegmentorCriteria* const that,
   return res;
 }
 
-// Create a new ImgSegmentorCriteriaRGB with 'nbClass' output
-ImgSegmentorCriteriaRGB* ImgSegmentorCriteriaRGBCreate(int nbClass) {
+// Create a new ImgSegmentorCriterionRGB with 'nbClass' output
+ImgSegmentorCriterionRGB* ImgSegmentorCriterionRGBCreate(int nbClass) {
 #if BUILDMODE == 0
-  if (nbClass == NULL) {
+  if (nbClass <= 0) {
     PBImgAnalysisErr->_type = PBErrTypeInvalidArg;
     sprintf(PBImgAnalysisErr->_msg, "'nbClass' is invalid (%d>0)",
       nbClass);
     PBErrCatch(PBImgAnalysisErr);
   }
 #endif
-  // Allocate memory for the new ImgSegmentorCriteriaRGB
-  ImgSegmentorCriteriaRGB* that = PBErrMalloc(PBImgAnalysisErr,
-    sizeof(ImgSegmentorCriteriaRGB));
-  // Create the parent ImgSegmentorCriteria
-  that->_criteria = ImgSegmentorCriteriaCreateStatic(nbClass, 
+  // Allocate memory for the new ImgSegmentorCriterionRGB
+  ImgSegmentorCriterionRGB* that = PBErrMalloc(PBImgAnalysisErr,
+    sizeof(ImgSegmentorCriterionRGB));
+  // Create the parent ImgSegmentorCriterion
+  that->_criterion = ImgSegmentorCriterionCreateStatic(nbClass, 
     ISCType_RGB);
   // Create the NeuraNet
   const int nbInput = 3;
@@ -493,25 +626,25 @@ ImgSegmentorCriteriaRGB* ImgSegmentorCriteriaRGBCreate(int nbClass) {
   const int nbMaxBases = nbMaxLinks;
   that->_nn = NeuraNetCreate(nbInput, nbClass, nbMaxHidden, nbMaxBases, 
     nbMaxLinks);
-  // Return the new ImgSegmentorCriteriaRGB
+  // Return the new ImgSegmentorCriterionRGB
   return that;
 }
 
-// Free the memory used by the ImgSegmentorCriteriaRGB 'that'
-void ImgSegmentorCriteriaRGBFree(ImgSegmentorCriteriaRGB** that) {
+// Free the memory used by the ImgSegmentorCriterionRGB 'that'
+void ImgSegmentorCriterionRGBFree(ImgSegmentorCriterionRGB** that) {
   if (that == NULL || *that == NULL)
     return;
   // Free memory
-  ImgSegmentorCriteriaFreeStatic((ImgSegmentorCriteria*)(*that));
+  ImgSegmentorCriterionFreeStatic((ImgSegmentorCriterion*)(*that));
   NeuraNetFree(&((*that)->_nn));
   free(*that);
 }
 
 // Make the prediction on the 'input' values with the 
-// ImgSegmentorCriteriaRGB that
+// ImgSegmentorCriterionRGB that
 // 'input' 's format is height*width*3, values in [0.0, 1.0]
 // Return values are height*width*nbClass, values in [-1.0, 1.0]
-VecFloat* ISCRGBPredict(const ImgSegmentorCriteriaRGB* const that,
+VecFloat* ISCRGBPredict(const ImgSegmentorCriterionRGB* const that,
   const VecFloat* input) {
 #if BUILDMODE == 0
   if (that == NULL) {
@@ -527,7 +660,7 @@ VecFloat* ISCRGBPredict(const ImgSegmentorCriteriaRGB* const that,
   if ((VecGetDim(input) % 3) != 0) {
     PBImgAnalysisErr->_type = PBErrTypeInvalidArg;
     sprintf(PBImgAnalysisErr->_msg, 
-      "'input' 's dim is not multiple of 3 (%d)", VecGetDim(input));
+      "'input' 's dim is not multiple of 3 (%ld)", VecGetDim(input));
     PBErrCatch(PBImgAnalysisErr);
   }
 #endif

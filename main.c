@@ -66,12 +66,12 @@ void UnitTestIntersectionOverUnion() {
 
 void UnitTestImgSegmentorRGB() {
   int nbClass = 2;
-  ImgSegmentorCriteriaRGB* criteria = 
-    ImgSegmentorCriteriaRGBCreate(nbClass);
+  ImgSegmentorCriterionRGB* criteria = 
+    ImgSegmentorCriterionRGBCreate(nbClass);
   if (ISCGetNbClass(criteria) != nbClass) {
     PBImgAnalysisErr->_type = PBErrTypeUnitTestFailed;
     sprintf(PBImgAnalysisErr->_msg, 
-      "ImgSegmentorCriteriaRGBCreate failed");
+      "ImgSegmentorCriterionRGBCreate failed");
     PBErrCatch(PBImgAnalysisErr);
   }
   int imgArea = 4;
@@ -84,12 +84,55 @@ void UnitTestImgSegmentorRGB() {
   }
   VecFree(&input);
   VecFree(&output);
-  ImgSegmentorCriteriaRGBFree(&criteria);
+  ImgSegmentorCriterionRGBFree(&criteria);
   printf("UnitTestImgSegmentorRGB OK\n");
 }
 
+void UnitTestImgSegmentorCreateFree() {
+  int nbClass = 2;
+  ImgSegmentor segmentor = ImgSegmentorCreateStatic(nbClass);
+  if (segmentor._nbClass != nbClass) {
+    PBImgAnalysisErr->_type = PBErrTypeUnitTestFailed;
+    sprintf(PBImgAnalysisErr->_msg, "ImgSegmentorCreateStatic failed");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+  ImgSegmentorFreeStatic(&segmentor);
+  printf("UnitTestImgSegmentorCreateFree OK\n");
+}
+
+void UnitTestImgSegmentorAddCriterionGet() {
+  int nbClass = 2;
+  ImgSegmentor segmentor = ImgSegmentorCreateStatic(nbClass);
+  if (ISGetNbClass(&segmentor) != nbClass) {
+    PBImgAnalysisErr->_type = PBErrTypeUnitTestFailed;
+    sprintf(PBImgAnalysisErr->_msg, "ISGetNbClass failed");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+  if (ISGetNbCriterion(&segmentor) != 0) {
+    PBImgAnalysisErr->_type = PBErrTypeUnitTestFailed;
+    sprintf(PBImgAnalysisErr->_msg, "ISGetNbCriterion failed");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+  ISAddCriterion(&segmentor, ISCType_RGB);
+  if (GSetNbElem(&(segmentor._criteria)) != 1 ||
+    ((ImgSegmentorCriterion*)GSetGet(&(segmentor._criteria), 
+      0))->_type != ISCType_RGB) {
+    PBImgAnalysisErr->_type = PBErrTypeUnitTestFailed;
+    sprintf(PBImgAnalysisErr->_msg, "ISAddCriterion failed");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+  if (ISGetNbCriterion(&segmentor) != 1) {
+    PBImgAnalysisErr->_type = PBErrTypeUnitTestFailed;
+    sprintf(PBImgAnalysisErr->_msg, "ISGetNbCriterionfailed");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+  ImgSegmentorFreeStatic(&segmentor);
+  printf("UnitTestImgSegmentorAddCriterionGet OK\n");
+}
+
 void UnitTestImgSegmentor() {
-  
+  UnitTestImgSegmentorCreateFree();
+  UnitTestImgSegmentorAddCriterionGet();
   printf("UnitTestImgSegmentor OK\n");
 }
 

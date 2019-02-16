@@ -106,11 +106,41 @@ int IKMCGetK(const ImgKMeansClusters* const that) {
   return KMeansClustersGetK(&(that->_kmeansClusters));
 }
 
-// Return the nb of class of the ImgSegmentorCriteria 'that'
+// Return the nb of criterion of the ImgSegmentor 'that'
 #if BUILDMODE != 0
 inline
 #endif
-int _ISCGetNbClass(const ImgSegmentorCriteria* const that) {
+long ISGetNbCriterion(const ImgSegmentor* const that) {
+#if BUILDMODE == 0
+  if (that == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'that' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+#endif
+  return GSetNbElem(&(that->_criteria));
+}
+
+// Return the nb of classes of the ImgSegmentor 'that'
+#if BUILDMODE != 0
+inline
+#endif
+int ISGetNbClass(const ImgSegmentor* const that) {
+#if BUILDMODE == 0
+  if (that == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'that' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+#endif
+  return that->_nbClass;
+}
+
+// Return the nb of class of the ImgSegmentorCriterion 'that'
+#if BUILDMODE != 0
+inline
+#endif
+int _ISCGetNbClass(const ImgSegmentorCriterion* const that) {
 #if BUILDMODE == 0
   if (that == NULL) {
     PBImgAnalysisErr->_type = PBErrTypeNullPointer;

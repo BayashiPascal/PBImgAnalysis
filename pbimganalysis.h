@@ -142,8 +142,8 @@ float IntersectionOverUnion(const GenBrush* const that,
 // ================= Data structure ===================
 
 typedef struct ImgSegmentor {
-  // Set of criteria
-  GSet* _criteria;
+  // Set of criterion
+  GSet _criteria;
   // Number of segmentation class
   int _nbClass;
 } ImgSegmentor;
@@ -162,64 +162,93 @@ typedef enum ISCType {
   ISCType_RGB
 } ISCType;
 
-typedef struct ImgSegmentorCriteria {
-  // Type of criteria
+typedef struct ImgSegmentorCriterion {
+  // Type of criteriion
   ISCType _type;
   // Nb of class
   int _nbClass;
-} ImgSegmentorCriteria;
+} ImgSegmentorCriterion;
 
-typedef struct ImgSegmentorCriteriaRGB {
-  // ImgSegmentorCriteria
-  ImgSegmentorCriteria _criteria;
+typedef struct ImgSegmentorCriterionRGB {
+  // ImgSegmentorCriterion
+  ImgSegmentorCriterion _criterion;
   // NeuraNet model
   NeuraNet* _nn;
-} ImgSegmentorCriteriaRGB;
+} ImgSegmentorCriterionRGB;
 
 // ================ Functions declaration ====================
 
-// Create a new static ImgSegmentorCriteria with 'nbClass' output
-// and the type of criteria 'type'
-ImgSegmentorCriteria ImgSegmentorCriteriaCreateStatic(int nbClass,
-  ISCType type);
+// Create a new static ImgSegmentor with 'nbClass' output
+ImgSegmentor ImgSegmentorCreateStatic(int nbClass);
 
-// Free the memory used by the static ImgSegmentorCriteria 'that'
-void ImgSegmentorCriteriaFreeStatic(ImgSegmentorCriteria* that);
+// Free the memory used by the static ImgSegmentor 'that'
+void ImgSegmentorFreeStatic(ImgSegmentor* that);
 
-// Make the prediction on the 'input' values by calling the appropriate
-// function according to the type of criteria
-// 'input' 's format is height*width*3, values in [0.0, 1.0]
-// Return values are height*width*nbClass, values in [-1.0, 1.0]
-VecFloat* ISCPredict(const ImgSegmentorCriteria* const that,
-  const VecFloat* input);
-
-// Return the nb of class of the ImgSegmentorCriteria 'that'
+// Return the nb of criterion of the ImgSegmentor 'that'
 #if BUILDMODE != 0
 inline
 #endif
-int _ISCGetNbClass(const ImgSegmentorCriteria* const that);
+long ISGetNbCriterion(const ImgSegmentor* const that);
 
-// Create a new ImgSegmentorCriteriaRGB with 'nbClass' output
-ImgSegmentorCriteriaRGB* ImgSegmentorCriteriaRGBCreate(int nbClass);
+// Add a new criterion of the type 'type' to the ImgSegmentor 'that'
+void ISAddCriterion(ImgSegmentor* const that, const ISCType type);
 
-// Free the memory used by the ImgSegmentorCriteriaRGB 'that'
-void ImgSegmentorCriteriaRGBFree(ImgSegmentorCriteriaRGB** that);
+// Return the nb of classes of the ImgSegmentor 'that'
+#if BUILDMODE != 0
+inline
+#endif
+int ISGetNbClass(const ImgSegmentor* const that);
 
-// Make the prediction on the 'input' values with the 
-// ImgSegmentorCriteriaRGB that
+// Make a prediction on the GenBrush 'img' with the ImgSegmentor 'that'
+// Return an array of pointer to GenBrush, one per output class, in 
+// greyscale, where the color of each pixel indicates the detection of 
+// the corresponding class at the given pixel, white equals no 
+// detection, black equals detection, 50% grey equals "don't know"
+GenBrush** ISPredict(const ImgSegmentor* const that, 
+  const GenBrush* const img);
+
+// Create a new static ImgSegmentorCriterion with 'nbClass' output
+// and the type of criterion 'type'
+ImgSegmentorCriterion ImgSegmentorCriterionCreateStatic(int nbClass,
+  ISCType type);
+
+// Free the memory used by the static ImgSegmentorCriterion 'that'
+void ImgSegmentorCriterionFreeStatic(ImgSegmentorCriterion* that);
+
+// Make the prediction on the 'input' values by calling the appropriate
+// function according to the type of criterion
 // 'input' 's format is height*width*3, values in [0.0, 1.0]
 // Return values are height*width*nbClass, values in [-1.0, 1.0]
-VecFloat* ISCRGBPredict(const ImgSegmentorCriteriaRGB* const that,
+VecFloat* ISCPredict(const ImgSegmentorCriterion* const that,
+  const VecFloat* input);
+
+// Return the nb of class of the ImgSegmentorCriterion 'that'
+#if BUILDMODE != 0
+inline
+#endif
+int _ISCGetNbClass(const ImgSegmentorCriterion* const that);
+
+// Create a new ImgSegmentorCriterionRGB with 'nbClass' output
+ImgSegmentorCriterionRGB* ImgSegmentorCriterionRGBCreate(int nbClass);
+
+// Free the memory used by the ImgSegmentorCriterionRGB 'that'
+void ImgSegmentorCriterionRGBFree(ImgSegmentorCriterionRGB** that);
+
+// Make the prediction on the 'input' values with the 
+// ImgSegmentorCriterionRGB that
+// 'input' 's format is height*width*3, values in [0.0, 1.0]
+// Return values are height*width*nbClass, values in [-1.0, 1.0]
+VecFloat* ISCRGBPredict(const ImgSegmentorCriterionRGB* const that,
   const VecFloat* input);
 
 // ================= Polymorphism ==================
 
 #define ISCGetNbClass(That) _Generic(That, \
-  ImgSegmentorCriteria*: _ISCGetNbClass, \
-  const ImgSegmentorCriteria*: _ISCGetNbClass, \
-  ImgSegmentorCriteriaRGB*: _ISCGetNbClass, \
-  const ImgSegmentorCriteriaRGB*: _ISCGetNbClass, \
-  default: PBErrInvalidPolymorphism) ((const ImgSegmentorCriteria*)That)
+  ImgSegmentorCriterion*: _ISCGetNbClass, \
+  const ImgSegmentorCriterion*: _ISCGetNbClass, \
+  ImgSegmentorCriterionRGB*: _ISCGetNbClass, \
+  const ImgSegmentorCriterionRGB*: _ISCGetNbClass, \
+  default: PBErrInvalidPolymorphism) ((const ImgSegmentorCriterion*)That)
 
 // ================ Inliner ====================
 
