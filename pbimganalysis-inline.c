@@ -168,6 +168,102 @@ void ISAddCriterionRGB(ImgSegmentor* const that) {
     ImgSegmentorCriterionRGBCreate(ISGetNbClass(that)));
 }
 
+// Return the flag controlling the binarization of the result of 
+// prediction of the ImgSegmentor 'that'
+#if BUILDMODE != 0
+inline
+#endif
+bool ISGetFlagBinaryResult(const ImgSegmentor* const that) {
+#if BUILDMODE == 0
+  if (that == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'that' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+#endif
+  return that->_flagBinaryResult;
+}
+
+// Return the threshold controlling the binarization of the result of 
+// prediction of the ImgSegmentor 'that'
+#if BUILDMODE != 0
+inline
+#endif
+float ISGetThresholdBinaryResult(const ImgSegmentor* const that) {
+#if BUILDMODE == 0
+  if (that == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'that' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+#endif
+  return that->_thresholdBinaryResult;
+}
+
+// Set the flag controlling the binarization of the result of 
+// prediction of the ImgSegmentor 'that' to 'flag'
+#if BUILDMODE != 0
+inline
+#endif
+void ISSetFlagBinaryResult(ImgSegmentor* const that, 
+  const bool flag) {
+#if BUILDMODE == 0
+  if (that == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'that' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+#endif
+  that->_flagBinaryResult = flag;
+}
+
+// Set the threshold controlling the binarization of the result of 
+// prediction of the ImgSegmentor 'that' to 'threshold'
+#if BUILDMODE != 0
+inline
+#endif
+void ISSetThresholdBinaryResult(ImgSegmentor* const that,
+  const float threshold) {
+#if BUILDMODE == 0
+  if (that == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'that' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+#endif
+  that->_thresholdBinaryResult = threshold;
+}
+
+// Return the number of epoch for training the ImgSegmentor 'that'
+#if BUILDMODE != 0
+inline
+#endif
+unsigned int ISGetNbEpoch(const ImgSegmentor* const that) {
+#if BUILDMODE == 0
+  if (that == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'that' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+#endif
+  return that->_nbEpoch;
+}
+
+// Set the number of epoch for training the ImgSegmentor 'that' to 'nb'
+#if BUILDMODE != 0
+inline
+#endif
+void ISSetNbEpoch(ImgSegmentor* const that, unsigned int nb) {
+#if BUILDMODE == 0
+  if (that == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'that' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+#endif
+  that->_nbEpoch = nb;
+}
+
 // Return the nb of class of the ImgSegmentorCriterion 'that'
 #if BUILDMODE != 0
 inline

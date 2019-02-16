@@ -425,6 +425,9 @@ ImgSegmentor ImgSegmentorCreateStatic(int nbClass) {
   // Init properties
   that._nbClass = nbClass;
   that._criteria = GSetCreateStatic();
+  that._flagBinaryResult = false;
+  that._thresholdBinaryResult = 0.5;
+  that._nbEpoch = 1;
   // Return the new ImgSegmentor
   return that;
 }
@@ -493,7 +496,7 @@ GenBrush** ISPredict(const ImgSegmentor* const that,
   GSetIterForward iter = GSetIterForwardCreateStatic(ISCriteria(that));
   do {
     ImgSegmentorCriterion* criterion = GSetIterGet(&iter);
-    pred[iCrit] = ISCPredict(criterion, input);
+    pred[iCrit] = ISCPredict(criterion, input, &dim);
     ++iCrit;
   } while(GSetIterStep(&iter));
   // Create temporary vectors to memorize the combined predictions
@@ -556,6 +559,12 @@ GenBrush** ISPredict(const ImgSegmentor* const that,
       // and convert it to rgb value
       long iPos = GBPosIndex(&pos, &dim);
       float p = VecGet(finalPred, iPos * ISGetNbClass(that) + iClass);
+      if (ISGetFlagBinaryResult(that)) {
+        if (p > ISGetThresholdBinaryResult(that))
+          p = 1.0;
+        else
+          p = -1.0;
+      }
       unsigned char pChar = 255 - 
         (unsigned char)round(255.0 * (p * 0.5 + 0.5));
       // Convert the prediction to a pixel
@@ -574,6 +583,13 @@ GenBrush** ISPredict(const ImgSegmentor* const that,
   VecFree(&finalPred);
   // Return the result
   return res;
+}
+
+// Train the ImageSegmentor 'that' on the data set 'dataSet' using
+// the data of the first category in 'dataSet'
+void ISTrain(ImgSegmentor* const that, 
+  const GDataSetGenBrushPair* const dataset) {
+    
 }
 
 // Create a new static ImgSegmentorCriterion with 'nbClass' output 
@@ -609,7 +625,7 @@ void ImgSegmentorCriterionFreeStatic(ImgSegmentorCriterion* that) {
 // 'input' 's format is width*height*3, values in [0.0, 1.0]
 // Return values are width*height*nbClass, values in [-1.0, 1.0]
 VecFloat* ISCPredict(const ImgSegmentorCriterion* const that,
-  const VecFloat* input) {
+  const VecFloat* input, const VecShort2D* const dim) {
 #if BUILDMODE == 0
   if (that == NULL) {
     PBImgAnalysisErr->_type = PBErrTypeNullPointer;
@@ -627,7 +643,8 @@ VecFloat* ISCPredict(const ImgSegmentorCriterion* const that,
   // Call the appropriate function based on the type
   switch(that->_type) {
     case ISCType_RGB:
-      res = ISCRGBPredict((const ImgSegmentorCriterionRGB*)that, input);
+      res = ISCRGBPredict((const ImgSegmentorCriterionRGB*)that, 
+        input, dim);
       break;
     default:
       break;
@@ -678,7 +695,7 @@ void ImgSegmentorCriterionRGBFree(ImgSegmentorCriterionRGB** that) {
 // 'input' 's format is width*height*3, values in [0.0, 1.0]
 // Return values are width*height*nbClass, values in [-1.0, 1.0]
 VecFloat* ISCRGBPredict(const ImgSegmentorCriterionRGB* const that,
-  const VecFloat* input) {
+  const VecFloat* input, const VecShort2D* const dim) {
 #if BUILDMODE == 0
   if (that == NULL) {
     PBImgAnalysisErr->_type = PBErrTypeNullPointer;
@@ -698,7 +715,7 @@ VecFloat* ISCRGBPredict(const ImgSegmentorCriterionRGB* const that,
   }
 #endif
   // Calculate the area of the input image
-  long area = VecGetDim(input) / 3;
+  long area = VecGet(dim, 0) * VecGet(dim, 1);
   // Allocate memory for the result
   VecFloat* res = VecFloatCreate(area * (long)ISCGetNbClass(that));
   // Declare variables to memorize the input/output of the NeuraNet

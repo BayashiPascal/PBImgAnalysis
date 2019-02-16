@@ -15,6 +15,7 @@
 #include "pbdataanalysis.h"
 #include "genbrush.h"
 #include "neuranet.h"
+#include "gdataset.h"
 
 // ------------------ ImgKMeansClusters ----------------------
 
@@ -146,6 +147,17 @@ typedef struct ImgSegmentor {
   GSet _criteria;
   // Number of segmentation class
   int _nbClass;
+  // Flag to apply or not the binarization on result of prediction
+  // false by default
+  bool _flagBinaryResult;
+  // Threshold value for the binarization of result of prediction
+  // If the result of prediction is above the threshold then
+  // the result is considered equal to 1.0 else it is considered equal 
+  // to -1.0
+  // 0.5 by default
+  float _thresholdBinaryResult;
+  // Nb of epoch for training, 1 by default
+  unsigned int _nbEpoch;
 } ImgSegmentor;
 
 typedef struct ImgSegmentorPerf {
@@ -202,6 +214,48 @@ inline
 #endif
 int ISGetNbClass(const ImgSegmentor* const that);
 
+// Return the flag controlling the binarization of the result of 
+// prediction of the ImgSegmentor 'that'
+#if BUILDMODE != 0
+inline
+#endif
+bool ISGetFlagBinaryResult(const ImgSegmentor* const that);
+
+// Return the threshold controlling the binarization of the result of 
+// prediction of the ImgSegmentor 'that'
+#if BUILDMODE != 0
+inline
+#endif
+float ISGetThresholdBinaryResult(const ImgSegmentor* const that);
+
+// Set the flag controlling the binarization of the result of 
+// prediction of the ImgSegmentor 'that' to 'flag'
+#if BUILDMODE != 0
+inline
+#endif
+void ISSetFlagBinaryResult(ImgSegmentor* const that, 
+  const bool flag);
+
+// Return the number of epoch for training the ImgSegmentor 'that'
+#if BUILDMODE != 0
+inline
+#endif
+unsigned int ISGetNbEpoch(const ImgSegmentor* const that);
+
+// Set the number of epoch for training the ImgSegmentor 'that' to 'nb'
+#if BUILDMODE != 0
+inline
+#endif
+void ISSetNbEpoch(ImgSegmentor* const that, unsigned int nb);
+
+// Set the threshold controlling the binarization of the result of 
+// prediction of the ImgSegmentor 'that' to 'threshold'
+#if BUILDMODE != 0
+inline
+#endif
+void ISSetThresholdBinaryResult(ImgSegmentor* const that,
+  const float threshold);
+
 // Make a prediction on the GenBrush 'img' with the ImgSegmentor 'that'
 // Return an array of pointer to GenBrush, one per output class, in 
 // greyscale, where the color of each pixel indicates the detection of 
@@ -216,6 +270,11 @@ inline
 #endif
 const GSet* ISCriteria(const ImgSegmentor* const that);
 
+// Train the ImageSegmentor 'that' on the data set 'dataSet' using
+// the data of the first category in 'dataSet'
+void ISTrain(ImgSegmentor* const that, 
+  const GDataSetGenBrushPair* const dataset);
+
 // Create a new static ImgSegmentorCriterion with 'nbClass' output
 // and the type of criterion 'type'
 ImgSegmentorCriterion ImgSegmentorCriterionCreateStatic(int nbClass,
@@ -229,7 +288,7 @@ void ImgSegmentorCriterionFreeStatic(ImgSegmentorCriterion* that);
 // 'input' 's format is width*height*3, values in [0.0, 1.0]
 // Return values are width*height*nbClass, values in [-1.0, 1.0]
 VecFloat* ISCPredict(const ImgSegmentorCriterion* const that,
-  const VecFloat* input);
+  const VecFloat* input, const VecShort2D* const dim);
 
 // Return the nb of class of the ImgSegmentorCriterion 'that'
 #if BUILDMODE != 0
@@ -248,7 +307,7 @@ void ImgSegmentorCriterionRGBFree(ImgSegmentorCriterionRGB** that);
 // 'input' 's format is width*height*3, values in [0.0, 1.0]
 // Return values are width*height*nbClass, values in [-1.0, 1.0]
 VecFloat* ISCRGBPredict(const ImgSegmentorCriterionRGB* const that,
-  const VecFloat* input);
+  const VecFloat* input, const VecShort2D* const dim);
 
 // ================= Polymorphism ==================
 

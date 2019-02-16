@@ -76,7 +76,10 @@ void UnitTestImgSegmentorRGB() {
   }
   int imgArea = 4;
   VecFloat* input = VecFloatCreate(imgArea * 3);
-  VecFloat* output = ISCRGBPredict(criterion, input);
+  VecShort2D dim = VecShortCreateStatic2D();
+  VecSet(&dim, 0, 2);
+  VecSet(&dim, 1, 2);
+  VecFloat* output = ISCRGBPredict(criterion, input, &dim);
   if (VecGetDim(output) != imgArea * nbClass) {
     PBImgAnalysisErr->_type = PBErrTypeUnitTestFailed;
     sprintf(PBImgAnalysisErr->_msg, "ISCRGBPredict failed");
@@ -91,7 +94,10 @@ void UnitTestImgSegmentorRGB() {
 void UnitTestImgSegmentorCreateFree() {
   int nbClass = 2;
   ImgSegmentor segmentor = ImgSegmentorCreateStatic(nbClass);
-  if (segmentor._nbClass != nbClass) {
+  if (segmentor._nbClass != nbClass ||
+    segmentor._flagBinaryResult != false ||
+    segmentor._nbEpoch != 1 ||
+    !ISEQUALF(segmentor._thresholdBinaryResult, 0.5)) {
     PBImgAnalysisErr->_type = PBErrTypeUnitTestFailed;
     sprintf(PBImgAnalysisErr->_msg, "ImgSegmentorCreateStatic failed");
     PBErrCatch(PBImgAnalysisErr);
@@ -100,7 +106,7 @@ void UnitTestImgSegmentorCreateFree() {
   printf("UnitTestImgSegmentorCreateFree OK\n");
 }
 
-void UnitTestImgSegmentorAddCriterionGet() {
+void UnitTestImgSegmentorAddCriterionGetSet() {
   int nbClass = 2;
   ImgSegmentor segmentor = ImgSegmentorCreateStatic(nbClass);
   if (ISCriteria(&segmentor) != &(segmentor._criteria)) {
@@ -128,11 +134,33 @@ void UnitTestImgSegmentorAddCriterionGet() {
   }
   if (ISGetNbCriterion(&segmentor) != 1) {
     PBImgAnalysisErr->_type = PBErrTypeUnitTestFailed;
-    sprintf(PBImgAnalysisErr->_msg, "ISGetNbCriterionfailed");
+    sprintf(PBImgAnalysisErr->_msg, "ISGetNbCriterion failed");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+  ISSetFlagBinaryResult(&segmentor, true);
+  if (segmentor._flagBinaryResult != true) {
+    PBImgAnalysisErr->_type = PBErrTypeUnitTestFailed;
+    sprintf(PBImgAnalysisErr->_msg, "ISSetFlagBinaryResult failed");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+  if (ISGetFlagBinaryResult(&segmentor) != true) {
+    PBImgAnalysisErr->_type = PBErrTypeUnitTestFailed;
+    sprintf(PBImgAnalysisErr->_msg, "ISGetFlagBinaryResult failed");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+  ISSetThresholdBinaryResult(&segmentor, 1.0);
+  if (!ISEQUALF(segmentor._thresholdBinaryResult, 1.0)) {
+    PBImgAnalysisErr->_type = PBErrTypeUnitTestFailed;
+    sprintf(PBImgAnalysisErr->_msg, "ISSetThrehsoldBinaryResult failed");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+  if (!ISEQUALF(ISGetThresholdBinaryResult(&segmentor), 1.0)) {
+    PBImgAnalysisErr->_type = PBErrTypeUnitTestFailed;
+    sprintf(PBImgAnalysisErr->_msg, "ISGetThresholdBinaryResult failed");
     PBErrCatch(PBImgAnalysisErr);
   }
   ImgSegmentorFreeStatic(&segmentor);
-  printf("UnitTestImgSegmentorAddCriterionGet OK\n");
+  printf("UnitTestImgSegmentorAddCriterionGetSet OK\n");
 }
 
 void UnitTestImgSegmentorPredict() {
@@ -156,10 +184,28 @@ void UnitTestImgSegmentorPredict() {
   printf("UnitTestImgSegmentorPredict OK\n");
 }
 
+void UnitTestImgSegmentorTrain() {
+  int nbClass = 1;
+  ImgSegmentor segmentor = ImgSegmentorCreateStatic(nbClass);
+  ISAddCriterionRGB(&segmentor);
+  char* cfgFilePath = PBFSJoinPath(
+    "..", "SDSIA", "DataSets", "001", "001", "dataset.json");
+  GDataSetGenBrushPair dataSet = 
+    GDataSetGenBrushPairCreateStatic(cfgFilePath);
+  
+  ISTrain(&segmentor, &dataSet);
+  
+  free(cfgFilePath);
+  GDataSetGenBrushPairFreeStatic(&dataSet);
+  ImgSegmentorFreeStatic(&segmentor);
+  printf("UnitTestImgSegmentorTrain OK\n");
+}
+
 void UnitTestImgSegmentor() {
   UnitTestImgSegmentorCreateFree();
-  UnitTestImgSegmentorAddCriterionGet();
+  UnitTestImgSegmentorAddCriterionGetSet();
   UnitTestImgSegmentorPredict();
+  UnitTestImgSegmentorTrain();
   printf("UnitTestImgSegmentor OK\n");
 }
 
