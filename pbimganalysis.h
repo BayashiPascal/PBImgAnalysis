@@ -14,6 +14,7 @@
 #include "pberr.h"
 #include "pbdataanalysis.h"
 #include "genbrush.h"
+#include "genalg.h"
 #include "neuranet.h"
 #include "gdataset.h"
 
@@ -272,6 +273,7 @@ const GSet* ISCriteria(const ImgSegmentor* const that);
 
 // Train the ImageSegmentor 'that' on the data set 'dataSet' using
 // the data of the first category in 'dataSet'
+// srandom must have been caled before calling ISTrain
 void ISTrain(ImgSegmentor* const that, 
   const GDataSetGenBrushPair* const dataset);
 
@@ -296,6 +298,12 @@ inline
 #endif
 int _ISCGetNbClass(const ImgSegmentorCriterion* const that);
 
+// Return the number of int parameters for the criterion 'that'
+long _ISCGetNbParamInt(const ImgSegmentorCriterion* const that);
+
+// Return the number of float parameters for the criterion 'that'
+long _ISCGetNbParamFloat(const ImgSegmentorCriterion* const that);
+
 // Create a new ImgSegmentorCriterionRGB with 'nbClass' output
 ImgSegmentorCriterionRGB* ImgSegmentorCriterionRGBCreate(int nbClass);
 
@@ -309,6 +317,12 @@ void ImgSegmentorCriterionRGBFree(ImgSegmentorCriterionRGB** that);
 VecFloat* ISCRGBPredict(const ImgSegmentorCriterionRGB* const that,
   const VecFloat* input, const VecShort2D* const dim);
 
+// Return the number of int parameters for the criterion 'that'
+long ISCRGBGetNbParamInt(const ImgSegmentorCriterionRGB* const that);
+
+// Return the number of float parameters for the criterion 'that'
+long ISCRGBGetNbParamFloat(const ImgSegmentorCriterionRGB* const that);
+
 // ================= Polymorphism ==================
 
 #define ISCGetNbClass(That) _Generic(That, \
@@ -316,6 +330,20 @@ VecFloat* ISCRGBPredict(const ImgSegmentorCriterionRGB* const that,
   const ImgSegmentorCriterion*: _ISCGetNbClass, \
   ImgSegmentorCriterionRGB*: _ISCGetNbClass, \
   const ImgSegmentorCriterionRGB*: _ISCGetNbClass, \
+  default: PBErrInvalidPolymorphism) ((const ImgSegmentorCriterion*)That)
+
+#define ISCGetNbParamInt(That) _Generic(That, \
+  ImgSegmentorCriterion*: _ISCGetNbParamInt, \
+  const ImgSegmentorCriterion*: _ISCGetNbParamInt, \
+  ImgSegmentorCriterionRGB*: ISCRGBGetNbParamInt, \
+  const ImgSegmentorCriterionRGB*: ISCRGBGetNbParamInt, \
+  default: PBErrInvalidPolymorphism) ((const ImgSegmentorCriterion*)That)
+
+#define ISCGetNbParamFloat(That) _Generic(That, \
+  ImgSegmentorCriterion*: _ISCGetNbParamFloat, \
+  const ImgSegmentorCriterion*: _ISCGetNbParamFloat, \
+  ImgSegmentorCriterionRGB*: ISCRGBGetNbParamFloat, \
+  const ImgSegmentorCriterionRGB*: ISCRGBGetNbParamFloat, \
   default: PBErrInvalidPolymorphism) ((const ImgSegmentorCriterion*)That)
 
 // ================ Inliner ====================

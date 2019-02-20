@@ -279,3 +279,4 @@ int _ISCGetNbClass(const ImgSegmentorCriterion* const that) {
   return that->_nbClass;
 }
 
+

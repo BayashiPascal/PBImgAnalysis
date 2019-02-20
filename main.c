@@ -185,6 +185,7 @@ void UnitTestImgSegmentorPredict() {
 }
 
 void UnitTestImgSegmentorTrain() {
+  srandom(0);
   int nbClass = 1;
   ImgSegmentor segmentor = ImgSegmentorCreateStatic(nbClass);
   ISAddCriterionRGB(&segmentor);

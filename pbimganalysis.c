@@ -587,9 +587,109 @@ GenBrush** ISPredict(const ImgSegmentor* const that,
 
 // Train the ImageSegmentor 'that' on the data set 'dataSet' using
 // the data of the first category in 'dataSet'
+// srandom must have been caled before calling ISTrain
 void ISTrain(ImgSegmentor* const that, 
   const GDataSetGenBrushPair* const dataset) {
+#if BUILDMODE == 0
+  if (that == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'that' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+  if (dataset == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'dataset' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+#endif
+  // If there is no criterion, nothing to do
+  if (ISGetNbCriterion(that) == 0)
+    return;
+  // Create two vectors to memorize the number of int and float
+  // parameters for each criterion
+  VecLong* nbParamInt = VecLongCreate(ISGetNbCriterion(that));
+  VecLong* nbParamFloat = VecLongCreate(ISGetNbCriterion(that));
+  // Declare two variables to memorize the total number of int and 
+  // float parameters
+  long nbTotalParamInt = 0;
+  long nbTotalParamFloat = 0;
+  // Get the number of int and float parameters for each criterion
+  int iCrit = 0;
+  GSetIterForward iter = GSetIterForwardCreateStatic(ISCriteria(that));
+  do {
+    ImgSegmentorCriterion* crit = GSetIterGet(&iter);
+    long nb = ISCGetNbParamInt(crit);
+    VecSet(nbParamInt, iCrit, nb);
+    nbTotalParamInt += nb;
+    nb = ISCGetNbParamFloat(crit);
+    VecSet(nbParamFloat, iCrit, nb);
+    nbTotalParamFloat += nb;
+    ++iCrit;
+  } while (GSetIterStep(&iter));
+  // If there are parameters
+  if (nbTotalParamInt > 0 || nbTotalParamFloat > 0) {
+    // Create the GenAlg to search parameters' value
+    GenAlg* ga = GenAlgCreate(GENALG_NBENTITIES, GENALG_NBELITES, 
+      nbTotalParamFloat, nbTotalParamInt);
+    // Initialise the parameters bound
     
+    // Initialise the GenAlg
+    GAInit(ga);
+    // Declare a variable to memorize the current best value
+    float bestValue = 0.0;
+    // Loop over epochs
+    do {
+      // Loop over the GenAlg entities
+      for (int iEnt = GAGetNbAdns(ga); iEnt--;) {
+        // If this entity is a new one
+        if (GAAdnIsNew(GAAdn(ga, iEnt))) {
+          // Set the criteria parameters with this entity's adn
+          
+          // Evaluate the ImgSegmentor for this entity's adn on the 
+          // dataset
+          
+          float value = 0.0;
+          int iCat = 0;
+          // Reset the iterator of the GDataSet
+          GDSReset(dataset, iCat);
+          // Loop on the samples
+          do {
+            // Get the next sample
+            GDSGenBrushPair* sample = GDSGetSample(dataset, iCat);
+            
+            // Do the prediction on the sample
+            /*GenBrush** pred = ISPredict(that, sample->_img);
+            // Check the prediction against the mask 
+            value += IntersectionOverUnion(sample->_mask, pred, 
+              rgbaMask);
+            
+            // Free memory
+            for (int iClass = ISGetNbClass(that); iClass--;)
+              GBFree(pred + iClass);
+            free(pred);*/
+            
+            GDSGenBrushPairFree(&sample);
+          } while (GDSStepSample(dataset, iCat));
+          // Get the average value over all samples
+          value /= (float)GDSGetSizeCat(dataset, iCat);
+          // Update the adn value of this entity
+          GASetAdnValue(ga, GAAdn(ga, iEnt), value);
+          // If the value is the best value
+          if (bestValue - value > PBMATH_EPSILON) {
+            bestValue = value;
+            printf("%lu %f\n", GAGetCurEpoch(ga), bestValue);
+          }
+        }
+      }
+      // Step the GenAlg
+      GAStep(ga);
+    } while (GAGetCurEpoch(ga) < ISGetNbEpoch(that));
+    // Free memory
+    GenAlgFree(&ga);
+  }
+  // Free memory
+  VecFree(&nbParamInt);
+  VecFree(&nbParamFloat);
 }
 
 // Create a new static ImgSegmentorCriterion with 'nbClass' output 
@@ -645,6 +745,52 @@ VecFloat* ISCPredict(const ImgSegmentorCriterion* const that,
     case ISCType_RGB:
       res = ISCRGBPredict((const ImgSegmentorCriterionRGB*)that, 
         input, dim);
+      break;
+    default:
+      break;
+  }
+  // Return the result
+  return res;
+}
+
+// Return the number of int parameters for the criterion 'that'
+long _ISCGetNbParamInt(const ImgSegmentorCriterion* const that) {
+#if BUILDMODE == 0
+  if (that == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'that' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+#endif
+  // Declare a variable to memorize the result
+  long res = 0;
+  // Call the appropriate function based on the type
+  switch(that->_type) {
+    case ISCType_RGB:
+      res = ISCRGBGetNbParamInt((const ImgSegmentorCriterionRGB*)that);
+      break;
+    default:
+      break;
+  }
+  // Return the result
+  return res;
+}
+
+// Return the number of float parameters for the criterion 'that'
+long _ISCGetNbParamFloat(const ImgSegmentorCriterion* const that) {
+#if BUILDMODE == 0
+  if (that == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'that' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+#endif
+  // Declare a variable to memorize the result
+  long res = 0;
+  // Call the appropriate function based on the type
+  switch(that->_type) {
+    case ISCType_RGB:
+      res = ISCRGBGetNbParamFloat((const ImgSegmentorCriterionRGB*)that);
       break;
     default:
       break;
@@ -735,7 +881,31 @@ VecFloat* ISCRGBPredict(const ImgSegmentorCriterionRGB* const that,
   // Return the result
   return res;
 }
-  
+
+// Return the number of int parameters for the criterion 'that'
+long ISCRGBGetNbParamInt(const ImgSegmentorCriterionRGB* const that) {
+#if BUILDMODE == 0
+  if (that == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'that' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+#endif
+  return 0;
+}
+
+// Return the number of float parameters for the criterion 'that'
+long ISCRGBGetNbParamFloat(const ImgSegmentorCriterionRGB* const that) {
+#if BUILDMODE == 0
+  if (that == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'that' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+#endif
+  return NNGetGAAdnFloatLength(that->_nn);
+}
+
 // ------------------ General functions ----------------------
 
 // ================ Functions implementation ====================
