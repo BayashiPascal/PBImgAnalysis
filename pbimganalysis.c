@@ -428,6 +428,8 @@ ImgSegmentor ImgSegmentorCreateStatic(int nbClass) {
   that._flagBinaryResult = false;
   that._thresholdBinaryResult = 0.5;
   that._nbEpoch = 1;
+  that._sizePool = GENALG_NBENTITIES;
+  that._nbElite = GENALG_NBELITES;
   // Return the new ImgSegmentor
   return that;
 }
@@ -613,6 +615,8 @@ void ISTrain(ImgSegmentor* const that,
   // float parameters
   long nbTotalParamInt = 0;
   long nbTotalParamFloat = 0;
+  // Decclare a varibale to memorize the color of the mask
+  const GBPixel rgbaMask = GBColorBlack; 
   // Get the number of int and float parameters for each criterion
   int iCrit = 0;
   GSetIterForward iter = GSetIterForwardCreateStatic(ISCriteria(that));
@@ -629,7 +633,7 @@ void ISTrain(ImgSegmentor* const that,
   // If there are parameters
   if (nbTotalParamInt > 0 || nbTotalParamFloat > 0) {
     // Create the GenAlg to search parameters' value
-    GenAlg* ga = GenAlgCreate(GENALG_NBENTITIES, GENALG_NBELITES, 
+    GenAlg* ga = GenAlgCreate(ISGetSizePool(that), ISGetNbElite(that), 
       nbTotalParamFloat, nbTotalParamInt);
     // Initialise the parameters bound
     
@@ -647,37 +651,46 @@ void ISTrain(ImgSegmentor* const that,
           
           // Evaluate the ImgSegmentor for this entity's adn on the 
           // dataset
-          
           float value = 0.0;
-          int iCat = 0;
+          const int iCatTraining = 0;
           // Reset the iterator of the GDataSet
-          GDSReset(dataset, iCat);
+          GDSReset(dataset, iCatTraining);
           // Loop on the samples
+          long iSample = 0;
           do {
+            printf("Epoch %ld/%u ", 
+              GAGetCurEpoch(ga), ISGetNbEpoch(that));
+            printf("Entity %d/%d ", 
+              iEnt, GAGetNbAdns(ga));
+            printf("Sample %ld/%ld ", 
+              iSample, GDSGetSizeCat(dataset, iCatTraining));
             // Get the next sample
-            GDSGenBrushPair* sample = GDSGetSample(dataset, iCat);
-            
+            GDSGenBrushPair* sample = GDSGetSample(dataset, iCatTraining);
             // Do the prediction on the sample
-            /*GenBrush** pred = ISPredict(that, sample->_img);
-            // Check the prediction against the mask 
-            value += IntersectionOverUnion(sample->_mask, pred, 
-              rgbaMask);
-            
+            GenBrush** pred = ISPredict(that, sample->_img);
+            // Check the prediction against the masks
+            float valMask = 0.0;
+            for (int iMask = GDSGetNbMask(dataset); iMask--;) { 
+              valMask += IntersectionOverUnion(
+                (sample->_mask)[iMask], pred[iMask], &rgbaMask);
+            }
+            value += valMask / (float)GDSGetNbMask(dataset);
             // Free memory
             for (int iClass = ISGetNbClass(that); iClass--;)
               GBFree(pred + iClass);
-            free(pred);*/
-            
+            free(pred);
             GDSGenBrushPairFree(&sample);
-          } while (GDSStepSample(dataset, iCat));
+            printf("Best value %f\n", bestValue);
+            fflush(stdout);
+            ++iSample;
+          } while (GDSStepSample(dataset, iCatTraining));
           // Get the average value over all samples
-          value /= (float)GDSGetSizeCat(dataset, iCat);
+          value /= (float)GDSGetSizeCat(dataset, iCatTraining);
           // Update the adn value of this entity
           GASetAdnValue(ga, GAAdn(ga, iEnt), value);
           // If the value is the best value
           if (bestValue - value > PBMATH_EPSILON) {
             bestValue = value;
-            printf("%lu %f\n", GAGetCurEpoch(ga), bestValue);
           }
         }
       }
@@ -891,6 +904,7 @@ long ISCRGBGetNbParamInt(const ImgSegmentorCriterionRGB* const that) {
     PBErrCatch(PBImgAnalysisErr);
   }
 #endif
+  (void)that;
   return 0;
 }
 

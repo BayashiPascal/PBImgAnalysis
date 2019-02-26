@@ -159,6 +159,12 @@ typedef struct ImgSegmentor {
   float _thresholdBinaryResult;
   // Nb of epoch for training, 1 by default
   unsigned int _nbEpoch;
+  // Size pool for training
+  // By default GENALG_NBENTITIES
+  int _sizePool;
+  // Nb elite for training
+  // By default GENALG_NBELITES
+  int _nbElite;
 } ImgSegmentor;
 
 typedef struct ImgSegmentorPerf {
@@ -248,6 +254,30 @@ unsigned int ISGetNbEpoch(const ImgSegmentor* const that);
 inline
 #endif
 void ISSetNbEpoch(ImgSegmentor* const that, unsigned int nb);
+
+// Return the size of the pool for training the ImgSegmentor 'that'
+#if BUILDMODE != 0
+inline
+#endif
+int ISGetSizePool(const ImgSegmentor* const that);
+
+// Set the size of the pool for training the ImgSegmentor 'that' to 'nb'
+#if BUILDMODE != 0
+inline
+#endif
+void ISSetSizePool(ImgSegmentor* const that, int nb);
+
+// Return the nb of elites for training the ImgSegmentor 'that'
+#if BUILDMODE != 0
+inline
+#endif
+int ISGetNbElite(const ImgSegmentor* const that);
+
+// Set the nb of elites for training the ImgSegmentor 'that' to 'nb'
+#if BUILDMODE != 0
+inline
+#endif
+void ISSetNbElite(ImgSegmentor* const that, int nb);
 
 // Set the threshold controlling the binarization of the result of 
 // prediction of the ImgSegmentor 'that' to 'threshold'

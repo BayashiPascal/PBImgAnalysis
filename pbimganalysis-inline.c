@@ -279,4 +279,65 @@ int _ISCGetNbClass(const ImgSegmentorCriterion* const that) {
   return that->_nbClass;
 }
 
+// Return the size of the pool for training the ImgSegmentor 'that'
+#if BUILDMODE != 0
+inline
+#endif
+int ISGetSizePool(const ImgSegmentor* const that) {
+#if BUILDMODE == 0
+  if (that == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'that' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+#endif
+  return that->_sizePool;
+}
+
+// Set the size of the pool for training the ImgSegmentor 'that' to 'nb'
+#if BUILDMODE != 0
+inline
+#endif
+void ISSetSizePool(ImgSegmentor* const that, int nb) {
+#if BUILDMODE == 0
+  if (that == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'that' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+#endif
+  that->_sizePool = nb;
+}
+
+// Return the nb of elites for training the ImgSegmentor 'that'
+#if BUILDMODE != 0
+inline
+#endif
+int ISGetNbElite(const ImgSegmentor* const that) {
+#if BUILDMODE == 0
+  if (that == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'that' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+#endif
+  return that->_nbElite;
+}
+
+// Set the nb of elites for training the ImgSegmentor 'that' to 'nb'
+#if BUILDMODE != 0
+inline
+#endif
+void ISSetNbElite(ImgSegmentor* const that, int nb) {
+#if BUILDMODE == 0
+  if (that == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'that' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+#endif
+  that->_nbElite = nb;
+}
+
+
 

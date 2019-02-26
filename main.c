@@ -159,6 +159,28 @@ void UnitTestImgSegmentorAddCriterionGetSet() {
     sprintf(PBImgAnalysisErr->_msg, "ISGetThresholdBinaryResult failed");
     PBErrCatch(PBImgAnalysisErr);
   }
+  if (ISGetSizePool(&segmentor) != GENALG_NBENTITIES) {
+    PBImgAnalysisErr->_type = PBErrTypeUnitTestFailed;
+    sprintf(PBImgAnalysisErr->_msg, "ISGetSizePool failed");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+  ISSetSizePool(&segmentor, GENALG_NBENTITIES + 100);
+  if (ISGetSizePool(&segmentor) != GENALG_NBENTITIES + 100) {
+    PBImgAnalysisErr->_type = PBErrTypeUnitTestFailed;
+    sprintf(PBImgAnalysisErr->_msg, "ISSetSizePool failed");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+  if (ISGetNbElite(&segmentor) != GENALG_NBELITES) {
+    PBImgAnalysisErr->_type = PBErrTypeUnitTestFailed;
+    sprintf(PBImgAnalysisErr->_msg, "ISGetNbElite failed");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+  ISSetNbElite(&segmentor, GENALG_NBELITES + 10);
+  if (ISGetNbElite(&segmentor) != GENALG_NBELITES + 10) {
+    PBImgAnalysisErr->_type = PBErrTypeUnitTestFailed;
+    sprintf(PBImgAnalysisErr->_msg, "ISSetNbElite failed");
+    PBErrCatch(PBImgAnalysisErr);
+  }
   ImgSegmentorFreeStatic(&segmentor);
   printf("UnitTestImgSegmentorAddCriterionGetSet OK\n");
 }
@@ -189,13 +211,16 @@ void UnitTestImgSegmentorTrain() {
   int nbClass = 1;
   ImgSegmentor segmentor = ImgSegmentorCreateStatic(nbClass);
   ISAddCriterionRGB(&segmentor);
+  //char* cfgFilePath = PBFSJoinPath(
+  //  "..", "SDSIA", "DataSets", "001", "001", "dataset.json");
   char* cfgFilePath = PBFSJoinPath(
-    "..", "SDSIA", "DataSets", "001", "001", "dataset.json");
+    ".", "UnitTestImgSegmentorTrain", "dataset.json");
   GDataSetGenBrushPair dataSet = 
     GDataSetGenBrushPairCreateStatic(cfgFilePath);
-  
+  ISSetNbElite(&segmentor, 3);
+  ISSetSizePool(&segmentor, 10);
+  ISSetNbEpoch(&segmentor, 2);
   ISTrain(&segmentor, &dataSet);
-  
   free(cfgFilePath);
   GDataSetGenBrushPairFreeStatic(&dataSet);
   ImgSegmentorFreeStatic(&segmentor);
