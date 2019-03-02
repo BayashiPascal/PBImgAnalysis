@@ -165,6 +165,8 @@ typedef struct ImgSegmentor {
   // Nb elite for training
   // By default GENALG_NBELITES
   int _nbElite;
+  // Threshold to stop the training once
+  float _targetBestValue;
 } ImgSegmentor;
 
 typedef struct ImgSegmentorPerf {
@@ -234,6 +236,19 @@ bool ISGetFlagBinaryResult(const ImgSegmentor* const that);
 inline
 #endif
 float ISGetThresholdBinaryResult(const ImgSegmentor* const that);
+
+// Return the threshold controlling the stop of the training
+#if BUILDMODE != 0
+inline
+#endif
+float ISGetTargetBestValue(const ImgSegmentor* const that);
+
+// Set the threshold controlling the stop of the training to 'val'
+// Clip the value to [0.0, 1.0]
+#if BUILDMODE != 0
+inline
+#endif
+void ISSetTargetBestValue(ImgSegmentor* const that, const float val);
 
 // Set the flag controlling the binarization of the result of 
 // prediction of the ImgSegmentor 'that' to 'flag'
@@ -334,6 +349,22 @@ long _ISCGetNbParamInt(const ImgSegmentorCriterion* const that);
 // Return the number of float parameters for the criterion 'that'
 long _ISCGetNbParamFloat(const ImgSegmentorCriterion* const that);
 
+// Set the bounds of int parameters for training of the criterion 'that'
+void _ISCSetBoundsAdnInt(const ImgSegmentorCriterion* const that,
+  GenAlg* const ga, const long shift);
+
+// Set the bounds of float parameters for training of the criterion 'that'
+void _ISCSetBoundsAdnFloat(const ImgSegmentorCriterion* const that,
+  GenAlg* const ga, const long shift);
+
+// Set the values of int parameters for training of the criterion 'that'
+void _ISCSetAdnInt(const ImgSegmentorCriterion* const that,
+  const GenAlgAdn* const adn, const long shift);
+
+// Set the values of float parameters for training of the criterion 'that'
+void _ISCSetAdnFloat(const ImgSegmentorCriterion* const that,
+  const GenAlgAdn* const adn, const long shift);
+
 // Create a new ImgSegmentorCriterionRGB with 'nbClass' output
 ImgSegmentorCriterionRGB* ImgSegmentorCriterionRGBCreate(int nbClass);
 
@@ -353,6 +384,29 @@ long ISCRGBGetNbParamInt(const ImgSegmentorCriterionRGB* const that);
 // Return the number of float parameters for the criterion 'that'
 long ISCRGBGetNbParamFloat(const ImgSegmentorCriterionRGB* const that);
 
+// Set the bounds of int parameters for training of the criterion 'that'
+void ISCRGBSetBoundsAdnInt(const ImgSegmentorCriterionRGB* const that,
+  GenAlg* const ga, const long shift);
+
+// Set the bounds of float parameters for training of the criterion 'that'
+void ISCRGBSetBoundsAdnFloat(const ImgSegmentorCriterionRGB* const that,
+  GenAlg* const ga, const long shift);
+
+// Set the values of int parameters for training of the criterion 'that'
+void ISCRGBSetAdnInt(const ImgSegmentorCriterionRGB* const that,
+  const GenAlgAdn* const adn, const long shift);
+
+// Set the values of float parameters for training of the criterion 'that'
+void ISCRGBSetAdnFloat(const ImgSegmentorCriterionRGB* const that,
+  const GenAlgAdn* const adn, const long shift);
+
+// Return the NeuraNet of the ImgSegmentorCriterionRGB 'that'
+#if BUILDMODE != 0
+inline
+#endif
+const NeuraNet* ISCRGBNeuraNet(
+  const ImgSegmentorCriterionRGB* const that);
+  
 // ================= Polymorphism ==================
 
 #define ISCGetNbClass(That) _Generic(That, \
@@ -376,6 +430,38 @@ long ISCRGBGetNbParamFloat(const ImgSegmentorCriterionRGB* const that);
   const ImgSegmentorCriterionRGB*: ISCRGBGetNbParamFloat, \
   default: PBErrInvalidPolymorphism) ((const ImgSegmentorCriterion*)That)
 
+#define ISCSetBoundsAdnInt(That, GenAlg, Shift) _Generic(That, \
+  ImgSegmentorCriterion*: _ISCSetBoundsAdnInt, \
+  const ImgSegmentorCriterion*: _ISCSetBoundsAdnInt, \
+  ImgSegmentorCriterionRGB*: ISCRGBSetBoundsAdnInt, \
+  const ImgSegmentorCriterionRGB*: ISCRGBSetBoundsAdnInt, \
+  default: PBErrInvalidPolymorphism) ( \
+    (const ImgSegmentorCriterion*)That, GenAlg, Shift)
+  
+#define ISCSetBoundsAdnFloat(That, GenAlg, Shift) _Generic(That, \
+  ImgSegmentorCriterion*: _ISCSetBoundsAdnFloat, \
+  const ImgSegmentorCriterion*: _ISCSetBoundsAdnFloat, \
+  ImgSegmentorCriterionRGB*: ISCRGBSetBoundsAdnFloat, \
+  const ImgSegmentorCriterionRGB*: ISCRGBSetBoundsAdnFloat, \
+  default: PBErrInvalidPolymorphism) ( \
+    (const ImgSegmentorCriterion*)That, GenAlg, Shift)
+  
+#define ISCSetAdnInt(That, Adn, Shift) _Generic(That, \
+  ImgSegmentorCriterion*: _ISCSetAdnInt, \
+  const ImgSegmentorCriterion*: _ISCSetAdnInt, \
+  ImgSegmentorCriterionRGB*: ISCRGBSetAdnInt, \
+  const ImgSegmentorCriterionRGB*: ISCRGBSetAdnInt, \
+  default: PBErrInvalidPolymorphism) ( \
+    (const ImgSegmentorCriterion*)That, Adn, Shift)
+  
+#define ISCSetAdnFloat(That, Adn, Shift) _Generic(That, \
+  ImgSegmentorCriterion*: _ISCSetAdnFloat, \
+  const ImgSegmentorCriterion*: _ISCSetAdnFloat, \
+  ImgSegmentorCriterionRGB*: ISCRGBSetAdnFloat, \
+  const ImgSegmentorCriterionRGB*: ISCRGBSetAdnFloat, \
+  default: PBErrInvalidPolymorphism) ( \
+    (const ImgSegmentorCriterion*)That, Adn, Shift)
+  
 // ================ Inliner ====================
 
 #if BUILDMODE != 0

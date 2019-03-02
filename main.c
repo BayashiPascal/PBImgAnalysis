@@ -97,7 +97,8 @@ void UnitTestImgSegmentorCreateFree() {
   if (segmentor._nbClass != nbClass ||
     segmentor._flagBinaryResult != false ||
     segmentor._nbEpoch != 1 ||
-    !ISEQUALF(segmentor._thresholdBinaryResult, 0.5)) {
+    !ISEQUALF(segmentor._thresholdBinaryResult, 0.5) ||
+    !ISEQUALF(segmentor._targetBestValue, 0.9999)) {
     PBImgAnalysisErr->_type = PBErrTypeUnitTestFailed;
     sprintf(PBImgAnalysisErr->_msg, "ImgSegmentorCreateStatic failed");
     PBErrCatch(PBImgAnalysisErr);
@@ -181,6 +182,17 @@ void UnitTestImgSegmentorAddCriterionGetSet() {
     sprintf(PBImgAnalysisErr->_msg, "ISSetNbElite failed");
     PBErrCatch(PBImgAnalysisErr);
   }
+  if (!ISEQUALF(ISGetTargetBestValue(&segmentor), 0.9999)) {
+    PBImgAnalysisErr->_type = PBErrTypeUnitTestFailed;
+    sprintf(PBImgAnalysisErr->_msg, "ISGetTargetBestValue failed");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+  ISSetTargetBestValue(&segmentor, 0.5);
+  if (!ISEQUALF(ISGetTargetBestValue(&segmentor), 0.5)) {
+    PBImgAnalysisErr->_type = PBErrTypeUnitTestFailed;
+    sprintf(PBImgAnalysisErr->_msg, "ISSetTargetBestValue failed");
+    PBErrCatch(PBImgAnalysisErr);
+  }
   ImgSegmentorFreeStatic(&segmentor);
   printf("UnitTestImgSegmentorAddCriterionGetSet OK\n");
 }
@@ -208,20 +220,36 @@ void UnitTestImgSegmentorPredict() {
 
 void UnitTestImgSegmentorTrain() {
   srandom(0);
-  int nbClass = 1;
+  int nbClass = 2;
   ImgSegmentor segmentor = ImgSegmentorCreateStatic(nbClass);
   ISAddCriterionRGB(&segmentor);
-  //char* cfgFilePath = PBFSJoinPath(
-  //  "..", "SDSIA", "DataSets", "001", "001", "dataset.json");
   char* cfgFilePath = PBFSJoinPath(
     ".", "UnitTestImgSegmentorTrain", "dataset.json");
   GDataSetGenBrushPair dataSet = 
     GDataSetGenBrushPairCreateStatic(cfgFilePath);
-  ISSetNbElite(&segmentor, 3);
-  ISSetSizePool(&segmentor, 10);
-  ISSetNbEpoch(&segmentor, 2);
+  ISSetSizePool(&segmentor, 20);
+  ISSetNbElite(&segmentor, 5);
+  ISSetNbEpoch(&segmentor, 100);
+  ISSetTargetBestValue(&segmentor, 0.9);
   ISTrain(&segmentor, &dataSet);
+  char* imgFilePath = PBFSJoinPath(
+    ".", "UnitTestImgSegmentorTrain", "img000.tga");
+  GenBrush* img = GBCreateFromFile(imgFilePath);
+  GenBrush** pred = ISPredict(&segmentor, img);
+  for (int iClass = nbClass; iClass--;) {
+    char outPath[100];
+    sprintf(outPath, "pred000-%03d.tga", iClass);
+    char* predFilePath = PBFSJoinPath(
+      ".", "UnitTestImgSegmentorTrain", outPath);
+    GBSetFileName(pred[iClass], predFilePath);
+    GBRender(pred[iClass]);
+    GBFree(pred + iClass);
+    free(predFilePath);
+  }
+  free(pred);
+  GBFree(&img);
   free(cfgFilePath);
+  free(imgFilePath);
   GDataSetGenBrushPairFreeStatic(&dataSet);
   ImgSegmentorFreeStatic(&segmentor);
   printf("UnitTestImgSegmentorTrain OK\n");
@@ -244,7 +272,7 @@ void UnitTestAll() {
 
 int main(void) {
   //UnitTestAll();
-  UnitTestImgSegmentor();
+  UnitTestImgSegmentorTrain();
   return 0;
 }
 

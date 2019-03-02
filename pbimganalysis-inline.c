@@ -339,5 +339,51 @@ void ISSetNbElite(ImgSegmentor* const that, int nb) {
   that->_nbElite = nb;
 }
 
+// Return the NeuraNet of the ImgSegmentorCriterionRGB 'that'
+#if BUILDMODE != 0
+inline
+#endif
+const NeuraNet* ISCRGBNeuraNet(
+  const ImgSegmentorCriterionRGB* const that) {
+#if BUILDMODE == 0
+  if (that == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'that' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+#endif
+  return that->_nn;
+}
+
+// Return the threshold controlling the stop of the training
+#if BUILDMODE != 0
+inline
+#endif
+float ISGetTargetBestValue(const ImgSegmentor* const that) {
+#if BUILDMODE == 0
+  if (that == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'that' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+#endif
+  return that->_targetBestValue;
+}
+
+// Set the threshold controlling the stop of the training to 'val'
+// Clip the value to [0.0, 1.0]
+#if BUILDMODE != 0
+inline
+#endif
+void ISSetTargetBestValue(ImgSegmentor* const that, const float val) {
+#if BUILDMODE == 0
+  if (that == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'that' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+#endif
+  that->_targetBestValue = MIN(1.0, MAX(0.0, val));
+}
 
 
