@@ -64,6 +64,28 @@ void UnitTestIntersectionOverUnion() {
   printf("UnitTestIntersectionOverUnion OK\n");
 }
 
+void UnitTestGBSimilarityCoefficient() {
+  char* fileNameA = "./iou1.tga";
+  GenBrush* imgA = GBCreateFromFile(fileNameA);
+  char* fileNameB = "./iou2.tga";
+  GenBrush* imgB = GBCreateFromFile(fileNameB);
+  float sim = GBSimilarityCoeff(imgA, imgA);
+  if (!ISEQUALF(sim, 1.0)) {
+    PBImgAnalysisErr->_type = PBErrTypeUnitTestFailed;
+    sprintf(PBImgAnalysisErr->_msg, "GBSimilarityCoefficient failed");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+  sim = GBSimilarityCoeff(imgA, imgB);
+  if (!ISEQUALF(sim, 0.965359)) {
+    PBImgAnalysisErr->_type = PBErrTypeUnitTestFailed;
+    sprintf(PBImgAnalysisErr->_msg, "GBSimilarityCoefficient failed");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+  GBFree(&imgA);
+  GBFree(&imgB);
+  printf("UnitTestIntersectionOverUnion OK\n");
+}
+
 void UnitTestImgSegmentorRGB() {
   int nbClass = 2;
   ImgSegmentorCriterionRGB* criterion = 
@@ -125,9 +147,9 @@ void UnitTestImgSegmentorAddCriterionGetSet() {
     sprintf(PBImgAnalysisErr->_msg, "ISGetNbCriterion failed");
     PBErrCatch(PBImgAnalysisErr);
   }
-  ISAddCriterionRGB(&segmentor);
-  if (GSetNbElem(&(segmentor._criteria)) != 1 ||
-    ((ImgSegmentorCriterion*)GSetGet(&(segmentor._criteria), 
+  if (!ISAddCriterionRGB(&segmentor, NULL) ||
+    GenTreeGetSize(ISCriteria(&segmentor)) != 1 ||
+    ((ImgSegmentorCriterion*)GSetGet(&(segmentor._criteria._subtrees), 
       0))->_type != ISCType_RGB) {
     PBImgAnalysisErr->_type = PBErrTypeUnitTestFailed;
     sprintf(PBImgAnalysisErr->_msg, "ISAddCriterion failed");
@@ -200,7 +222,7 @@ void UnitTestImgSegmentorAddCriterionGetSet() {
 void UnitTestImgSegmentorPredict() {
   int nbClass = 2;
   ImgSegmentor segmentor = ImgSegmentorCreateStatic(nbClass);
-  ISAddCriterionRGB(&segmentor);
+  ISAddCriterionRGB(&segmentor, NULL);
   char* fileNameIn = "ISPredict-in.tga";
   char fileNameOut[20];
   GenBrush* img = GBCreateFromFile(fileNameIn);
@@ -222,19 +244,23 @@ void UnitTestImgSegmentorTrain() {
   srandom(0);
   int nbClass = 2;
   ImgSegmentor segmentor = ImgSegmentorCreateStatic(nbClass);
-  ISAddCriterionRGB(&segmentor);
+  ISAddCriterionRGB(&segmentor, NULL);
   char* cfgFilePath = PBFSJoinPath(
     ".", "UnitTestImgSegmentorTrain", "dataset.json");
   GDataSetGenBrushPair dataSet = 
     GDataSetGenBrushPairCreateStatic(cfgFilePath);
-  ISSetSizePool(&segmentor, 20);
-  ISSetNbElite(&segmentor, 5);
-  ISSetNbEpoch(&segmentor, 100);
+  //ISSetSizePool(&segmentor, 20);
+  //ISSetNbElite(&segmentor, 5);
+  //ISSetNbEpoch(&segmentor, 50);
+  ISSetSizePool(&segmentor, 2);
+  ISSetNbElite(&segmentor, 2);
+  ISSetNbEpoch(&segmentor, 2);
   ISSetTargetBestValue(&segmentor, 0.9);
   ISTrain(&segmentor, &dataSet);
   char* imgFilePath = PBFSJoinPath(
     ".", "UnitTestImgSegmentorTrain", "img000.tga");
   GenBrush* img = GBCreateFromFile(imgFilePath);
+  ISSetFlagBinaryResult(&segmentor, true);
   GenBrush** pred = ISPredict(&segmentor, img);
   for (int iClass = nbClass; iClass--;) {
     char outPath[100];
@@ -266,6 +292,7 @@ void UnitTestImgSegmentor() {
 void UnitTestAll() {
   UnitTestImgKMeansClusters();
   UnitTestIntersectionOverUnion();
+  UnitTestGBSimilarityCoefficient();
   UnitTestImgSegmentorRGB();
   UnitTestImgSegmentor();
 }

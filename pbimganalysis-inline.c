@@ -118,7 +118,7 @@ long ISGetNbCriterion(const ImgSegmentor* const that) {
     PBErrCatch(PBImgAnalysisErr);
   }
 #endif
-  return GSetNbElem(ISCriteria(that));
+  return GenTreeGetSize(ISCriteria(that));
 }
 
 // Return the nb of classes of the ImgSegmentor 'that'
@@ -140,7 +140,7 @@ int ISGetNbClass(const ImgSegmentor* const that) {
 #if BUILDMODE != 0
 inline
 #endif
-const GSet* ISCriteria(const ImgSegmentor* const that) {
+const GenTree* ISCriteria(const ImgSegmentor* const that) {
 #if BUILDMODE == 0
   if (that == NULL) {
     PBImgAnalysisErr->_type = PBErrTypeNullPointer;
@@ -152,10 +152,13 @@ const GSet* ISCriteria(const ImgSegmentor* const that) {
 }
 
 // Add a new ImageSegmentorCriterionRGB to the ImgSegmentor 'that'
+// under the node 'parent'
+// If 'parent' is null it is inserted to the root of the ImgSegmentor
 #if BUILDMODE != 0
 inline
 #endif
-void ISAddCriterionRGB(ImgSegmentor* const that) {
+bool ISAddCriterionRGB(ImgSegmentor* const that, 
+  void* const parent) {
 #if BUILDMODE == 0
   if (that == NULL) {
     PBImgAnalysisErr->_type = PBErrTypeNullPointer;
@@ -164,8 +167,19 @@ void ISAddCriterionRGB(ImgSegmentor* const that) {
   }
 #endif
   // Create and add the criterion to the set of criteria
-  GSetAppend(&(that->_criteria), 
-    ImgSegmentorCriterionRGBCreate(ISGetNbClass(that)));
+  if (parent == NULL) {
+    GenTreeAppendData(&(that->_criteria), 
+      ImgSegmentorCriterionRGBCreate(ISGetNbClass(that)));
+    return true;
+  } else {
+    GenTreeIterDepth iter = 
+      GenTreeIterDepthCreateStatic(&(that->_criteria));
+    bool ret = GenTreeAppendToNode(&(that->_criteria), 
+      ImgSegmentorCriterionRGBCreate(ISGetNbClass(that)),
+      parent, &iter);
+    GenTreeIterFreeStatic(&iter);
+    return ret;
+  }
 }
 
 // Return the flag controlling the binarization of the result of 

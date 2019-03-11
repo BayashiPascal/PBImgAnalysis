@@ -424,7 +424,7 @@ ImgSegmentor ImgSegmentorCreateStatic(int nbClass) {
   ImgSegmentor that;
   // Init properties
   that._nbClass = nbClass;
-  that._criteria = GSetCreateStatic();
+  that._criteria = GenTreeCreateStatic();
   that._flagBinaryResult = false;
   that._thresholdBinaryResult = 0.5;
   that._nbEpoch = 1;
@@ -439,8 +439,9 @@ ImgSegmentor ImgSegmentorCreateStatic(int nbClass) {
 void ImgSegmentorFreeStatic(ImgSegmentor* that) {
   if (that == NULL)
     return;
-  while (ISGetNbCriterion(that) > 0) {
-    ImgSegmentorCriterion* criterion = GSetPop(&(that->_criteria));
+  GenTreeIterDepth iter = GenTreeIterDepthCreateStatic(ISCriteria(that));
+  do {
+    ImgSegmentorCriterion* criterion = GenTreeIterGetData(&iter);
     switch (criterion->_type) {
       case ISCType_RGB:
         ImgSegmentorCriterionRGBFree(
@@ -453,7 +454,9 @@ void ImgSegmentorFreeStatic(ImgSegmentor* that) {
         PBErrCatch(PBImgAnalysisErr);
         break;
     }
-  }
+  } while (GenTreeIterStep(&iter));
+  GenTreeIterFreeStatic(&iter);
+  GenTreeFreeStatic((GenTree*)ISCriteria(that));
 }
 
 // Make a prediction on the GenBrush 'img' with the ImgSegmentor 'that'
@@ -491,17 +494,22 @@ GenBrush** ISPredict(const ImgSegmentor* const that,
     for (int iRGB = 3; iRGB--;)
       VecSet(input, iPos * 3 + iRGB, (float)(pix._rgba[iRGB]) / 255.0);
   } while (VecStep(&pos, &dim));
-  // Create temporary vectors to memorize the prediction of each criterion
-  VecFloat** pred = PBErrMalloc(PBImgAnalysisErr, 
-    sizeof(VecFloat*) * ISGetNbCriterion(that));
+  // Declare a set to memorize the temporary inputs while moving
+  // through the tree of criteria
+  GSet inputs = GSetCreateStatic();
+  // Add the initial input to the set
+  GSetAppend(&inputs, input);
+  // Create a set to memorize the prediction of each leaf criterion
+  GSet leafPred = GSetCreateStatic();
   // Loop on criteria
-  int iCrit = 0;
-  GSetIterForward iter = GSetIterForwardCreateStatic(ISCriteria(that));
+  GenTreeIterDepth iter = GenTreeIterDepthCreateStatic(ISCriteria(that));
   do {
-    ImgSegmentorCriterion* criterion = GSetIterGet(&iter);
-    pred[iCrit] = ISCPredict(criterion, input, &dim);
-    ++iCrit;
-  } while(GSetIterStep(&iter));
+    ImgSegmentorCriterion* criterion = GenTreeIterGetData(&iter);
+    VecFloat* curInput = GSetTail(&inputs);
+    VecFloat* pred = ISCPredict(criterion, curInput, &dim);
+    GSetAppend(&leafPred, pred);
+  } while(GenTreeIterStep(&iter));
+  GenTreeIterFreeStatic(&iter);
   // Create temporary vectors to memorize the combined predictions
   VecFloat* combPred = VecFloatCreate(area * ISGetNbClass(that));
   VecFloat* finalPred = VecFloatCreate(area * ISGetNbClass(that));
@@ -510,11 +518,13 @@ GenBrush** ISPredict(const ImgSegmentor* const that,
   // where the weight is the absolute value of the prediction
   for (long i = area * (long)ISGetNbClass(that); i--;) {
     float sumWeight = 0.0;
-    for (iCrit = ISGetNbCriterion(that); iCrit--;) {
-      float v = VecGet(pred[iCrit], i);
+    GSetIterForward iter = GSetIterForwardCreateStatic(&leafPred);
+    do {
+      VecFloat* pred = GSetIterGet(&iter);
+      float v = VecGet(pred, i);
       VecSetAdd(combPred, i, v * fabs(v));
       sumWeight += fabs(v);
-    }
+    } while (GSetIterStep(&iter));
     if (sumWeight > PBMATH_EPSILON)
       VecSet(combPred, i, VecGet(combPred, i) / sumWeight);
     else
@@ -577,12 +587,16 @@ GenBrush** ISPredict(const ImgSegmentor* const that,
     } while (VecStep(&pos, &dim));
   }
   // Free memory
-  for (int iCrit = ISGetNbCriterion(that); iCrit--;) {
-    VecFree(pred + iCrit);
+  while (GSetNbElem(&leafPred) > 0) {
+    VecFloat* pred = GSetPop(&leafPred);
+    VecFree(&pred);
   }
-  free(pred);
-  VecFree(&input);
+  do {
+    VecFloat* curInput = GSetDrop(&inputs);
+    VecFree(&curInput);
+  } while (GSetNbElem(&inputs) > 0);
   VecFree(&finalPred);
+  VecFree(&combPred);
   // Return the result
   return res;
 }
@@ -630,9 +644,9 @@ void ISTrain(ImgSegmentor* const that,
   const GBPixel rgbaMask = GBColorBlack; 
   // Get the number of int and float parameters for each criterion
   int iCrit = 0;
-  GSetIterForward iter = GSetIterForwardCreateStatic(ISCriteria(that));
+  GenTreeIterDepth iter = GenTreeIterDepthCreateStatic(ISCriteria(that));
   do {
-    ImgSegmentorCriterion* crit = GSetIterGet(&iter);
+    ImgSegmentorCriterion* crit = GenTreeIterGetData(&iter);
     long nb = ISCGetNbParamInt(crit);
     VecSet(nbParamInt, iCrit, nb);
     nbTotalParamInt += nb;
@@ -640,23 +654,23 @@ void ISTrain(ImgSegmentor* const that,
     VecSet(nbParamFloat, iCrit, nb);
     nbTotalParamFloat += nb;
     ++iCrit;
-  } while (GSetIterStep(&iter));
+  } while (GenTreeIterStep(&iter));
   // If there are parameters
   if (nbTotalParamInt > 0 || nbTotalParamFloat > 0) {
     // Create the GenAlg to search parameters' value
     GenAlg* ga = GenAlgCreate(ISGetSizePool(that), ISGetNbElite(that), 
       nbTotalParamFloat, nbTotalParamInt);
     // Loop on the criterion to initialise the parameters bound
-    GSetIterReset(&iter);
+    GenTreeIterReset(&iter);
     long shiftParamInt = 0;
     long shiftParamFloat = 0;
     do {
-      ImgSegmentorCriterion* crit = GSetIterGet(&iter);
+      ImgSegmentorCriterion* crit = GenTreeIterGetData(&iter);
       ISCSetBoundsAdnInt(crit, ga, shiftParamInt);
       shiftParamInt += ISCGetNbParamInt(crit);
       ISCSetBoundsAdnFloat(crit, ga, shiftParamFloat);
       shiftParamFloat += ISCGetNbParamFloat(crit);
-    } while (GSetIterStep(&iter));
+    } while (GenTreeIterStep(&iter));
     // Initialise the GenAlg
     GAInit(ga);
     // Declare a variable to memorize the current best value
@@ -669,16 +683,16 @@ void ISTrain(ImgSegmentor* const that,
         if (GAAdnIsNew(GAAdn(ga, iEnt))) {
           // Loop on the criterion to set the criteria parameters with 
           // this entity's adn
-          GSetIterReset(&iter);
+          GenTreeIterReset(&iter);
           shiftParamInt = 0;
           shiftParamFloat = 0;
           do {
-            ImgSegmentorCriterion* crit = GSetIterGet(&iter);
+            ImgSegmentorCriterion* crit = GenTreeIterGetData(&iter);
             ISCSetAdnInt(crit, GAAdn(ga, iEnt), shiftParamInt);
             shiftParamInt += ISCGetNbParamInt(crit);
             ISCSetAdnFloat(crit, GAAdn(ga, iEnt), shiftParamFloat);
             shiftParamFloat += ISCGetNbParamFloat(crit);
-          } while (GSetIterStep(&iter));
+          } while (GenTreeIterStep(&iter));
           // Evaluate the ImgSegmentor for this entity's adn on the 
           // dataset
           float value = 0.0;
@@ -732,20 +746,21 @@ void ISTrain(ImgSegmentor* const that,
     } while (GAGetCurEpoch(ga) < ISGetNbEpoch(that) &&
       bestValue < ISGetTargetBestValue(that));
     // Loop on the criterion to set the criteria to the best one
-    GSetIterReset(&iter);
+    GenTreeIterReset(&iter);
     shiftParamInt = 0;
     shiftParamFloat = 0;
     do {
-      ImgSegmentorCriterion* crit = GSetIterGet(&iter);
+      ImgSegmentorCriterion* crit = GenTreeIterGetData(&iter);
       ISCSetAdnInt(crit, GABestAdn(ga), shiftParamInt);
       shiftParamInt += ISCGetNbParamInt(crit);
       ISCSetAdnFloat(crit, GABestAdn(ga), shiftParamFloat);
       shiftParamFloat += ISCGetNbParamFloat(crit);
-    } while (GSetIterStep(&iter));
+    } while (GenTreeIterStep(&iter));
     // Free memory
     GenAlgFree(&ga);
   }
   // Free memory
+  GenTreeIterFreeStatic(&iter);
   VecFree(&nbParamInt);
   VecFree(&nbParamFloat);
   // Put back the flag for binarization in its original state
@@ -1212,9 +1227,56 @@ float IntersectionOverUnion(const GenBrush* const that,
       ++nbUnion;
     }
   } while (VecStep(&pos, GBDim(that)));
-  // Calcaulte the intersection over union
+  // Calculate the intersection over union
   float iou = (float)nbInter / (float)nbUnion;
   // Return the result
   return iou;
 }
 
+// Return the similarity coefficient of the images 'that' and 'tho'
+// (i.e. the sum of the distances of pixels at the same position
+// over the whole image)
+// Return a value in [0.0, 1.0], 1.0 means the two images are
+// identical, 0.0 means they are binary black and white with each
+// pixel in one image the opposite of the corresponding pixel in the 
+// other image. 
+// 'that' and 'tho' must have same dimensions
+float GBSimilarityCoeff(const GenBrush* const that, 
+  const GenBrush* const tho) {
+#if BUILDMODE == 0
+  if (that == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'that' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+  if (tho == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'tho' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+  if (!VecIsEqual(GBDim(that), GBDim(tho))) {
+    PBImgAnalysisErr->_type = PBErrTypeInvalidArg;
+    sprintf(PBImgAnalysisErr->_msg, 
+      "'that' and 'tho' have different dimensions");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+#endif
+  // Declare a variable to calculate the result
+  float res = 0.0;
+  // Declare a variable to loop through pixels
+  VecShort2D pos = VecShortCreateStatic2D();
+  // Loop through pixels
+  do {
+    const GBPixel* pixA = GBFinalPixel(that, &pos);
+    const GBPixel* pixB = GBFinalPixel(tho, &pos);
+    res += sqrt(
+      fsquare((float)(pixA->_rgba[0]) - (float)(pixB->_rgba[0])) +
+      fsquare((float)(pixA->_rgba[1]) - (float)(pixB->_rgba[1])) +
+      fsquare((float)(pixA->_rgba[2]) - (float)(pixB->_rgba[2])) +
+      fsquare((float)(pixA->_rgba[3]) - (float)(pixB->_rgba[3])));
+  } while (VecStep(&pos, GBDim(that)));
+  // Calculate the result
+  res /= (float)GBArea(that) * 510.0;
+  // Return the result
+  return 1.0 - res;
+}

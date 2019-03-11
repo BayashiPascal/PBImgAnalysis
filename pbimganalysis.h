@@ -132,10 +132,21 @@ bool IKMCDecodeAsJSON(ImgKMeansClusters* that,
 // ------------------ General functions ----------------------
 
 // Return the Jaccard index (aka intersection over union) of the 
-// image 'that' and 'tho' for pixels of color 'rgba'
+// images 'that' and 'tho' for pixels of color 'rgba'
 // 'that' and 'tho' must have same dimensions
 float IntersectionOverUnion(const GenBrush* const that, 
   const GenBrush* const tho, const GBPixel* const rgba);
+
+// Return the similarity coefficient of the images 'that' and 'tho'
+// (i.e. the sum of the distances of pixels at the same position
+// over the whole image)
+// Return a value in [0.0, 1.0], 1.0 means the two images are
+// identical, 0.0 means they are binary black and white with each
+// pixel in one image the opposite of the corresponding pixel in the 
+// other image. 
+// 'that' and 'tho' must have same dimensions
+float GBSimilarityCoeff(const GenBrush* const that, 
+  const GenBrush* const tho);
 
 // ------------------ ImgSegmentor ----------------------
 
@@ -144,8 +155,8 @@ float IntersectionOverUnion(const GenBrush* const that,
 // ================= Data structure ===================
 
 typedef struct ImgSegmentor {
-  // Set of criterion
-  GSet _criteria;
+  // Tree of criterion
+  GenTree _criteria;
   // Number of segmentation class
   int _nbClass;
   // Flag to apply or not the binarization on result of prediction
@@ -212,10 +223,13 @@ inline
 long ISGetNbCriterion(const ImgSegmentor* const that);
 
 // Add a new ImageSegmentorCriterionRGB to the ImgSegmentor 'that'
+// under the node 'parent'
+// If 'parent' is null it is inserted to the root of the ImgSegmentor
 #if BUILDMODE != 0
 inline
 #endif
-void ISAddCriterionRGB(ImgSegmentor* const that);
+bool ISAddCriterionRGB(ImgSegmentor* const that, 
+  void* const parent);
 
 // Return the nb of classes of the ImgSegmentor 'that'
 #if BUILDMODE != 0
@@ -314,7 +328,7 @@ GenBrush** ISPredict(const ImgSegmentor* const that,
 #if BUILDMODE != 0
 inline
 #endif
-const GSet* ISCriteria(const ImgSegmentor* const that);
+const GenTree* ISCriteria(const ImgSegmentor* const that);
 
 // Train the ImageSegmentor 'that' on the data set 'dataSet' using
 // the data of the first category in 'dataSet'
