@@ -504,10 +504,37 @@ GenBrush** ISPredict(const ImgSegmentor* const that,
   // Loop on criteria
   GenTreeIterDepth iter = GenTreeIterDepthCreateStatic(ISCriteria(that));
   do {
+    // Get the criteria
     ImgSegmentorCriterion* criterion = GenTreeIterGetData(&iter);
+    // Get the input on which to apply the criteria, this is the last
+    // pushed input
     VecFloat* curInput = GSetTail(&inputs);
+    // Do the prediction
     VecFloat* pred = ISCPredict(criterion, curInput, &dim);
-    GSetAppend(&leafPred, pred);
+    // If this criterion is a leaf in the tree of crieria
+    if (GenTreeIsLeaf(GenTreeIterGetGenTree(&iter))) {
+      // Add the result of the prediction to the set of final prediction
+      GSetAppend(&leafPred, pred);
+      // If the criterion is a last brother
+      if (GenTreeIsLastBrother(GenTreeIterGetGenTree(&iter))) {
+        // Drop and free the intermediate input
+        (void)GSetDrop(&inputs);
+        VecFree(&curInput);
+        // In case the parent was the last brother it will be skipped
+        // back by the GenTreeIterDepth and we need to drop its input
+        // right away
+        GenTree* parent = GenTreeParent(GenTreeIterGetGenTree(&iter));
+        while (parent != NULL && GenTreeIsLastBrother(parent)) {
+          curInput = GSetDrop(&inputs);
+          VecFree(&curInput);
+          parent = GenTreeParent(parent);
+        }
+      }
+    // Else the criterion is a node in the tree
+    } else {
+      // Append the result of prediction to the intermediate input
+      GSetAppend(&inputs, pred);
+    }
   } while(GenTreeIterStep(&iter));
   GenTreeIterFreeStatic(&iter);
   // Create temporary vectors to memorize the combined predictions

@@ -249,12 +249,12 @@ void UnitTestImgSegmentorTrain() {
     ".", "UnitTestImgSegmentorTrain", "dataset.json");
   GDataSetGenBrushPair dataSet = 
     GDataSetGenBrushPairCreateStatic(cfgFilePath);
-  //ISSetSizePool(&segmentor, 20);
-  //ISSetNbElite(&segmentor, 5);
-  //ISSetNbEpoch(&segmentor, 50);
-  ISSetSizePool(&segmentor, 2);
-  ISSetNbElite(&segmentor, 2);
-  ISSetNbEpoch(&segmentor, 2);
+  ISSetSizePool(&segmentor, 20);
+  ISSetNbElite(&segmentor, 5);
+  ISSetNbEpoch(&segmentor, 50);
+  //ISSetSizePool(&segmentor, 2);
+  //ISSetNbElite(&segmentor, 2);
+  //ISSetNbEpoch(&segmentor, 2);
   ISSetTargetBestValue(&segmentor, 0.9);
   ISTrain(&segmentor, &dataSet);
   char* imgFilePath = PBFSJoinPath(
@@ -290,7 +290,7 @@ void UnitTestImgSegmentor() {
 }
 
 void UnitTestAll() {
-  UnitTestImgKMeansClusters();
+  //UnitTestImgKMeansClusters();
   UnitTestIntersectionOverUnion();
   UnitTestGBSimilarityCoefficient();
   UnitTestImgSegmentorRGB();
@@ -298,8 +298,8 @@ void UnitTestAll() {
 }
 
 int main(void) {
-  //UnitTestAll();
-  UnitTestImgSegmentorTrain();
+  UnitTestAll();
+  //UnitTestImgSegmentorTrain();
   return 0;
 }
 
