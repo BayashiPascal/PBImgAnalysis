@@ -147,7 +147,7 @@ void UnitTestImgSegmentorAddCriterionGetSet() {
     sprintf(PBImgAnalysisErr->_msg, "ISGetNbCriterion failed");
     PBErrCatch(PBImgAnalysisErr);
   }
-  if (!ISAddCriterionRGB(&segmentor, NULL) ||
+  if (ISAddCriterionRGB(&segmentor, NULL) == NULL ||
     GenTreeGetSize(ISCriteria(&segmentor)) != 1 ||
     ((ImgSegmentorCriterion*)GSetGet(&(segmentor._criteria._subtrees), 
       0))->_type != ISCType_RGB) {
@@ -222,7 +222,7 @@ void UnitTestImgSegmentorAddCriterionGetSet() {
 void UnitTestImgSegmentorPredict() {
   int nbClass = 2;
   ImgSegmentor segmentor = ImgSegmentorCreateStatic(nbClass);
-  ISAddCriterionRGB(&segmentor, NULL);
+  (void)ISAddCriterionRGB(&segmentor, NULL);
   char* fileNameIn = "ISPredict-in.tga";
   char fileNameOut[20];
   GenBrush* img = GBCreateFromFile(fileNameIn);
@@ -240,11 +240,15 @@ void UnitTestImgSegmentorPredict() {
   printf("UnitTestImgSegmentorPredict OK\n");
 }
 
-void UnitTestImgSegmentorTrain() {
+void UnitTestImgSegmentorTrain01() {
   srandom(0);
   int nbClass = 2;
   ImgSegmentor segmentor = ImgSegmentorCreateStatic(nbClass);
-  ISAddCriterionRGB(&segmentor, NULL);
+  if (ISAddCriterionRGB(&segmentor, NULL) == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeUnitTestFailed;
+    sprintf(PBImgAnalysisErr->_msg, "UnitTestImgSegmentorTrain01 failed");
+    PBErrCatch(PBImgAnalysisErr);
+  }
   char* cfgFilePath = PBFSJoinPath(
     ".", "UnitTestImgSegmentorTrain", "dataset.json");
   GDataSetGenBrushPair dataSet = 
@@ -278,14 +282,72 @@ void UnitTestImgSegmentorTrain() {
   free(imgFilePath);
   GDataSetGenBrushPairFreeStatic(&dataSet);
   ImgSegmentorFreeStatic(&segmentor);
-  printf("UnitTestImgSegmentorTrain OK\n");
+  printf("UnitTestImgSegmentorTrain01 OK\n");
+}
+
+void UnitTestImgSegmentorTrain02() {
+  srandom(0);
+  int nbClass = 2;
+  ImgSegmentor segmentor = ImgSegmentorCreateStatic(nbClass);
+  /*if (ISAddCriterionRGB(&segmentor, NULL) == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeUnitTestFailed;
+    sprintf(PBImgAnalysisErr->_msg, "UnitTestImgSegmentorTrain02 failed");
+    PBErrCatch(PBImgAnalysisErr);
+  }*/
+  ImgSegmentorCriterionRGB2HSV* criterionHSV = 
+    ISAddCriterionRGB2HSV(&segmentor, NULL);
+  if (criterionHSV == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeUnitTestFailed;
+    sprintf(PBImgAnalysisErr->_msg, "UnitTestImgSegmentorTrain02 failed");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+  if (ISAddCriterionRGB(&segmentor, criterionHSV) == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeUnitTestFailed;
+    sprintf(PBImgAnalysisErr->_msg, "UnitTestImgSegmentorTrain02 failed");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+  char* cfgFilePath = PBFSJoinPath(
+    ".", "UnitTestImgSegmentorTrain", "dataset.json");
+  GDataSetGenBrushPair dataSet = 
+    GDataSetGenBrushPairCreateStatic(cfgFilePath);
+  ISSetSizePool(&segmentor, 20);
+  ISSetNbElite(&segmentor, 5);
+  ISSetNbEpoch(&segmentor, 500);
+  //ISSetSizePool(&segmentor, 2);
+  //ISSetNbElite(&segmentor, 2);
+  //ISSetNbEpoch(&segmentor, 2);
+  ISSetTargetBestValue(&segmentor, 0.9);
+  ISTrain(&segmentor, &dataSet);
+  char* imgFilePath = PBFSJoinPath(
+    ".", "UnitTestImgSegmentorTrain", "img001.tga");
+  GenBrush* img = GBCreateFromFile(imgFilePath);
+  ISSetFlagBinaryResult(&segmentor, true);
+  GenBrush** pred = ISPredict(&segmentor, img);
+  for (int iClass = nbClass; iClass--;) {
+    char outPath[100];
+    sprintf(outPath, "pred001-%03d.tga", iClass);
+    char* predFilePath = PBFSJoinPath(
+      ".", "UnitTestImgSegmentorTrain", outPath);
+    GBSetFileName(pred[iClass], predFilePath);
+    GBRender(pred[iClass]);
+    GBFree(pred + iClass);
+    free(predFilePath);
+  }
+  free(pred);
+  GBFree(&img);
+  free(cfgFilePath);
+  free(imgFilePath);
+  GDataSetGenBrushPairFreeStatic(&dataSet);
+  ImgSegmentorFreeStatic(&segmentor);
+  printf("UnitTestImgSegmentorTrain01 OK\n");
 }
 
 void UnitTestImgSegmentor() {
   UnitTestImgSegmentorCreateFree();
   UnitTestImgSegmentorAddCriterionGetSet();
   UnitTestImgSegmentorPredict();
-  UnitTestImgSegmentorTrain();
+  UnitTestImgSegmentorTrain01();
+  UnitTestImgSegmentorTrain02();
   printf("UnitTestImgSegmentor OK\n");
 }
 
@@ -298,8 +360,8 @@ void UnitTestAll() {
 }
 
 int main(void) {
-  UnitTestAll();
-  //UnitTestImgSegmentorTrain();
+  //UnitTestAll();
+  UnitTestImgSegmentorTrain02();
   return 0;
 }
 

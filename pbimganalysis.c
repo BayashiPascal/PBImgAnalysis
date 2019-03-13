@@ -447,6 +447,10 @@ void ImgSegmentorFreeStatic(ImgSegmentor* that) {
         ImgSegmentorCriterionRGBFree(
           (ImgSegmentorCriterionRGB**)&criterion);
         break;
+      case ISCType_RGB2HSV:
+        ImgSegmentorCriterionRGB2HSVFree(
+          (ImgSegmentorCriterionRGB2HSV**)&criterion);
+        break;
       default:
         PBImgAnalysisErr->_type = PBErrTypeNotYetImplemented;
         sprintf(PBImgAnalysisErr->_msg, 
@@ -755,7 +759,11 @@ void ISTrain(ImgSegmentor* const that,
               printf("\n");
             fflush(stdout);
             ++iSample;
-          } while (GDSStepSample(dataset, iCatTraining));
+          } while (GDSStepSample(dataset, iCatTraining)
+/*          
+          && iSample < 2
+*/          
+          );
           // Get the average value over all samples
           value /= (float)GDSGetSizeCat(dataset, iCatTraining);
           // Update the adn value of this entity
@@ -848,7 +856,15 @@ VecFloat* ISCPredict(const ImgSegmentorCriterion* const that,
       res = ISCRGBPredict((const ImgSegmentorCriterionRGB*)that, 
         input, dim);
       break;
+    case ISCType_RGB2HSV:
+      res = ISCRGB2HSVPredict((const ImgSegmentorCriterionRGB2HSV*)that, 
+        input, dim);
+      break;
     default:
+      PBImgAnalysisErr->_type = PBErrTypeNotYetImplemented;
+      sprintf(PBImgAnalysisErr->_msg, 
+        "Not yet implemented type of criterion");
+      PBErrCatch(PBImgAnalysisErr);
       break;
   }
   // Return the result
@@ -871,7 +887,15 @@ long _ISCGetNbParamInt(const ImgSegmentorCriterion* const that) {
     case ISCType_RGB:
       res = ISCRGBGetNbParamInt((const ImgSegmentorCriterionRGB*)that);
       break;
+    case ISCType_RGB2HSV:
+      res = ISCRGB2HSVGetNbParamInt(
+        (const ImgSegmentorCriterionRGB2HSV*)that);
+      break;
     default:
+      PBImgAnalysisErr->_type = PBErrTypeNotYetImplemented;
+      sprintf(PBImgAnalysisErr->_msg, 
+        "Not yet implemented type of criterion");
+      PBErrCatch(PBImgAnalysisErr);
       break;
   }
   // Return the result
@@ -894,12 +918,160 @@ long _ISCGetNbParamFloat(const ImgSegmentorCriterion* const that) {
     case ISCType_RGB:
       res = ISCRGBGetNbParamFloat((const ImgSegmentorCriterionRGB*)that);
       break;
+    case ISCType_RGB2HSV:
+      res = ISCRGB2HSVGetNbParamFloat(
+        (const ImgSegmentorCriterionRGB2HSV*)that);
+      break;
     default:
+      PBImgAnalysisErr->_type = PBErrTypeNotYetImplemented;
+      sprintf(PBImgAnalysisErr->_msg, 
+        "Not yet implemented type of criterion");
+      PBErrCatch(PBImgAnalysisErr);
       break;
   }
   // Return the result
   return res;
 }
+
+// Set the bounds of int parameters for training of the criterion 'that'
+void _ISCSetBoundsAdnInt(const ImgSegmentorCriterion* const that, 
+  GenAlg* const ga, const long shift) {
+#if BUILDMODE == 0
+  if (that == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'that' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+  if (ga == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'ga' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+#endif
+  // Call the appropriate function based on the type
+  switch(that->_type) {
+    case ISCType_RGB:
+      ISCRGBSetBoundsAdnInt((const ImgSegmentorCriterionRGB*)that,
+        ga, shift);
+      break;
+    case ISCType_RGB2HSV:
+      ISCRGB2HSVSetBoundsAdnInt((const ImgSegmentorCriterionRGB2HSV*)that,
+        ga, shift);
+      break;
+    default:
+      PBImgAnalysisErr->_type = PBErrTypeNotYetImplemented;
+      sprintf(PBImgAnalysisErr->_msg, 
+        "Not yet implemented type of criterion");
+      PBErrCatch(PBImgAnalysisErr);
+      break;
+  }
+}
+
+// Set the bounds of float parameters for training of the criterion 
+// 'that'
+void _ISCSetBoundsAdnFloat(const ImgSegmentorCriterion* const that, 
+  GenAlg* const ga, const long shift) {
+#if BUILDMODE == 0
+  if (that == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'that' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+  if (ga == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'ga' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+#endif
+  // Call the appropriate function based on the type
+  switch(that->_type) {
+    case ISCType_RGB:
+      ISCRGBSetBoundsAdnFloat((const ImgSegmentorCriterionRGB*)that,
+        ga, shift);
+      break;
+    case ISCType_RGB2HSV:
+      ISCRGB2HSVSetBoundsAdnFloat(
+        (const ImgSegmentorCriterionRGB2HSV*)that, ga, shift);
+      break;
+    default:
+      PBImgAnalysisErr->_type = PBErrTypeNotYetImplemented;
+      sprintf(PBImgAnalysisErr->_msg, 
+        "Not yet implemented type of criterion");
+      PBErrCatch(PBImgAnalysisErr);
+      break;
+  }
+}
+
+// Set the values of int parameters for training of the criterion 'that'
+void _ISCSetAdnInt(const ImgSegmentorCriterion* const that, 
+  const GenAlgAdn* const adn, const long shift) {
+#if BUILDMODE == 0
+  if (that == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'that' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+  if (adn == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'ga' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+#endif
+  // Call the appropriate function based on the type
+  switch(that->_type) {
+    case ISCType_RGB:
+      ISCRGBSetAdnInt((const ImgSegmentorCriterionRGB*)that,
+        adn, shift);
+      break;
+    case ISCType_RGB2HSV:
+      ISCRGB2HSVSetAdnInt((const ImgSegmentorCriterionRGB2HSV*)that,
+        adn, shift);
+      break;
+    default:
+      PBImgAnalysisErr->_type = PBErrTypeNotYetImplemented;
+      sprintf(PBImgAnalysisErr->_msg, 
+        "Not yet implemented type of criterion");
+      PBErrCatch(PBImgAnalysisErr);
+      break;
+  }
+}
+
+// Set the values of float parameters for training of the criterion 
+// 'that'
+void _ISCSetAdnFloat(const ImgSegmentorCriterion* const that, 
+  const GenAlgAdn* const adn, const long shift) {
+#if BUILDMODE == 0
+  if (that == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'that' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+  if (adn == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'ga' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+#endif
+  // Call the appropriate function based on the type
+  switch(that->_type) {
+    case ISCType_RGB:
+      ISCRGBSetAdnFloat((const ImgSegmentorCriterionRGB*)that,
+        adn, shift);
+      break;
+    case ISCType_RGB2HSV:
+      ISCRGB2HSVSetAdnFloat((const ImgSegmentorCriterionRGB2HSV*)that,
+        adn, shift);
+      break;
+    default:
+      PBImgAnalysisErr->_type = PBErrTypeNotYetImplemented;
+      sprintf(PBImgAnalysisErr->_msg, 
+        "Not yet implemented type of criterion");
+      PBErrCatch(PBImgAnalysisErr);
+      break;
+  }
+}
+
+// ---- ImgSegmentorCriterionRGB
 
 // Create a new ImgSegmentorCriterionRGB with 'nbClass' output
 ImgSegmentorCriterionRGB* ImgSegmentorCriterionRGBCreate(int nbClass) {
@@ -955,13 +1127,24 @@ VecFloat* ISCRGBPredict(const ImgSegmentorCriterionRGB* const that,
     sprintf(PBImgAnalysisErr->_msg, "'input' is null");
     PBErrCatch(PBImgAnalysisErr);
   }
-  if ((VecGetDim(input) % 3) != 0) {
+  if (dim == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'dim' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+  if ((VecGet(dim, 0) * VecGet(dim, 1) * 3) != VecGetDim(input)) {
     PBImgAnalysisErr->_type = PBErrTypeInvalidArg;
     sprintf(PBImgAnalysisErr->_msg, 
-      "'input' 's dim is not multiple of 3 (%ld)", VecGetDim(input));
+      "'input' 's dim is invalid (%ld=%d*%d*3)", VecGetDim(input),
+        VecGet(dim, 0), VecGet(dim, 1));
     PBErrCatch(PBImgAnalysisErr);
   }
 #endif
+/*
+  printf("ISCRGB2Predict <%.3f,%.3f,%.3f %.3f,%.3f,%.3f ...>\n",
+    VecGet(input, 0), VecGet(input, 1), VecGet(input, 2), 
+    VecGet(input, 3), VecGet(input, 4), VecGet(input, 5));
+*/
   // Calculate the area of the input image
   long area = VecGet(dim, 0) * VecGet(dim, 1);
   // Allocate memory for the result
@@ -1010,59 +1193,6 @@ long ISCRGBGetNbParamFloat(const ImgSegmentorCriterionRGB* const that) {
 }
 
 // Set the bounds of int parameters for training of the criterion 'that'
-void _ISCSetBoundsAdnInt(const ImgSegmentorCriterion* const that, 
-  GenAlg* const ga, const long shift) {
-#if BUILDMODE == 0
-  if (that == NULL) {
-    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
-    sprintf(PBImgAnalysisErr->_msg, "'that' is null");
-    PBErrCatch(PBImgAnalysisErr);
-  }
-  if (ga == NULL) {
-    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
-    sprintf(PBImgAnalysisErr->_msg, "'ga' is null");
-    PBErrCatch(PBImgAnalysisErr);
-  }
-#endif
-  // Call the appropriate function based on the type
-  switch(that->_type) {
-    case ISCType_RGB:
-      ISCRGBSetBoundsAdnInt((const ImgSegmentorCriterionRGB*)that,
-        ga, shift);
-      break;
-    default:
-      break;
-  }
-}
-
-// Set the bounds of float parameters for training of the criterion 
-// 'that'
-void _ISCSetBoundsAdnFloat(const ImgSegmentorCriterion* const that, 
-  GenAlg* const ga, const long shift) {
-#if BUILDMODE == 0
-  if (that == NULL) {
-    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
-    sprintf(PBImgAnalysisErr->_msg, "'that' is null");
-    PBErrCatch(PBImgAnalysisErr);
-  }
-  if (ga == NULL) {
-    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
-    sprintf(PBImgAnalysisErr->_msg, "'ga' is null");
-    PBErrCatch(PBImgAnalysisErr);
-  }
-#endif
-  // Call the appropriate function based on the type
-  switch(that->_type) {
-    case ISCType_RGB:
-      ISCRGBSetBoundsAdnFloat((const ImgSegmentorCriterionRGB*)that,
-        ga, shift);
-      break;
-    default:
-      break;
-  }
-}
-
-// Set the bounds of int parameters for training of the criterion 'that'
 void ISCRGBSetBoundsAdnInt(const ImgSegmentorCriterionRGB* const that,
   GenAlg* const ga, const long shift) {
 #if BUILDMODE == 0
@@ -1102,59 +1232,6 @@ void ISCRGBSetBoundsAdnFloat(const ImgSegmentorCriterionRGB* const that,
   VecSet(&bounds, 1, 1.0);
   for (long iParam = ISCRGBGetNbParamFloat(that); iParam--;) {
     GASetBoundsAdnFloat(ga, iParam + shift, &bounds);
-  }
-}
-
-// Set the values of int parameters for training of the criterion 'that'
-void _ISCSetAdnInt(const ImgSegmentorCriterion* const that, 
-  const GenAlgAdn* const adn, const long shift) {
-#if BUILDMODE == 0
-  if (that == NULL) {
-    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
-    sprintf(PBImgAnalysisErr->_msg, "'that' is null");
-    PBErrCatch(PBImgAnalysisErr);
-  }
-  if (adn == NULL) {
-    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
-    sprintf(PBImgAnalysisErr->_msg, "'ga' is null");
-    PBErrCatch(PBImgAnalysisErr);
-  }
-#endif
-  // Call the appropriate function based on the type
-  switch(that->_type) {
-    case ISCType_RGB:
-      ISCRGBSetAdnInt((const ImgSegmentorCriterionRGB*)that,
-        adn, shift);
-      break;
-    default:
-      break;
-  }
-}
-
-// Set the values of float parameters for training of the criterion 
-// 'that'
-void _ISCSetAdnFloat(const ImgSegmentorCriterion* const that, 
-  const GenAlgAdn* const adn, const long shift) {
-#if BUILDMODE == 0
-  if (that == NULL) {
-    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
-    sprintf(PBImgAnalysisErr->_msg, "'that' is null");
-    PBErrCatch(PBImgAnalysisErr);
-  }
-  if (adn == NULL) {
-    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
-    sprintf(PBImgAnalysisErr->_msg, "'ga' is null");
-    PBErrCatch(PBImgAnalysisErr);
-  }
-#endif
-  // Call the appropriate function based on the type
-  switch(that->_type) {
-    case ISCType_RGB:
-      ISCRGBSetAdnFloat((const ImgSegmentorCriterionRGB*)that,
-        adn, shift);
-      break;
-    default:
-      break;
   }
 }
 
@@ -1199,6 +1276,207 @@ void ISCRGBSetAdnFloat(const ImgSegmentorCriterionRGB* const that,
     VecSet(bases, i, VecGet(adnF, shift + i));
   NNSetBases((NeuraNet*)ISCRGBNeuraNet(that), bases);
   VecFree(&bases);
+}
+
+// ---- ImgSegmentorCriterionRGB2HSV
+
+// Create a new ImgSegmentorCriterionRGB2HSV with 'nbClass' output
+ImgSegmentorCriterionRGB2HSV* ImgSegmentorCriterionRGB2HSVCreate(
+  int nbClass) {
+#if BUILDMODE == 0
+  if (nbClass <= 0) {
+    PBImgAnalysisErr->_type = PBErrTypeInvalidArg;
+    sprintf(PBImgAnalysisErr->_msg, "'nbClass' is invalid (%d>0)",
+      nbClass);
+    PBErrCatch(PBImgAnalysisErr);
+  }
+#endif
+  (void)nbClass;
+  // Allocate memory for the new ImgSegmentorCriterionRGB
+  ImgSegmentorCriterionRGB2HSV* that = PBErrMalloc(PBImgAnalysisErr,
+    sizeof(ImgSegmentorCriterionRGB2HSV));
+  // Create the parent ImgSegmentorCriterion
+  that->_criterion = ImgSegmentorCriterionCreateStatic(nbClass, 
+    ISCType_RGB2HSV);
+  // Return the new ImgSegmentorCriterionRGB
+  return that;
+}
+
+// Free the memory used by the ImgSegmentorCriterionRGB 'that'
+void ImgSegmentorCriterionRGB2HSVFree(
+  ImgSegmentorCriterionRGB2HSV** that) {
+  if (that == NULL || *that == NULL)
+    return;
+  // Free memory
+  ImgSegmentorCriterionFreeStatic((ImgSegmentorCriterion*)(*that));
+  free(*that);
+}
+
+// Make the prediction on the 'input' values with the 
+// ImgSegmentorCriterionRGB2HSV that
+// 'input' 's format is width*height*3, values in [0.0, 1.0]
+// Return values are width*height*3, values in [0.0, 1.0]
+VecFloat* ISCRGB2HSVPredict(
+  const ImgSegmentorCriterionRGB2HSV* const that,
+  const VecFloat* input, const VecShort2D* const dim) {
+#if BUILDMODE == 0
+  if (that == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'that' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+  if (input == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'input' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+  if (dim == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'dim' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+  if ((VecGet(dim, 0) * VecGet(dim, 1) * 3) != VecGetDim(input)) {
+    PBImgAnalysisErr->_type = PBErrTypeInvalidArg;
+    sprintf(PBImgAnalysisErr->_msg, 
+      "'input' 's dim is invalid (%ld=%d*%d*3)", VecGetDim(input),
+        VecGet(dim, 0), VecGet(dim, 1));
+    PBErrCatch(PBImgAnalysisErr);
+  }
+#endif
+/*
+  printf("ISCRGB2HSVPredict <%.3f,%.3f,%.3f %.3f,%.3f,%.3f ...>\n",
+    VecGet(input, 0), VecGet(input, 1), VecGet(input, 2), 
+    VecGet(input, 3), VecGet(input, 4), VecGet(input, 5));
+*/
+  (void)that;
+  // Calculate the area of the input image
+  long area = VecGet(dim, 0) * VecGet(dim, 1);
+  // Allocate memory for the result
+  VecFloat* res = VecFloatCreate(area * 3L);
+  // Loop over the image
+  for (long iPos = 0; iPos < area; ++iPos) {
+    // Get the pixel
+    GBPixel pix = GBColorWhite;
+    for (int iRGB = 3; iRGB--;)
+      pix._rgba[iRGB] = (unsigned char)round(
+        255.0 * VecGet(input, iPos * 3 + iRGB));
+    // Convert to HSV
+    pix = GBPixelRGB2HSV(&pix);
+    // Update the result
+    for (int iHSV = 3; iHSV--;)
+      VecSet(res, iPos * 3 + iHSV, (float)(pix._hsva[iHSV]) / 255.0);
+  }
+  // Return the result
+  return res;
+}
+
+// Return the number of int parameters for the criterion 'that'
+long ISCRGB2HSVGetNbParamInt(
+  const ImgSegmentorCriterionRGB2HSV* const that) {
+#if BUILDMODE == 0
+  if (that == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'that' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+#endif
+  (void)that;
+  return 0;
+}
+
+// Return the number of float parameters for the criterion 'that'
+long ISCRGB2HSVGetNbParamFloat(
+  const ImgSegmentorCriterionRGB2HSV* const that) {
+#if BUILDMODE == 0
+  if (that == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'that' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+#endif
+  (void)that;
+  return 0;
+}
+
+// Set the bounds of int parameters for training of the criterion 'that'
+void ISCRGB2HSVSetBoundsAdnInt(
+  const ImgSegmentorCriterionRGB2HSV* const that,
+  GenAlg* const ga, const long shift) {
+#if BUILDMODE == 0
+  if (that == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'that' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+  if (ga == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'ga' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+#endif
+  // Nothing to do
+  (void)that;(void)ga;(void)shift;
+}
+
+// Set the bounds of float parameters for training of the criterion 
+// 'that'
+void ISCRGB2HSVSetBoundsAdnFloat(
+  const ImgSegmentorCriterionRGB2HSV* const that,
+  GenAlg* const ga, const long shift) {
+#if BUILDMODE == 0
+  if (that == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'that' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+  if (ga == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'ga' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+#endif
+  // Nothing to do
+  (void)that;(void)ga;(void)shift;
+}
+
+// Set the values of int parameters for training of the criterion 'that'
+void ISCRGB2HSVSetAdnInt(const ImgSegmentorCriterionRGB2HSV* const that,
+  const GenAlgAdn* const adn, const long shift) {
+#if BUILDMODE == 0
+  if (that == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'that' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+  if (adn == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'ga' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+#endif
+  // Nothing to do
+  (void)that;(void)adn;(void)shift;
+}
+
+// Set the values of float parameters for training of the criterion 
+// 'that'
+void ISCRGB2HSVSetAdnFloat(
+  const ImgSegmentorCriterionRGB2HSV* const that,
+  const GenAlgAdn* const adn, const long shift) {
+#if BUILDMODE == 0
+  if (that == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'that' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+  if (adn == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'ga' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+#endif
+  // Nothing to do
+  (void)that;(void)adn;(void)shift;
 }
 
 // ------------------ General functions ----------------------

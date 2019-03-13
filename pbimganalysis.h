@@ -191,7 +191,7 @@ typedef struct ImgSegmentorTrainParam {
 } ImgSegmentorParam;
 
 typedef enum ISCType {
-  ISCType_RGB
+  ISCType_RGB, ISCType_RGB2HSV
 } ISCType;
 
 typedef struct ImgSegmentorCriterion {
@@ -207,6 +207,11 @@ typedef struct ImgSegmentorCriterionRGB {
   // NeuraNet model
   NeuraNet* _nn;
 } ImgSegmentorCriterionRGB;
+
+typedef struct ImgSegmentorCriterionRGB2HSV {
+  // ImgSegmentorCriterion
+  ImgSegmentorCriterion _criterion;
+} ImgSegmentorCriterionRGB2HSV;
 
 // ================ Functions declaration ====================
 
@@ -225,11 +230,22 @@ long ISGetNbCriterion(const ImgSegmentor* const that);
 // Add a new ImageSegmentorCriterionRGB to the ImgSegmentor 'that'
 // under the node 'parent'
 // If 'parent' is null it is inserted to the root of the ImgSegmentor
+// Return the added criterion if successful, null else
 #if BUILDMODE != 0
 inline
 #endif
-bool ISAddCriterionRGB(ImgSegmentor* const that, 
+ImgSegmentorCriterionRGB* ISAddCriterionRGB(ImgSegmentor* const that, 
   void* const parent);
+
+// Add a new ImageSegmentorCriterionRGB2HSV to the ImgSegmentor 'that'
+// under the node 'parent'
+// If 'parent' is null it is inserted to the root of the ImgSegmentor
+// Return the added criterion if successful, null else
+#if BUILDMODE != 0
+inline
+#endif
+ImgSegmentorCriterionRGB2HSV* ISAddCriterionRGB2HSV(
+  ImgSegmentor* const that, void* const parent);
 
 // Return the nb of classes of the ImgSegmentor 'that'
 #if BUILDMODE != 0
@@ -379,6 +395,8 @@ void _ISCSetAdnInt(const ImgSegmentorCriterion* const that,
 void _ISCSetAdnFloat(const ImgSegmentorCriterion* const that,
   const GenAlgAdn* const adn, const long shift);
 
+// ---- ImgSegmentorCriterionRGB
+
 // Create a new ImgSegmentorCriterionRGB with 'nbClass' output
 ImgSegmentorCriterionRGB* ImgSegmentorCriterionRGBCreate(int nbClass);
 
@@ -420,6 +438,50 @@ inline
 #endif
 const NeuraNet* ISCRGBNeuraNet(
   const ImgSegmentorCriterionRGB* const that);
+
+// ---- ImgSegmentorCriterionRGB2HSV
+
+// Create a new ImgSegmentorCriterionRGB2HSV with 'nbClass' output
+ImgSegmentorCriterionRGB2HSV* ImgSegmentorCriterionRGB2HSVCreate(
+  int nbClass);
+
+// Free the memory used by the ImgSegmentorCriterionRGB2HSV 'that'
+void ImgSegmentorCriterionRGB2HSVFree(
+  ImgSegmentorCriterionRGB2HSV** that);
+
+// Make the prediction on the 'input' values with the 
+// ImgSegmentorCriterionRGB2HSV that
+// 'input' 's format is width*height*3, values in [0.0, 1.0]
+// Return values are width*height*nbClass, values in [-1.0, 1.0]
+VecFloat* ISCRGB2HSVPredict(
+  const ImgSegmentorCriterionRGB2HSV* const that,
+  const VecFloat* input, const VecShort2D* const dim);
+
+// Return the number of int parameters for the criterion 'that'
+long ISCRGB2HSVGetNbParamInt(
+  const ImgSegmentorCriterionRGB2HSV* const that);
+
+// Return the number of float parameters for the criterion 'that'
+long ISCRGB2HSVGetNbParamFloat(
+  const ImgSegmentorCriterionRGB2HSV* const that);
+
+// Set the bounds of int parameters for training of the criterion 'that'
+void ISCRGB2HSVSetBoundsAdnInt(
+  const ImgSegmentorCriterionRGB2HSV* const that,
+  GenAlg* const ga, const long shift);
+
+// Set the bounds of float parameters for training of the criterion 'that'
+void ISCRGB2HSVSetBoundsAdnFloat(
+  const ImgSegmentorCriterionRGB2HSV* const that,
+  GenAlg* const ga, const long shift);
+
+// Set the values of int parameters for training of the criterion 'that'
+void ISCRGB2HSVSetAdnInt(const ImgSegmentorCriterionRGB2HSV* const that,
+  const GenAlgAdn* const adn, const long shift);
+
+// Set the values of float parameters for training of the criterion 'that'
+void ISCRGB2HSVSetAdnFloat(const ImgSegmentorCriterionRGB2HSV* const that,
+  const GenAlgAdn* const adn, const long shift);
   
 // ================= Polymorphism ==================
 
@@ -428,6 +490,8 @@ const NeuraNet* ISCRGBNeuraNet(
   const ImgSegmentorCriterion*: _ISCGetNbClass, \
   ImgSegmentorCriterionRGB*: _ISCGetNbClass, \
   const ImgSegmentorCriterionRGB*: _ISCGetNbClass, \
+  ImgSegmentorCriterionRGB2HSV*: _ISCGetNbClass, \
+  const ImgSegmentorCriterionRGB2HSV*: _ISCGetNbClass, \
   default: PBErrInvalidPolymorphism) ((const ImgSegmentorCriterion*)That)
 
 #define ISCGetNbParamInt(That) _Generic(That, \
@@ -435,6 +499,8 @@ const NeuraNet* ISCRGBNeuraNet(
   const ImgSegmentorCriterion*: _ISCGetNbParamInt, \
   ImgSegmentorCriterionRGB*: ISCRGBGetNbParamInt, \
   const ImgSegmentorCriterionRGB*: ISCRGBGetNbParamInt, \
+  ImgSegmentorCriterionRGB2HSV*: ISCRGB2HSVGetNbParamInt, \
+  const ImgSegmentorCriterionRGB2HSV*: ISCRGB2HSVGetNbParamInt, \
   default: PBErrInvalidPolymorphism) ((const ImgSegmentorCriterion*)That)
 
 #define ISCGetNbParamFloat(That) _Generic(That, \
@@ -442,6 +508,8 @@ const NeuraNet* ISCRGBNeuraNet(
   const ImgSegmentorCriterion*: _ISCGetNbParamFloat, \
   ImgSegmentorCriterionRGB*: ISCRGBGetNbParamFloat, \
   const ImgSegmentorCriterionRGB*: ISCRGBGetNbParamFloat, \
+  ImgSegmentorCriterionRGB2HSV*: ISCRGB2HSVGetNbParamFloat, \
+  const ImgSegmentorCriterionRGB2HSV*: ISCRGB2HSVGetNbParamFloat, \
   default: PBErrInvalidPolymorphism) ((const ImgSegmentorCriterion*)That)
 
 #define ISCSetBoundsAdnInt(That, GenAlg, Shift) _Generic(That, \
@@ -449,6 +517,8 @@ const NeuraNet* ISCRGBNeuraNet(
   const ImgSegmentorCriterion*: _ISCSetBoundsAdnInt, \
   ImgSegmentorCriterionRGB*: ISCRGBSetBoundsAdnInt, \
   const ImgSegmentorCriterionRGB*: ISCRGBSetBoundsAdnInt, \
+  ImgSegmentorCriterionRGB2HSV*: ISCRGB2HSVSetBoundsAdnInt, \
+  const ImgSegmentorCriterionRGB2HSV*: ISCRGB2HSVSetBoundsAdnInt, \
   default: PBErrInvalidPolymorphism) ( \
     (const ImgSegmentorCriterion*)That, GenAlg, Shift)
   
@@ -457,6 +527,8 @@ const NeuraNet* ISCRGBNeuraNet(
   const ImgSegmentorCriterion*: _ISCSetBoundsAdnFloat, \
   ImgSegmentorCriterionRGB*: ISCRGBSetBoundsAdnFloat, \
   const ImgSegmentorCriterionRGB*: ISCRGBSetBoundsAdnFloat, \
+  ImgSegmentorCriterionRGB2HSV*: ISCRGB2HSVSetBoundsAdnFloat, \
+  const ImgSegmentorCriterionRGB2HSV*: ISCRGB2HSVSetBoundsAdnFloat, \
   default: PBErrInvalidPolymorphism) ( \
     (const ImgSegmentorCriterion*)That, GenAlg, Shift)
   
@@ -465,6 +537,8 @@ const NeuraNet* ISCRGBNeuraNet(
   const ImgSegmentorCriterion*: _ISCSetAdnInt, \
   ImgSegmentorCriterionRGB*: ISCRGBSetAdnInt, \
   const ImgSegmentorCriterionRGB*: ISCRGBSetAdnInt, \
+  ImgSegmentorCriterionRGB2HSV*: ISCRGB2HSVSetAdnInt, \
+  const ImgSegmentorCriterionRGB2HSV*: ISCRGB2HSVSetAdnInt, \
   default: PBErrInvalidPolymorphism) ( \
     (const ImgSegmentorCriterion*)That, Adn, Shift)
   
@@ -473,6 +547,8 @@ const NeuraNet* ISCRGBNeuraNet(
   const ImgSegmentorCriterion*: _ISCSetAdnFloat, \
   ImgSegmentorCriterionRGB*: ISCRGBSetAdnFloat, \
   const ImgSegmentorCriterionRGB*: ISCRGBSetAdnFloat, \
+  ImgSegmentorCriterionRGB2HSV*: ISCRGB2HSVSetAdnFloat, \
+  const ImgSegmentorCriterionRGB2HSV*: ISCRGB2HSVSetAdnFloat, \
   default: PBErrInvalidPolymorphism) ( \
     (const ImgSegmentorCriterion*)That, Adn, Shift)
   

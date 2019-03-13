@@ -154,10 +154,11 @@ const GenTree* ISCriteria(const ImgSegmentor* const that) {
 // Add a new ImageSegmentorCriterionRGB to the ImgSegmentor 'that'
 // under the node 'parent'
 // If 'parent' is null it is inserted to the root of the ImgSegmentor
+// Return the added criterion if successful, null else
 #if BUILDMODE != 0
 inline
 #endif
-bool ISAddCriterionRGB(ImgSegmentor* const that, 
+ImgSegmentorCriterionRGB* ISAddCriterionRGB(ImgSegmentor* const that, 
   void* const parent) {
 #if BUILDMODE == 0
   if (that == NULL) {
@@ -168,18 +169,66 @@ bool ISAddCriterionRGB(ImgSegmentor* const that,
 #endif
   // Create and add the criterion to the set of criteria
   if (parent == NULL) {
-    GenTreeAppendData(&(that->_criteria), 
-      ImgSegmentorCriterionRGBCreate(ISGetNbClass(that)));
-    return true;
+    ImgSegmentorCriterionRGB* criterion = 
+      ImgSegmentorCriterionRGBCreate(ISGetNbClass(that));
+    GenTreeAppendData(&(that->_criteria), criterion);
+    return criterion;
   } else {
     GenTreeIterDepth iter = 
       GenTreeIterDepthCreateStatic(&(that->_criteria));
-    bool ret = GenTreeAppendToNode(&(that->_criteria), 
-      ImgSegmentorCriterionRGBCreate(ISGetNbClass(that)),
-      parent, &iter);
+    ImgSegmentorCriterionRGB* criterion = 
+      ImgSegmentorCriterionRGBCreate(ISGetNbClass(that));
+    bool ret = GenTreeAppendToNode(
+      &(that->_criteria), criterion, parent, &iter);
     GenTreeIterFreeStatic(&iter);
-    return ret;
+    if (ret) {
+      return criterion;
+    } else {
+      ImgSegmentorCriterionRGBFree(&criterion);
+      return NULL;
+    }
   }
+  return NULL;
+}
+
+// Add a new ImageSegmentorCriterionRGB2HSV to the ImgSegmentor 'that'
+// under the node 'parent'
+// If 'parent' is null it is inserted to the root of the ImgSegmentor
+// Return the added criterion if successful, null else
+#if BUILDMODE != 0
+inline
+#endif
+ImgSegmentorCriterionRGB2HSV* ISAddCriterionRGB2HSV(
+  ImgSegmentor* const that, void* const parent) {
+#if BUILDMODE == 0
+  if (that == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'that' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+#endif
+  // Create and add the criterion to the set of criteria
+  if (parent == NULL) {
+    ImgSegmentorCriterionRGB2HSV* criterion = 
+      ImgSegmentorCriterionRGB2HSVCreate(ISGetNbClass(that));
+    GenTreeAppendData(&(that->_criteria), criterion);
+    return criterion;
+  } else {
+    GenTreeIterDepth iter = 
+      GenTreeIterDepthCreateStatic(&(that->_criteria));
+    ImgSegmentorCriterionRGB2HSV* criterion = 
+      ImgSegmentorCriterionRGB2HSVCreate(ISGetNbClass(that));
+    bool ret = GenTreeAppendToNode(
+      &(that->_criteria), criterion, parent, &iter);
+    GenTreeIterFreeStatic(&iter);
+    if (ret) {
+      return criterion;
+    } else {
+      ImgSegmentorCriterionRGB2HSVFree(&criterion);
+      return NULL;
+    }
+  }
+  return NULL;
 }
 
 // Return the flag controlling the binarization of the result of 
@@ -353,22 +402,6 @@ void ISSetNbElite(ImgSegmentor* const that, int nb) {
   that->_nbElite = nb;
 }
 
-// Return the NeuraNet of the ImgSegmentorCriterionRGB 'that'
-#if BUILDMODE != 0
-inline
-#endif
-const NeuraNet* ISCRGBNeuraNet(
-  const ImgSegmentorCriterionRGB* const that) {
-#if BUILDMODE == 0
-  if (that == NULL) {
-    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
-    sprintf(PBImgAnalysisErr->_msg, "'that' is null");
-    PBErrCatch(PBImgAnalysisErr);
-  }
-#endif
-  return that->_nn;
-}
-
 // Return the threshold controlling the stop of the training
 #if BUILDMODE != 0
 inline
@@ -399,5 +432,24 @@ void ISSetTargetBestValue(ImgSegmentor* const that, const float val) {
 #endif
   that->_targetBestValue = MIN(1.0, MAX(0.0, val));
 }
+
+// ---- ImgSegmentorCriterionRGB
+
+// Return the NeuraNet of the ImgSegmentorCriterionRGB 'that'
+#if BUILDMODE != 0
+inline
+#endif
+const NeuraNet* ISCRGBNeuraNet(
+  const ImgSegmentorCriterionRGB* const that) {
+#if BUILDMODE == 0
+  if (that == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'that' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+#endif
+  return that->_nn;
+}
+
 
 
