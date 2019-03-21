@@ -433,6 +433,22 @@ void ISSetTargetBestValue(ImgSegmentor* const that, const float val) {
   that->_targetBestValue = MIN(1.0, MAX(0.0, val));
 }
 
+// Return the flag for the TextOMeter of the ImgSegmentor 'that'
+#if BUILDMODE != 0
+inline
+#endif
+bool ISGetFlagTextOMeter(const ImgSegmentor* const that) {
+#if BUILDMODE == 0
+  if (that == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'that' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+#endif
+  return that->_flagTextOMeter;
+}
+
+
 // ---- ImgSegmentorCriterionRGB
 
 // Return the NeuraNet of the ImgSegmentorCriterionRGB 'that'

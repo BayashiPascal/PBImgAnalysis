@@ -431,6 +431,8 @@ ImgSegmentor ImgSegmentorCreateStatic(int nbClass) {
   that._sizePool = GENALG_NBENTITIES;
   that._nbElite = GENALG_NBELITES;
   that._targetBestValue = 0.9999;
+  that._flagTextOMeter = false;
+  that._textOMeter = NULL;
   // Return the new ImgSegmentor
   return that;
 }
@@ -439,6 +441,8 @@ ImgSegmentor ImgSegmentorCreateStatic(int nbClass) {
 void ImgSegmentorFreeStatic(ImgSegmentor* that) {
   if (that == NULL)
     return;
+  if (that->_textOMeter != NULL)
+    TextOMeterFree(&(that->_textOMeter));
   GenTreeIterDepth iter = GenTreeIterDepthCreateStatic(ISCriteria(that));
   do {
     ImgSegmentorCriterion* criterion = GenTreeIterGetData(&iter);
@@ -704,6 +708,9 @@ void ISTrain(ImgSegmentor* const that,
     } while (GenTreeIterStep(&iter));
     // Initialise the GenAlg
     GAInit(ga);
+    // Set the TextOMeter of the GenAlg same as the one of the 
+    // ImgSegmentor
+    GASetTextOMeterFlag(ga, ISGetFlagTextOMeter(that));
     // Declare a variable to memorize the current best value
     float bestValue = 0.0;
     // Loop over epochs
@@ -733,12 +740,12 @@ void ISTrain(ImgSegmentor* const that,
           // Loop on the samples
           long iSample = 0;
           do {
-            printf("Epoch %05ld/%05u ", 
-              GAGetCurEpoch(ga) + 1, ISGetNbEpoch(that));
-            printf("Entity %03d/%03d ", 
-              iEnt + 1, GAGetNbAdns(ga));
-            printf("Sample %05ld/%05ld ", 
-              iSample + 1, GDSGetSizeCat(dataset, iCatTraining));
+            // Update the TexOMeter
+            if (ISGetFlagTextOMeter(that)) {
+              ISTrainUpdateTextOMeter(that, GAGetCurEpoch(ga) + 1, 
+                ISGetNbEpoch(that), GAGetNbAdns(ga), iEnt + 1, 
+                iSample + 1, GDSGetSizeCat(dataset, iCatTraining));
+            }
             // Get the next sample
             GDSGenBrushPair* sample = GDSGetSample(dataset, iCatTraining);
             // Do the prediction on the sample
@@ -755,9 +762,6 @@ void ISTrain(ImgSegmentor* const that,
               GBFree(pred + iClass);
             free(pred);
             GDSGenBrushPairFree(&sample);
-            if (iSample + 1 < GDSGetSizeCat(dataset, iCatTraining))
-              printf("\n");
-            fflush(stdout);
             ++iSample;
           } while (GDSStepSample(dataset, iCatTraining)
 /*          
@@ -771,9 +775,12 @@ void ISTrain(ImgSegmentor* const that,
           // If the value is the best value
           if (value - bestValue > PBMATH_EPSILON) {
             bestValue = value;
+            printf("Epoch %05ld/%05u ", 
+              GAGetCurEpoch(ga) + 1, ISGetNbEpoch(that));
+            printf("BestValue %f/%f\n", bestValue, 
+              ISGetTargetBestValue(that));
+            fflush(stdout);
           }
-          printf("BestValue %f/%f\n", bestValue, 
-            ISGetTargetBestValue(that));
         }
       }
       // Step the GenAlg
@@ -800,6 +807,60 @@ void ISTrain(ImgSegmentor* const that,
   VecFree(&nbParamFloat);
   // Put back the flag for binarization in its original state
   ISSetFlagBinaryResult(that, curFlagBinary);
+}
+
+// Set the flag memorizing if the TextOMeter is displayed for
+// the ImgSegmentor 'that' to 'flag'
+void ISSetFlagTextOMeter(ImgSegmentor* const that, bool flag) {
+#if BUILDMODE == 0
+  if (that == NULL) {
+    GenAlgErr->_type = PBErrTypeNullPointer;
+    sprintf(GenAlgErr->_msg, "'that' is null");
+    PBErrCatch(GenAlgErr);
+  }
+#endif
+  // If the requested flag is different from the current flag;
+  if (that->_flagTextOMeter != flag) {
+    if (flag && that->_textOMeter == NULL) {
+      char title[] = "ImgSegmentor";
+      int width = strlen(IS_TRAINTXTOMETER_LINE1) + 1;
+      int height = 2;
+      that->_textOMeter = TextOMeterCreate(title, width, height);
+    }
+    if (!flag && that->_textOMeter != NULL) {
+      TextOMeterFree(&(that->_textOMeter));
+    }
+    that->_flagTextOMeter = flag;
+  }
+}
+
+// Refresh the content of the TextOMeter attached to the 
+// ImgSegmentor 'that'
+void ISTrainUpdateTextOMeter(const ImgSegmentor* const that, 
+  const long epoch, const long nbEpoch, int nbAdn, const int iEnt, 
+  const unsigned long iSample, const unsigned long sizeCat) {
+#if BUILDMODE == 0
+  if (that == NULL) {
+    GenAlgErr->_type = PBErrTypeNullPointer;
+    sprintf(GenAlgErr->_msg, "'that' is null");
+    PBErrCatch(GenAlgErr);
+  }
+  if (that->_textOMeter == NULL) {
+    GenAlgErr->_type = PBErrTypeNullPointer;
+    sprintf(GenAlgErr->_msg, "'that->_textOMeter' is null");
+    PBErrCatch(GenAlgErr);
+  }
+#endif
+  // Clear the TextOMeter
+  TextOMeterClear(that->_textOMeter);
+  // Declare a variable to print the content of the TextOMeter
+  char str[100];
+  // .........................
+  sprintf(str, IS_TRAINTXTOMETER_FORMAT1, 
+    epoch, nbEpoch, iEnt, nbAdn, iSample, sizeCat);
+  TextOMeterPrint(that->_textOMeter, str);
+  // Flush the content of the TextOMeter
+  TextOMeterFlush(that->_textOMeter);
 }
 
 // Create a new static ImgSegmentorCriterion with 'nbClass' output 

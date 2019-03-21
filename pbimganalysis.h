@@ -17,6 +17,7 @@
 #include "genalg.h"
 #include "neuranet.h"
 #include "gdataset.h"
+#include "respublish.h"
 
 // ------------------ ImgKMeansClusters ----------------------
 
@@ -152,6 +153,11 @@ float GBSimilarityCoeff(const GenBrush* const that,
 
 // ================= Define ==================
 
+#define IS_TRAINTXTOMETER_LINE1 \
+  "Epoch xxxxx/xxxxx Entity xxx/xxx Sample xxxxx/xxxxx\n"
+#define IS_TRAINTXTOMETER_FORMAT1 \
+  "Epoch %05ld/%05ld Entity %03d/%03d Sample %05ld/%05ld\n"
+
 // ================= Data structure ===================
 
 typedef struct ImgSegmentor {
@@ -178,6 +184,10 @@ typedef struct ImgSegmentor {
   int _nbElite;
   // Threshold to stop the training once
   float _targetBestValue;
+  // Flag to memorize if we display info during training with a TextOMeter
+  bool _flagTextOMeter;
+  // TextOMeter to display info during training
+  TextOMeter* _textOMeter;
 } ImgSegmentor;
 
 typedef struct ImgSegmentorPerf {
@@ -226,6 +236,22 @@ void ImgSegmentorFreeStatic(ImgSegmentor* that);
 inline
 #endif
 long ISGetNbCriterion(const ImgSegmentor* const that);
+
+// Set the flag memorizing if the TextOMeter is displayed for
+// the ImgSegmentor 'that' to 'flag'
+void ISSetFlagTextOMeter(ImgSegmentor* const that, bool flag);
+
+// Return the flag for the TextOMeter of the ImgSegmentor 'that'
+#if BUILDMODE != 0
+inline
+#endif
+bool ISGetFlagTextOMeter(const ImgSegmentor* const that);
+
+// Refresh the content of the TextOMeter attached to the 
+// ImgSegmentor 'that'
+void ISTrainUpdateTextOMeter(const ImgSegmentor* const that, 
+  const long epoch, const long nbEpoch, int nbAdn, const int iEnt, 
+  const unsigned long iSample, const unsigned long sizeCat);
 
 // Add a new ImageSegmentorCriterionRGB to the ImgSegmentor 'that'
 // under the node 'parent'
