@@ -232,6 +232,61 @@ void UnitTestImgSegmentorAddCriterionGetSet() {
   printf("UnitTestImgSegmentorAddCriterionGetSet OK\n");
 }
 
+void UnitTestImgSegmentorSaveLoad() {
+  int nbClass = 2;
+  ImgSegmentor segmentor = ImgSegmentorCreateStatic(nbClass);
+  if (ISAddCriterionRGB(&segmentor, NULL) == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeUnitTestFailed;
+    sprintf(PBImgAnalysisErr->_msg, 
+      "UnitTestImgSegmentorSaveLoad failed");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+  ImgSegmentorCriterionRGB2HSV* criterionHSV = 
+    ISAddCriterionRGB2HSV(&segmentor, NULL);
+  if (criterionHSV == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeUnitTestFailed;
+    sprintf(PBImgAnalysisErr->_msg, 
+      "UnitTestImgSegmentorSaveLoad failed");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+  if (ISAddCriterionRGB(&segmentor, criterionHSV) == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeUnitTestFailed;
+    sprintf(PBImgAnalysisErr->_msg, 
+      "UnitTestImgSegmentorSaveLoad failed");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+  char* fileName = "unitTestImgSegmentorSaveLoad.json";
+  FILE* stream = fopen(fileName, "w");
+  if (!ImgSegmentorSave(&segmentor, stream, false)) {
+    PBImgAnalysisErr->_type = PBErrTypeUnitTestFailed;
+    sprintf(PBImgAnalysisErr->_msg, "ImgSegmentorSave failed");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+  fclose(stream);
+  stream = fopen(fileName, "r");
+  ImgSegmentor load = ImgSegmentorCreateStatic(1);
+  if (!ImgSegmentorLoad(&load, stream)) {
+    PBImgAnalysisErr->_type = PBErrTypeUnitTestFailed;
+    sprintf(PBImgAnalysisErr->_msg, "ImgSegmentorLoad failed");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+  if (load._nbClass != segmentor._nbClass ||
+    load._flagBinaryResult != segmentor._flagBinaryResult ||
+    load._thresholdBinaryResult != segmentor._thresholdBinaryResult ||
+    load._nbEpoch != segmentor._nbEpoch ||
+    load._sizePool != segmentor._sizePool ||
+    load._nbElite != segmentor._nbElite ||
+    load._targetBestValue != segmentor._targetBestValue) {
+    PBImgAnalysisErr->_type = PBErrTypeUnitTestFailed;
+    sprintf(PBImgAnalysisErr->_msg, "ImgSegmentorLoad failed");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+  fclose(stream);
+  ImgSegmentorFreeStatic(&segmentor);
+  ImgSegmentorFreeStatic(&load);
+  printf("UnitTestImgSegmentorSaveLoad OK\n");
+}
+
 void UnitTestImgSegmentorPredict() {
   int nbClass = 2;
   ImgSegmentor segmentor = ImgSegmentorCreateStatic(nbClass);
@@ -418,14 +473,16 @@ void UnitTestImgSegmentorTrain03() {
 void UnitTestImgSegmentor() {
   UnitTestImgSegmentorCreateFree();
   UnitTestImgSegmentorAddCriterionGetSet();
+  UnitTestImgSegmentorSaveLoad();
   UnitTestImgSegmentorPredict();
   UnitTestImgSegmentorTrain01();
   UnitTestImgSegmentorTrain02();
+  UnitTestImgSegmentorTrain03();
   printf("UnitTestImgSegmentor OK\n");
 }
 
 void UnitTestAll() {
-  //UnitTestImgKMeansClusters();
+  UnitTestImgKMeansClusters();
   UnitTestIntersectionOverUnion();
   UnitTestGBSimilarityCoefficient();
   UnitTestImgSegmentorRGB();
@@ -434,7 +491,7 @@ void UnitTestAll() {
 
 int main(void) {
   //UnitTestAll();
-  UnitTestImgSegmentorTrain03();
+  UnitTestImgSegmentorSaveLoad();
   return 0;
 }
 

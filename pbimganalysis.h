@@ -205,7 +205,7 @@ typedef enum ISCType {
 } ISCType;
 
 typedef struct ImgSegmentorCriterion {
-  // Type of criteriion
+  // Type of criterion
   ISCType _type;
   // Nb of class
   int _nbClass;
@@ -377,6 +377,25 @@ const GenTree* ISCriteria(const ImgSegmentor* const that);
 // srandom must have been caled before calling ISTrain
 void ISTrain(ImgSegmentor* const that, 
   const GDataSetGenBrushPair* const dataset);
+
+// Load the ImgSegmentor from the stream
+// If the ImgSegmentor is already allocated, it is freed before loading
+// Return true upon success else false
+bool ImgSegmentorLoad(ImgSegmentor* that, FILE* const stream);
+
+// Save the ImgSegmentor to the stream
+// If 'compact' equals true it saves in compact form, else it saves in 
+// readable form
+// Return true upon success else false
+bool ImgSegmentorSave(const ImgSegmentor* const that, 
+  FILE* const stream, const bool compact);
+
+// Function which return the JSON encoding of 'that' 
+JSONNode* ImgSegmentorEncodeAsJSON(const ImgSegmentor* const that);
+
+// Function which decode from JSON encoding 'json' to 'that'
+bool ImgSegmentorDecodeAsJSON(ImgSegmentor* that, 
+  const JSONNode* const json);
 
 // Create a new static ImgSegmentorCriterion with 'nbClass' output
 // and the type of criterion 'type'

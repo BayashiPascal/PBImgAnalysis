@@ -410,6 +410,24 @@ bool IKMCDecodeAsJSON(ImgKMeansClusters* that,
 
 // ================ Functions implementation ====================
 
+// Function which return the JSON encoding the node 'that' in the 
+// GenTree of criteria of a ImgSegmentor 
+JSONNode* ImgSegmentorEncodeNodeAsJSON(const GenTree* const that);
+
+// Function which return the JSON encoding of 'that' 
+JSONNode* ImgSegmentorCriterionEncodeAsJSON(
+  const ImgSegmentorCriterion* const that);
+
+// Function which return the JSON encoding of 'that' 
+void ISCRGBEncodeAsJSON(const ImgSegmentorCriterionRGB* const that, 
+  JSONNode* const json);
+
+// Function which return the JSON encoding of 'that' 
+void ISCRGB2HSVEncodeAsJSON(
+  const ImgSegmentorCriterionRGB2HSV* const that, JSONNode* const json);
+
+// ================ Functions implementation ====================
+
 // Create a new static ImgSegmentor with 'nbClass' output
 ImgSegmentor ImgSegmentorCreateStatic(int nbClass) {
 #if BUILDMODE == 0
@@ -443,27 +461,29 @@ void ImgSegmentorFreeStatic(ImgSegmentor* that) {
     return;
   if (that->_textOMeter != NULL)
     TextOMeterFree(&(that->_textOMeter));
-  GenTreeIterDepth iter = GenTreeIterDepthCreateStatic(ISCriteria(that));
-  do {
-    ImgSegmentorCriterion* criterion = GenTreeIterGetData(&iter);
-    switch (criterion->_type) {
-      case ISCType_RGB:
-        ImgSegmentorCriterionRGBFree(
-          (ImgSegmentorCriterionRGB**)&criterion);
-        break;
-      case ISCType_RGB2HSV:
-        ImgSegmentorCriterionRGB2HSVFree(
-          (ImgSegmentorCriterionRGB2HSV**)&criterion);
-        break;
-      default:
-        PBImgAnalysisErr->_type = PBErrTypeNotYetImplemented;
-        sprintf(PBImgAnalysisErr->_msg, 
-          "Not yet implemented type of criterion");
-        PBErrCatch(PBImgAnalysisErr);
-        break;
-    }
-  } while (GenTreeIterStep(&iter));
-  GenTreeIterFreeStatic(&iter);
+  if (!GenTreeIsLeaf(ISCriteria(that))) {
+    GenTreeIterDepth iter = GenTreeIterDepthCreateStatic(ISCriteria(that));
+    do {
+      ImgSegmentorCriterion* criterion = GenTreeIterGetData(&iter);
+      switch (criterion->_type) {
+        case ISCType_RGB:
+          ImgSegmentorCriterionRGBFree(
+            (ImgSegmentorCriterionRGB**)&criterion);
+          break;
+        case ISCType_RGB2HSV:
+          ImgSegmentorCriterionRGB2HSVFree(
+            (ImgSegmentorCriterionRGB2HSV**)&criterion);
+          break;
+        default:
+          PBImgAnalysisErr->_type = PBErrTypeNotYetImplemented;
+          sprintf(PBImgAnalysisErr->_msg, 
+            "Not yet implemented type of criterion");
+          PBErrCatch(PBImgAnalysisErr);
+          break;
+      }
+    } while (GenTreeIterStep(&iter));
+    GenTreeIterFreeStatic(&iter);
+  }
   GenTreeFreeStatic((GenTree*)ISCriteria(that));
 }
 
@@ -814,9 +834,9 @@ void ISTrain(ImgSegmentor* const that,
 void ISSetFlagTextOMeter(ImgSegmentor* const that, bool flag) {
 #if BUILDMODE == 0
   if (that == NULL) {
-    GenAlgErr->_type = PBErrTypeNullPointer;
-    sprintf(GenAlgErr->_msg, "'that' is null");
-    PBErrCatch(GenAlgErr);
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'that' is null");
+    PBErrCatch(PBImgAnalysisErr);
   }
 #endif
   // If the requested flag is different from the current flag;
@@ -841,14 +861,14 @@ void ISTrainUpdateTextOMeter(const ImgSegmentor* const that,
   const unsigned long iSample, const unsigned long sizeCat) {
 #if BUILDMODE == 0
   if (that == NULL) {
-    GenAlgErr->_type = PBErrTypeNullPointer;
-    sprintf(GenAlgErr->_msg, "'that' is null");
-    PBErrCatch(GenAlgErr);
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'that' is null");
+    PBErrCatch(PBImgAnalysisErr);
   }
   if (that->_textOMeter == NULL) {
-    GenAlgErr->_type = PBErrTypeNullPointer;
-    sprintf(GenAlgErr->_msg, "'that->_textOMeter' is null");
-    PBErrCatch(GenAlgErr);
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'that->_textOMeter' is null");
+    PBErrCatch(PBImgAnalysisErr);
   }
 #endif
   // Clear the TextOMeter
@@ -861,6 +881,243 @@ void ISTrainUpdateTextOMeter(const ImgSegmentor* const that,
   TextOMeterPrint(that->_textOMeter, str);
   // Flush the content of the TextOMeter
   TextOMeterFlush(that->_textOMeter);
+}
+
+// Load the ImgSegmentor from the stream
+// If the ImgSegmentor is already allocated, it is freed before loading
+// Return true upon success else false
+bool ImgSegmentorLoad(ImgSegmentor* that, FILE* const stream) {
+#if BUILDMODE == 0
+  if (that == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'that' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+  if (stream == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'stream' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+#endif
+  // Declare a json to load the encoded data
+  JSONNode* json = JSONCreate();
+  // Load the whole encoded data
+  if (!JSONLoad(json, stream)) {
+    return false;
+  }
+  // Decode the data from the JSON
+  if (!ImgSegmentorDecodeAsJSON(that, json)) {
+    return false;
+  }
+printf("toto\n");
+  // Free the memory used by the JSON
+  JSONFree(&json);
+  // Return success code
+  return true;
+}
+
+// Save the ImgSegmentor to the stream
+// If 'compact' equals true it saves in compact form, else it saves in 
+// readable form
+// Return true upon success else false
+bool ImgSegmentorSave(const ImgSegmentor* const that, 
+  FILE* const stream, const bool compact) {
+#if BUILDMODE == 0
+  if (that == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'that' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+  if (stream == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'stream' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+#endif
+  // Get the JSON encoding
+  JSONNode* json = ImgSegmentorEncodeAsJSON(that);
+  // Save the JSON
+  if (!JSONSave(json, stream, compact)) {
+    return false;
+  }
+  // Free memory
+  JSONFree(&json);
+  // Return success code
+  return true;
+}
+
+// Function which return the JSON encoding of 'that' 
+JSONNode* ImgSegmentorEncodeAsJSON(const ImgSegmentor* const that) {
+#if BUILDMODE == 0
+  if (that == NULL) {
+    PBMathErr->_type = PBErrTypeNullPointer;
+    sprintf(PBMathErr->_msg, "'that' is null");
+    PBErrCatch(PBMathErr);
+  }
+#endif
+  // Create the JSON structure
+  JSONNode* json = JSONCreate();
+  // Declare a buffer to convert value into string
+  char val[100];
+  // Number of segmentation class
+  sprintf(val, "%d", that->_nbClass);
+  JSONAddProp(json, "_nbClass", val);
+  // Flag to apply or not the binarization
+  sprintf(val, "%d", that->_flagBinaryResult);
+  JSONAddProp(json, "_flagBinaryResult", val);
+  // Threshold value for the binarization of result of prediction
+  sprintf(val, "%f", that->_thresholdBinaryResult);
+  JSONAddProp(json, "_thresholdBinaryResult", val);
+  // Nb of epoch
+  sprintf(val, "%u", that->_nbEpoch);
+  JSONAddProp(json, "_nbEpoch", val);
+  // Size pool for training
+  sprintf(val, "%d", that->_sizePool);
+  JSONAddProp(json, "_sizePool", val);
+  // Nb elite for training
+  sprintf(val, "%d", that->_nbElite);
+  JSONAddProp(json, "_nbElite", val);
+  // Threshold to stop the training once
+  sprintf(val, "%f", that->_targetBestValue);
+  JSONAddProp(json, "_targetBestValue", val);
+  // Tree of criterion
+  JSONAddProp(json, "_criteria", 
+    ImgSegmentorEncodeNodeAsJSON(ISCriteria(that)));
+  // Return the created JSON 
+  return json;
+}
+
+// Function which return the JSON encoding the node 'that' in the 
+// GenTree of criteria of a ImgSegmentor 
+JSONNode* ImgSegmentorEncodeNodeAsJSON(const GenTree* const that) {
+#if BUILDMODE == 0
+  if (that == NULL) {
+    PBMathErr->_type = PBErrTypeNullPointer;
+    sprintf(PBMathErr->_msg, "'that' is null");
+    PBErrCatch(PBMathErr);
+  }
+#endif  
+  // Create the JSON structure
+  JSONNode* json = JSONCreate();
+  // If there is a criterion on the node
+  if (GenTreeData(that) != NULL) {
+    // Encore the criterion
+    JSONAddProp(json, "_criterion", 
+      ImgSegmentorCriterionEncodeAsJSON(
+      (ImgSegmentorCriterion*)GenTreeData(that)));
+  }
+  // If there are subtrees
+  if (!GenTreeIsLeaf(that)) {
+    JSONArrayStruct setStruct = JSONArrayStructCreateStatic();
+    // Loop on the subtrees
+    GSetIterForward iter = 
+      GSetIterForwardCreateStatic(GenTreeSubtrees(that));
+    do {
+      GenTree* subtree = GSetIterGet(&iter);
+      // Add the subtree
+      JSONArrayStructAdd(&setStruct, 
+        ImgSegmentorEncodeNodeAsJSON(subtree));
+    } while (GSetIterStep(&iter));
+    // Add the encoded array of subtrees
+    JSONAddProp(json, "_subtrees", &setStruct);
+    JSONArrayStructFlush(&setStruct);
+  }
+  // Return the created JSON 
+  return json;
+}
+
+// Function which decode from JSON encoding 'json' to 'that'
+bool ImgSegmentorDecodeAsJSON(ImgSegmentor* that, 
+  const JSONNode* const json) {
+#if BUILDMODE == 0
+  if (that == NULL) {
+    PBMathErr->_type = PBErrTypeNullPointer;
+    sprintf(PBMathErr->_msg, "'that' is null");
+    PBErrCatch(PBMathErr);
+  }
+  if (json == NULL) {
+    PBMathErr->_type = PBErrTypeNullPointer;
+    sprintf(PBMathErr->_msg, "'json' is null");
+    PBErrCatch(PBMathErr);
+  }
+#endif
+  // If 'that' is already allocated
+  if (that != NULL)
+    // Free memory
+    ImgSegmentorFreeStatic(that);
+  // Get the nb of class from the JSON
+  JSONNode* prop = JSONProperty(json, "_nbClass");
+  if (prop == NULL) {
+    return false;
+  }
+  int nbClass = atoi(JSONLabel(JSONValue(prop, 0)));
+  // If data are invalid
+  if (nbClass <= 0)
+    return false;
+  // Allocate memory
+  *that = ImgSegmentorCreateStatic(nbClass);
+  // Flag to apply or not the binarization
+  prop = JSONProperty(json, "_flagBinaryResult");
+  if (prop == NULL) {
+    return false;
+  }
+  int flagBinaryResult = atoi(JSONLabel(JSONValue(prop, 0)));
+  if (flagBinaryResult == 0)
+    that->_flagBinaryResult = false;
+  else if (flagBinaryResult == 1)
+    that->_flagBinaryResult = true;
+  else
+    return false;
+  // Threshold value for the binarization of result of prediction
+  prop = JSONProperty(json, "_thresholdBinaryResult");
+  if (prop == NULL) {
+    return false;
+  }
+  that->_thresholdBinaryResult = atof(JSONLabel(JSONValue(prop, 0)));
+  // Nb of epoch
+  prop = JSONProperty(json, "_nbEpoch");
+  if (prop == NULL) {
+    return false;
+  }
+  int nbEpoch = atoi(JSONLabel(JSONValue(prop, 0)));
+  if (nbEpoch < 1)
+    return false;
+  that->_nbEpoch = (unsigned int)nbEpoch;
+  // Size pool for training
+  prop = JSONProperty(json, "_sizePool");
+  if (prop == NULL) {
+    return false;
+  }
+  int sizePool = atoi(JSONLabel(JSONValue(prop, 0)));
+  if (sizePool < 3)
+    return false;
+  that->_sizePool = sizePool;
+  // Nb elite for training
+  prop = JSONProperty(json, "_nbElite");
+  if (prop == NULL) {
+    return false;
+  }
+  int nbElite = atoi(JSONLabel(JSONValue(prop, 0)));
+  if (nbElite < 2 || nbElite > sizePool - 1)
+    return false;
+  that->_nbElite = nbElite;
+  // Threshold to stop the training once
+  prop = JSONProperty(json, "_targetBestValue");
+  if (prop == NULL) {
+    return false;
+  }
+  float targetBestValue = atof(JSONLabel(JSONValue(prop, 0)));
+  if (targetBestValue < 0.0 || targetBestValue > 1.0)
+    return false;
+  that->_targetBestValue = targetBestValue;
+
+
+  // Tree of criterion
+  //GenTree _criteria;
+
+
+  // Return the success code
+  return true;
 }
 
 // Create a new static ImgSegmentorCriterion with 'nbClass' output 
@@ -930,6 +1187,45 @@ VecFloat* ISCPredict(const ImgSegmentorCriterion* const that,
   }
   // Return the result
   return res;
+}
+
+JSONNode* ImgSegmentorCriterionEncodeAsJSON(
+  const ImgSegmentorCriterion* const that) {
+#if BUILDMODE == 0
+  if (that == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'that' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+#endif
+  // Declare a variable to memorize the result
+  JSONNode* json = JSONCreate();
+  // Declare a buffer to convert value into string
+  char val[100];
+  // Type
+  sprintf(val, "%d", that->_type);
+  JSONAddProp(json, "_type", val);
+  // Number of segmentation class
+  sprintf(val, "%d", that->_nbClass);
+  JSONAddProp(json, "_nbClass", val);
+  // Call the appropriate function based on the type
+  switch(that->_type) {
+    case ISCType_RGB:
+      ISCRGBEncodeAsJSON((const ImgSegmentorCriterionRGB*)that, json);
+      break;
+    case ISCType_RGB2HSV:
+      ISCRGB2HSVEncodeAsJSON(
+        (const ImgSegmentorCriterionRGB2HSV*)that, json);
+      break;
+    default:
+      PBImgAnalysisErr->_type = PBErrTypeNotYetImplemented;
+      sprintf(PBImgAnalysisErr->_msg, 
+        "Not yet implemented type of criterion");
+      PBErrCatch(PBImgAnalysisErr);
+      break;
+  }
+  // Return the result
+  return json;
 }
 
 // Return the number of int parameters for the criterion 'that'
@@ -1171,6 +1467,20 @@ void ImgSegmentorCriterionRGBFree(ImgSegmentorCriterionRGB** that) {
   free(*that);
 }
 
+// Function which return the JSON encoding of 'that' 
+void ISCRGBEncodeAsJSON(
+  const ImgSegmentorCriterionRGB* const that, JSONNode* const json) {
+#if BUILDMODE == 0
+  if (that == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'that' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+#endif
+  // NeuraNet model
+  JSONAddProp(json, "_neuranet", NNEncodeAsJSON(that->_nn));
+}
+
 // Make the prediction on the 'input' values with the 
 // ImgSegmentorCriterionRGB that
 // 'input' 's format is width*height*3, values in [0.0, 1.0]
@@ -1371,6 +1681,20 @@ void ImgSegmentorCriterionRGB2HSVFree(
   // Free memory
   ImgSegmentorCriterionFreeStatic((ImgSegmentorCriterion*)(*that));
   free(*that);
+}
+
+// Function which return the JSON encoding of 'that' 
+void ISCRGB2HSVEncodeAsJSON(
+  const ImgSegmentorCriterionRGB2HSV* const that, JSONNode* const json) {
+#if BUILDMODE == 0
+  if (that == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'that' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+#endif
+  // Nothing to do
+  (void)that;(void)json;
 }
 
 // Make the prediction on the 'input' values with the 
