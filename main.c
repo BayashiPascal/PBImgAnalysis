@@ -161,9 +161,7 @@ void UnitTestImgSegmentorAddCriterionGetSet() {
     PBErrCatch(PBImgAnalysisErr);
   }
   if (ISAddCriterionRGB(&segmentor, NULL) == NULL ||
-    GenTreeGetSize(ISCriteria(&segmentor)) != 1 ||
-    ((ImgSegmentorCriterion*)GSetGet(&(segmentor._criteria._subtrees), 
-      0))->_type != ISCType_RGB) {
+    GenTreeGetSize(ISCriteria(&segmentor)) != 1) {
     PBImgAnalysisErr->_type = PBErrTypeUnitTestFailed;
     sprintf(PBImgAnalysisErr->_msg, "ISAddCriterion failed");
     PBErrCatch(PBImgAnalysisErr);
@@ -257,7 +255,7 @@ void UnitTestImgSegmentorSaveLoad() {
   }
   char* fileName = "unitTestImgSegmentorSaveLoad.json";
   FILE* stream = fopen(fileName, "w");
-  if (!ImgSegmentorSave(&segmentor, stream, false)) {
+  if (!ISSave(&segmentor, stream, false)) {
     PBImgAnalysisErr->_type = PBErrTypeUnitTestFailed;
     sprintf(PBImgAnalysisErr->_msg, "ImgSegmentorSave failed");
     PBErrCatch(PBImgAnalysisErr);
@@ -265,11 +263,12 @@ void UnitTestImgSegmentorSaveLoad() {
   fclose(stream);
   stream = fopen(fileName, "r");
   ImgSegmentor load = ImgSegmentorCreateStatic(1);
-  if (!ImgSegmentorLoad(&load, stream)) {
+  if (!ISLoad(&load, stream)) {
     PBImgAnalysisErr->_type = PBErrTypeUnitTestFailed;
     sprintf(PBImgAnalysisErr->_msg, "ImgSegmentorLoad failed");
     PBErrCatch(PBImgAnalysisErr);
   }
+  fclose(stream);
   if (load._nbClass != segmentor._nbClass ||
     load._flagBinaryResult != segmentor._flagBinaryResult ||
     load._thresholdBinaryResult != segmentor._thresholdBinaryResult ||
@@ -281,7 +280,42 @@ void UnitTestImgSegmentorSaveLoad() {
     sprintf(PBImgAnalysisErr->_msg, "ImgSegmentorLoad failed");
     PBErrCatch(PBImgAnalysisErr);
   }
-  fclose(stream);
+
+  if (load._criteria._data != segmentor._criteria._data) {
+    PBImgAnalysisErr->_type = PBErrTypeUnitTestFailed;
+    sprintf(PBImgAnalysisErr->_msg, "ImgSegmentorLoad failed");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+  ImgSegmentorCriterion* criteriaA = (ImgSegmentorCriterion*)
+    GenTreeData((GenTree*)GSetGet(&(load._criteria._subtrees), 0));
+  ImgSegmentorCriterion* criteriaB = (ImgSegmentorCriterion*)
+    GenTreeData((GenTree*)GSetGet(&(segmentor._criteria._subtrees), 0));
+  if (criteriaA->_type != criteriaB->_type) {
+    PBImgAnalysisErr->_type = PBErrTypeUnitTestFailed;
+    sprintf(PBImgAnalysisErr->_msg, "ImgSegmentorLoad failed");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+  criteriaA = (ImgSegmentorCriterion*)
+    GenTreeData((GenTree*)GSetGet(&(load._criteria._subtrees), 1));
+  criteriaB = (ImgSegmentorCriterion*)
+    GenTreeData((GenTree*)GSetGet(&(segmentor._criteria._subtrees), 1));
+  if (criteriaA->_type != criteriaB->_type) {
+    PBImgAnalysisErr->_type = PBErrTypeUnitTestFailed;
+    sprintf(PBImgAnalysisErr->_msg, "ImgSegmentorLoad failed");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+  criteriaA = (ImgSegmentorCriterion*)
+    GenTreeData((GenTree*)GSetGet(&(((GenTree*)GSetGet(
+    &(load._criteria._subtrees), 1))->_subtrees), 0));
+  criteriaB = (ImgSegmentorCriterion*)
+    GenTreeData((GenTree*)GSetGet(&(((GenTree*)GSetGet(
+    &(segmentor._criteria._subtrees), 1))->_subtrees), 0));
+  if (criteriaA->_type != criteriaB->_type) {
+    PBImgAnalysisErr->_type = PBErrTypeUnitTestFailed;
+    sprintf(PBImgAnalysisErr->_msg, "ImgSegmentorLoad failed");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+
   ImgSegmentorFreeStatic(&segmentor);
   ImgSegmentorFreeStatic(&load);
   printf("UnitTestImgSegmentorSaveLoad OK\n");
@@ -324,12 +358,20 @@ void UnitTestImgSegmentorTrain01() {
   ISSetSizePool(&segmentor, 20);
   ISSetNbElite(&segmentor, 5);
   ISSetNbEpoch(&segmentor, 50);
-  //ISSetSizePool(&segmentor, 2);
-  //ISSetNbElite(&segmentor, 2);
-  //ISSetNbEpoch(&segmentor, 2);
   ISSetTargetBestValue(&segmentor, 0.9);
   ISSetFlagTextOMeter(&segmentor, true);
   ISTrain(&segmentor, &dataSet);
+  char resFileName[] = "unitTestImgSegmentorTrain01.json";
+  FILE* fp = fopen(resFileName, "w");
+  if (!ISSave(&segmentor, fp, false)) {
+    fprintf(stderr, "Couldn't save %s\n", resFileName);
+  }
+  fclose(fp);
+  fp = fopen(resFileName, "r");
+  if (!ISLoad(&segmentor, fp)) {
+    fprintf(stderr, "Couldn't load %s\n", resFileName);
+  }
+  fclose(fp);
   char* imgFilePath = PBFSJoinPath(
     ".", "UnitTestImgSegmentorTrain", "img000.tga");
   GenBrush* img = GBCreateFromFile(imgFilePath);
@@ -355,14 +397,9 @@ void UnitTestImgSegmentorTrain01() {
 }
 
 void UnitTestImgSegmentorTrain02() {
-  srandom(0);
+  srandom(1);
   int nbClass = 2;
   ImgSegmentor segmentor = ImgSegmentorCreateStatic(nbClass);
-  /*if (ISAddCriterionRGB(&segmentor, NULL) == NULL) {
-    PBImgAnalysisErr->_type = PBErrTypeUnitTestFailed;
-    sprintf(PBImgAnalysisErr->_msg, "UnitTestImgSegmentorTrain02 failed");
-    PBErrCatch(PBImgAnalysisErr);
-  }*/
   ImgSegmentorCriterionRGB2HSV* criterionHSV = 
     ISAddCriterionRGB2HSV(&segmentor, NULL);
   if (criterionHSV == NULL) {
@@ -381,13 +418,21 @@ void UnitTestImgSegmentorTrain02() {
     GDataSetGenBrushPairCreateStatic(cfgFilePath);
   ISSetSizePool(&segmentor, 20);
   ISSetNbElite(&segmentor, 5);
-  ISSetNbEpoch(&segmentor, 500);
-  //ISSetSizePool(&segmentor, 2);
-  //ISSetNbElite(&segmentor, 2);
-  //ISSetNbEpoch(&segmentor, 2);
-  //ISSetTargetBestValue(&segmentor, 0.9);
+  ISSetNbEpoch(&segmentor, 50);
+  ISSetTargetBestValue(&segmentor, 0.9);
   ISSetFlagTextOMeter(&segmentor, true);
   ISTrain(&segmentor, &dataSet);
+  char resFileName[] = "unitTestImgSegmentorTrain02.json";
+  FILE* fp = fopen(resFileName, "w");
+  if (!ISSave(&segmentor, fp, false)) {
+    fprintf(stderr, "Couldn't save %s\n", resFileName);
+  }
+  fclose(fp);
+  fp = fopen(resFileName, "r");
+  if (!ISLoad(&segmentor, fp)) {
+    fprintf(stderr, "Couldn't load %s\n", resFileName);
+  }
+  fclose(fp);
   char* imgFilePath = PBFSJoinPath(
     ".", "UnitTestImgSegmentorTrain", "img001.tga");
   GenBrush* img = GBCreateFromFile(imgFilePath);
@@ -413,7 +458,7 @@ void UnitTestImgSegmentorTrain02() {
 }
 
 void UnitTestImgSegmentorTrain03() {
-  srandom(0);
+  srandom(2);
   int nbClass = 2;
   ImgSegmentor segmentor = ImgSegmentorCreateStatic(nbClass);
   if (ISAddCriterionRGB(&segmentor, NULL) == NULL) {
@@ -439,13 +484,21 @@ void UnitTestImgSegmentorTrain03() {
     GDataSetGenBrushPairCreateStatic(cfgFilePath);
   ISSetSizePool(&segmentor, 20);
   ISSetNbElite(&segmentor, 5);
-  ISSetNbEpoch(&segmentor, 500);
-  //ISSetSizePool(&segmentor, 2);
-  //ISSetNbElite(&segmentor, 2);
-  //ISSetNbEpoch(&segmentor, 2);
-  //ISSetTargetBestValue(&segmentor, 0.9);
+  ISSetNbEpoch(&segmentor, 50);
+  ISSetTargetBestValue(&segmentor, 0.9);
   ISSetFlagTextOMeter(&segmentor, true);
   ISTrain(&segmentor, &dataSet);
+  char resFileName[] = "unitTestImgSegmentorTrain03.json";
+  FILE* fp = fopen(resFileName, "w");
+  if (!ISSave(&segmentor, fp, false)) {
+    fprintf(stderr, "Couldn't save %s\n", resFileName);
+  }
+  fclose(fp);
+  fp = fopen(resFileName, "r");
+  if (!ISLoad(&segmentor, fp)) {
+    fprintf(stderr, "Couldn't load %s\n", resFileName);
+  }
+  fclose(fp);
   char* imgFilePath = PBFSJoinPath(
     ".", "UnitTestImgSegmentorTrain", "img002.tga");
   GenBrush* img = GBCreateFromFile(imgFilePath);
@@ -490,8 +543,7 @@ void UnitTestAll() {
 }
 
 int main(void) {
-  //UnitTestAll();
-  UnitTestImgSegmentorSaveLoad();
+  UnitTestAll();
   return 0;
 }
 

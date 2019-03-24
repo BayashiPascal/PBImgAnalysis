@@ -6,9 +6,10 @@ It implements the following algorithms:
 \begin{itemize}
 \item K-means clustering on the RGBA space of pixels in a user defined radius
 \item Intersection over Union (aka Jaccard index)
+\item ImgSegmentor, a multiclass multimodal image segmentation algorithm based on heuristics and NeuraNet
 \end{itemize}
 
-It uses the \begin{ttfamily}PBErr\end{ttfamily}, \begin{ttfamily}PBDataAnalaysis\end{ttfamily}, \begin{ttfamily}GenBrush\end{ttfamily} libraries.\\
+It uses the \begin{ttfamily}PBErr\end{ttfamily}, \begin{ttfamily}PBDataAnalaysis\end{ttfamily}, \begin{ttfamily}GenBrush\end{ttfamily}, \begin{ttfamily}GDataSet\end{ttfamily}, \begin{ttfamily}GenAlg\end{ttfamily}, \begin{ttfamily}NeuraNet\end{ttfamily}, \begin{ttfamily}ResPublish\end{ttfamily} libraries.\\
 
 \section{Interface}
 
@@ -25,6 +26,14 @@ It uses the \begin{ttfamily}PBErr\end{ttfamily}, \begin{ttfamily}PBDataAnalaysis
 \begin{scriptsize}
 \begin{ttfamily}
 \verbatiminput{/home/bayashi/GitHub/PBImgAnalysis/pbimganalysis.c}
+\end{ttfamily}
+\end{scriptsize}
+
+\subsection{pbimganalysis-inline.c}
+
+\begin{scriptsize}
+\begin{ttfamily}
+\verbatiminput{/home/bayashi/GitHub/PBImgAnalysis/pbimganalysis-inline.c}
 \end{ttfamily}
 \end{scriptsize}
 
@@ -164,3 +173,47 @@ imgkmeanscluster.txt:\\
 \verbatiminput{/home/bayashi/GitHub/PBImgAnalysis/imgkmeanscluster.txt}
 \end{ttfamily}
 \end{scriptsize}
+
+\subsection{ImgSegmentor}
+
+\subsubsection{Test 01}
+
+unitTestImgSegmentorTrain01.json:\\
+\begin{scriptsize}
+\begin{ttfamily}
+\verbatiminput{/home/bayashi/GitHub/PBImgAnalysis/unitTestImgSegmentorTrain01.json}
+\end{ttfamily}
+\end{scriptsize}
+\begin{center}
+\begin{figure}[H]
+\centering\includegraphics[width=6cm]{imgSegmentorTest01.png}
+\end{figure}
+\end{center}
+
+\subsubsection{Test 02}
+
+unitTestImgSegmentorTrain02.json:\\
+\begin{scriptsize}
+\begin{ttfamily}
+\verbatiminput{/home/bayashi/GitHub/PBImgAnalysis/unitTestImgSegmentorTrain02.json}
+\end{ttfamily}
+\end{scriptsize}
+\begin{center}
+\begin{figure}[H]
+\centering\includegraphics[width=6cm]{imgSegmentorTest02.png}
+\end{figure}
+\end{center}
+
+\subsubsection{Test 03}
+
+unitTestImgSegmentorTrain03.json:\\
+\begin{scriptsize}
+\begin{ttfamily}
+\verbatiminput{/home/bayashi/GitHub/PBImgAnalysis/unitTestImgSegmentorTrain03.json}
+\end{ttfamily}
+\end{scriptsize}
+\begin{center}
+\begin{figure}[H]
+\centering\includegraphics[width=6cm]{imgSegmentorTest03.png}
+\end{figure}
+\end{center}

@@ -381,13 +381,13 @@ void ISTrain(ImgSegmentor* const that,
 // Load the ImgSegmentor from the stream
 // If the ImgSegmentor is already allocated, it is freed before loading
 // Return true upon success else false
-bool ImgSegmentorLoad(ImgSegmentor* that, FILE* const stream);
+bool ISLoad(ImgSegmentor* that, FILE* const stream);
 
 // Save the ImgSegmentor to the stream
 // If 'compact' equals true it saves in compact form, else it saves in 
 // readable form
 // Return true upon success else false
-bool ImgSegmentorSave(const ImgSegmentor* const that, 
+bool ISSave(const ImgSegmentor* const that, 
   FILE* const stream, const bool compact);
 
 // Function which return the JSON encoding of 'that' 

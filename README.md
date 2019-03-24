@@ -3,6 +3,8 @@ PBImgAnalysis is a C library providing structures and functions to perform vario
 
 It implements the following algorithms:
 * K-means clustering on the RGBA space
+* Intersection over Union (aka Jaccard index)
+* ImgSegmentor, a multiclass multimodal image segmentation algorithm based on heuristics and NeuraNet
 
 It uses the PBErr, PBDataAnalaysis, GenBrush libraries.
 

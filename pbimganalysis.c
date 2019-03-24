@@ -412,10 +412,22 @@ bool IKMCDecodeAsJSON(ImgKMeansClusters* that,
 
 // Function which return the JSON encoding the node 'that' in the 
 // GenTree of criteria of a ImgSegmentor 
-JSONNode* ImgSegmentorEncodeNodeAsJSON(const GenTree* const that);
+JSONNode* ISEncodeNodeAsJSON(const GenTree* const that);
 
 // Function which return the JSON encoding of 'that' 
-JSONNode* ImgSegmentorCriterionEncodeAsJSON(
+JSONNode* ISEncodeAsJSON(const ImgSegmentor* const that);
+
+// Function which decode from JSON encoding 'json' to 'that'
+bool ISDecodeAsJSON(ImgSegmentor* that, 
+  const JSONNode* const json);
+  
+// Function which decodes the JSON encoding of the 
+// GenTree of criteria of the ImgSegmentor 'that' 
+bool ISDecodeNodeAsJSON(GenTree* const that, 
+  const JSONNode* const json);
+  
+// Function which return the JSON encoding of 'that' 
+JSONNode* ISCEncodeAsJSON(
   const ImgSegmentorCriterion* const that);
 
 // Function which return the JSON encoding of 'that' 
@@ -425,6 +437,21 @@ void ISCRGBEncodeAsJSON(const ImgSegmentorCriterionRGB* const that,
 // Function which return the JSON encoding of 'that' 
 void ISCRGB2HSVEncodeAsJSON(
   const ImgSegmentorCriterionRGB2HSV* const that, JSONNode* const json);
+
+// Function which decodes the JSON encoding of a ImgSegmentorCriterion 
+bool ISCDecodeAsJSON(
+  ImgSegmentorCriterion** const that, const JSONNode* const json);
+  
+// Function which decodes the JSON encoding of a 
+// ImgSegmentorCriterionRGB 
+bool ISCRGBDecodeAsJSON(
+  ImgSegmentorCriterionRGB** const that, const JSONNode* const json);
+  
+// Function which decodes the JSON encoding of a 
+// ImgSegmentorCriterionRGB2HSV 
+bool ISCRGB2HSVDecodeAsJSON(
+  ImgSegmentorCriterionRGB2HSV** const that, const JSONNode* const json);
+  
 
 // ================ Functions implementation ====================
 
@@ -728,7 +755,7 @@ void ISTrain(ImgSegmentor* const that,
     } while (GenTreeIterStep(&iter));
     // Initialise the GenAlg
     GAInit(ga);
-    // Set the TextOMeter of the GenAlg same as the one of the 
+    // Set the TextOMeter flag of the GenAlg same as the one of the 
     // ImgSegmentor
     GASetTextOMeterFlag(ga, ISGetFlagTextOMeter(that));
     // Declare a variable to memorize the current best value
@@ -886,7 +913,7 @@ void ISTrainUpdateTextOMeter(const ImgSegmentor* const that,
 // Load the ImgSegmentor from the stream
 // If the ImgSegmentor is already allocated, it is freed before loading
 // Return true upon success else false
-bool ImgSegmentorLoad(ImgSegmentor* that, FILE* const stream) {
+bool ISLoad(ImgSegmentor* that, FILE* const stream) {
 #if BUILDMODE == 0
   if (that == NULL) {
     PBImgAnalysisErr->_type = PBErrTypeNullPointer;
@@ -906,10 +933,9 @@ bool ImgSegmentorLoad(ImgSegmentor* that, FILE* const stream) {
     return false;
   }
   // Decode the data from the JSON
-  if (!ImgSegmentorDecodeAsJSON(that, json)) {
+  if (!ISDecodeAsJSON(that, json)) {
     return false;
   }
-printf("toto\n");
   // Free the memory used by the JSON
   JSONFree(&json);
   // Return success code
@@ -920,7 +946,7 @@ printf("toto\n");
 // If 'compact' equals true it saves in compact form, else it saves in 
 // readable form
 // Return true upon success else false
-bool ImgSegmentorSave(const ImgSegmentor* const that, 
+bool ISSave(const ImgSegmentor* const that, 
   FILE* const stream, const bool compact) {
 #if BUILDMODE == 0
   if (that == NULL) {
@@ -935,7 +961,7 @@ bool ImgSegmentorSave(const ImgSegmentor* const that,
   }
 #endif
   // Get the JSON encoding
-  JSONNode* json = ImgSegmentorEncodeAsJSON(that);
+  JSONNode* json = ISEncodeAsJSON(that);
   // Save the JSON
   if (!JSONSave(json, stream, compact)) {
     return false;
@@ -947,7 +973,7 @@ bool ImgSegmentorSave(const ImgSegmentor* const that,
 }
 
 // Function which return the JSON encoding of 'that' 
-JSONNode* ImgSegmentorEncodeAsJSON(const ImgSegmentor* const that) {
+JSONNode* ISEncodeAsJSON(const ImgSegmentor* const that) {
 #if BUILDMODE == 0
   if (that == NULL) {
     PBMathErr->_type = PBErrTypeNullPointer;
@@ -982,14 +1008,14 @@ JSONNode* ImgSegmentorEncodeAsJSON(const ImgSegmentor* const that) {
   JSONAddProp(json, "_targetBestValue", val);
   // Tree of criterion
   JSONAddProp(json, "_criteria", 
-    ImgSegmentorEncodeNodeAsJSON(ISCriteria(that)));
+    ISEncodeNodeAsJSON(ISCriteria(that)));
   // Return the created JSON 
   return json;
 }
 
 // Function which return the JSON encoding the node 'that' in the 
 // GenTree of criteria of a ImgSegmentor 
-JSONNode* ImgSegmentorEncodeNodeAsJSON(const GenTree* const that) {
+JSONNode* ISEncodeNodeAsJSON(const GenTree* const that) {
 #if BUILDMODE == 0
   if (that == NULL) {
     PBMathErr->_type = PBErrTypeNullPointer;
@@ -1003,31 +1029,35 @@ JSONNode* ImgSegmentorEncodeNodeAsJSON(const GenTree* const that) {
   if (GenTreeData(that) != NULL) {
     // Encore the criterion
     JSONAddProp(json, "_criterion", 
-      ImgSegmentorCriterionEncodeAsJSON(
+      ISCEncodeAsJSON(
       (ImgSegmentorCriterion*)GenTreeData(that)));
   }
+  // Add the number of subtrees
+  char val[100];
+  sprintf(val, "%ld", GSetNbElem(&(that->_subtrees)));
+  JSONAddProp(json, "_nbSubtree", val);
   // If there are subtrees
   if (!GenTreeIsLeaf(that)) {
-    JSONArrayStruct setStruct = JSONArrayStructCreateStatic();
     // Loop on the subtrees
     GSetIterForward iter = 
       GSetIterForwardCreateStatic(GenTreeSubtrees(that));
+    int iSubtree = 0;
     do {
       GenTree* subtree = GSetIterGet(&iter);
       // Add the subtree
-      JSONArrayStructAdd(&setStruct, 
-        ImgSegmentorEncodeNodeAsJSON(subtree));
+      char lblSubtree[100];
+      sprintf(lblSubtree, "_subtree_%d", iSubtree);
+      JSONAddProp(json, lblSubtree, 
+        ISEncodeNodeAsJSON(subtree));
+      ++iSubtree;
     } while (GSetIterStep(&iter));
-    // Add the encoded array of subtrees
-    JSONAddProp(json, "_subtrees", &setStruct);
-    JSONArrayStructFlush(&setStruct);
   }
   // Return the created JSON 
   return json;
 }
 
 // Function which decode from JSON encoding 'json' to 'that'
-bool ImgSegmentorDecodeAsJSON(ImgSegmentor* that, 
+bool ISDecodeAsJSON(ImgSegmentor* that, 
   const JSONNode* const json) {
 #if BUILDMODE == 0
   if (that == NULL) {
@@ -1110,12 +1140,66 @@ bool ImgSegmentorDecodeAsJSON(ImgSegmentor* that,
   if (targetBestValue < 0.0 || targetBestValue > 1.0)
     return false;
   that->_targetBestValue = targetBestValue;
-
-
   // Tree of criterion
-  //GenTree _criteria;
+  prop = JSONProperty(json, "_criteria");
+  if (prop == NULL) {
+    return false;
+  }
+  if (!ISDecodeNodeAsJSON(&(that->_criteria), prop)) {
+    return false;
+  }
+  // Return the success code
+  return true;
+}
 
-
+// Function which decodes the JSON encoding of the 
+// GenTree of criteria of the ImgSegmentor 'that' 
+bool ISDecodeNodeAsJSON(GenTree* const that, 
+  const JSONNode* const json) {
+#if BUILDMODE == 0
+  if (that == NULL) {
+    PBMathErr->_type = PBErrTypeNullPointer;
+    sprintf(PBMathErr->_msg, "'that' is null");
+    PBErrCatch(PBMathErr);
+  }
+  if (json == NULL) {
+    PBMathErr->_type = PBErrTypeNullPointer;
+    sprintf(PBMathErr->_msg, "'json' is null");
+    PBErrCatch(PBMathErr);
+  }
+#endif
+  // If there is a criterion
+  JSONNode* prop = JSONProperty(json, "_criterion");
+  if (prop != NULL) {
+    // Decode the criterion
+    if (!ISCDecodeAsJSON((ImgSegmentorCriterion**)&(that->_data), prop)) {
+      return false;
+    }
+  }
+  // Get the number of subtrees
+  prop = JSONProperty(json, "_nbSubtree");
+  if (prop == NULL) {
+    return false;
+  }
+  int nbSubtree = atoi(JSONLabel(JSONValue(prop, 0)));
+  if (nbSubtree < 0)
+    return false;
+  // Loop on subtree
+  for (int iSubtree = 0; iSubtree < nbSubtree; ++iSubtree) {
+    // Get the subtree
+    char lblSubtree[100];
+    sprintf(lblSubtree, "_subtree_%d", iSubtree);
+    prop = JSONProperty(json, lblSubtree);
+    if (prop == NULL) {
+      return false;
+    }
+    // Decode the subtree
+    GenTree* subtree = GenTreeCreate();
+    if (!ISDecodeNodeAsJSON(subtree, prop)) {
+      return false;
+    }
+    GenTreeAppendSubtree(that, subtree);
+  }
   // Return the success code
   return true;
 }
@@ -1189,7 +1273,7 @@ VecFloat* ISCPredict(const ImgSegmentorCriterion* const that,
   return res;
 }
 
-JSONNode* ImgSegmentorCriterionEncodeAsJSON(
+JSONNode* ISCEncodeAsJSON(
   const ImgSegmentorCriterion* const that) {
 #if BUILDMODE == 0
   if (that == NULL) {
@@ -1226,6 +1310,46 @@ JSONNode* ImgSegmentorCriterionEncodeAsJSON(
   }
   // Return the result
   return json;
+}
+
+// Function which decodes the JSON encoding of a ImgSegmentorCriterion 
+bool ISCDecodeAsJSON(
+  ImgSegmentorCriterion** const that, const JSONNode* const json) {
+#if BUILDMODE == 0
+  if (that == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'that' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+  if (json == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'json' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+#endif
+  // Get the type of the criterion
+  JSONNode* prop = JSONProperty(json, "_type");
+  if (prop == NULL) {
+    return false;
+  }
+  ISCType type = atoi(JSONLabel(JSONValue(prop, 0)));
+  // Declare a variable to memorize the returned code
+  bool ret = true;
+  // Call the appropriate function based on the type
+  switch(type) {
+    case ISCType_RGB:
+      ret = ISCRGBDecodeAsJSON((ImgSegmentorCriterionRGB**)that, json);
+      break;
+    case ISCType_RGB2HSV:
+      ret = ISCRGB2HSVDecodeAsJSON(
+        (ImgSegmentorCriterionRGB2HSV**)that, json);
+      break;
+    default:
+      ret = false;
+      break;
+  }
+  // Return the result code
+  return ret;
 }
 
 // Return the number of int parameters for the criterion 'that'
@@ -1480,6 +1604,54 @@ void ISCRGBEncodeAsJSON(
   // NeuraNet model
   JSONAddProp(json, "_neuranet", NNEncodeAsJSON(that->_nn));
 }
+  
+// Function which decodes the JSON encoding of a 
+// ImgSegmentorCriterionRGB 
+bool ISCRGBDecodeAsJSON(
+  ImgSegmentorCriterionRGB** const that, const JSONNode* const json) {
+#if BUILDMODE == 0
+  if (that == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'that' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+  if (json == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'json' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+#endif
+  // If the criterion exists
+  if (*that != NULL) {
+    // Free the memory
+    ImgSegmentorCriterionRGBFree(that);
+  }
+  // Get the number of class
+  JSONNode* prop = JSONProperty(json, "_nbClass");
+  if (prop == NULL) {
+    return false;
+  }
+  int nbClass = atoi(JSONLabel(JSONValue(prop, 0)));
+  // If the number of class is invalid
+  if (nbClass < 1)
+    // Return the error code
+    return false;
+  // Create the criterion
+  *that = ImgSegmentorCriterionRGBCreate(nbClass);
+  // If we couldn't create the criterion
+  if (*that == NULL)
+    // Return the failure code
+    return false;
+  // Decode the NeuraNet
+  prop = JSONProperty(json, "_neuranet");
+  if (prop == NULL) {
+    return false;
+  }
+  if (!NNDecodeAsJSON(&((*that)->_nn), prop))
+    return false;
+  // Return the success code
+  return true;
+}
 
 // Make the prediction on the 'input' values with the 
 // ImgSegmentorCriterionRGB that
@@ -1695,6 +1867,48 @@ void ISCRGB2HSVEncodeAsJSON(
 #endif
   // Nothing to do
   (void)that;(void)json;
+}
+
+// Function which decodes the JSON encoding of a 
+// ImgSegmentorCriterionRGB2HSV 
+bool ISCRGB2HSVDecodeAsJSON(
+  ImgSegmentorCriterionRGB2HSV** const that, 
+  const JSONNode* const json) {
+#if BUILDMODE == 0
+  if (that == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'that' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+  if (json == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'json' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+#endif
+  // If the criterion exists
+  if (*that != NULL) {
+    // Free the memory
+    ImgSegmentorCriterionRGB2HSVFree(that);
+  }
+  // Get the number of class
+  JSONNode* prop = JSONProperty(json, "_nbClass");
+  if (prop == NULL) {
+    return false;
+  }
+  int nbClass = atoi(JSONLabel(JSONValue(prop, 0)));
+  // If the number of class is invalid
+  if (nbClass < 1)
+    // Return the error code
+    return false;
+  // Create the criterion
+  *that = ImgSegmentorCriterionRGB2HSVCreate(nbClass);
+  // If we couldn't create the criterion
+  if (*that == NULL)
+    // Return the failure code
+    return false;
+  // Return the success code
+  return true;
 }
 
 // Make the prediction on the 'input' values with the 
