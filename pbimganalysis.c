@@ -474,6 +474,8 @@ ImgSegmentor ImgSegmentorCreateStatic(int nbClass) {
   that._thresholdBinaryResult = 0.5;
   that._nbEpoch = 1;
   that._sizePool = GENALG_NBENTITIES;
+  that._sizeMinPool = that._sizePool;
+  that._sizeMaxPool = that._sizePool;
   that._nbElite = GENALG_NBELITES;
   that._targetBestValue = 0.9999;
   that._flagTextOMeter = false;
@@ -742,6 +744,9 @@ void ISTrain(ImgSegmentor* const that,
     // Create the GenAlg to search parameters' value
     GenAlg* ga = GenAlgCreate(ISGetSizePool(that), ISGetNbElite(that), 
       nbTotalParamFloat, nbTotalParamInt);
+    // Set the min and max size of the pool
+    GASetNbMaxAdn(ga, ISGetSizeMaxPool(that));
+    GASetNbMinAdn(ga, ISGetSizeMinPool(that));
     // Loop on the criterion to initialise the parameters bound
     GenTreeIterReset(&iter);
     long shiftParamInt = 0;
@@ -1572,9 +1577,11 @@ ImgSegmentorCriterionRGB* ImgSegmentorCriterionRGBCreate(int nbClass) {
     ISCType_RGB);
   // Create the NeuraNet
   const int nbInput = 3;
-  const int nbHidden = fsquare(nbInput) * nbClass;
-  VecLong* hidden = VecLongCreate(1);
-  VecSet(hidden, 0, nbHidden);
+  const int nbHiddenPerLayer = fsquare(nbInput) * nbClass;
+  const int nbHiddenLayer = 1;
+  VecLong* hidden = VecLongCreate(nbHiddenLayer);
+  for (int iLayer = nbHiddenLayer; iLayer--;)
+    VecSet(hidden, iLayer, nbHiddenPerLayer);
   that->_nn = NeuraNetCreateFullyConnected(nbInput, nbClass, hidden);
   VecFree(&hidden);
   // Return the new ImgSegmentorCriterionRGB

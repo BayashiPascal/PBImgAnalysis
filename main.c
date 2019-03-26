@@ -226,6 +226,28 @@ void UnitTestImgSegmentorAddCriterionGetSet() {
     sprintf(PBImgAnalysisErr->_msg, "ISSetTargetBestValue failed");
     PBErrCatch(PBImgAnalysisErr);
   }
+  if (ISGetSizeMaxPool(&segmentor) != segmentor._sizeMaxPool) {
+    GenAlgErr->_type = PBErrTypeUnitTestFailed;
+    sprintf(GenAlgErr->_msg, "ISGetSizeMaxPool failed");
+    PBErrCatch(GenAlgErr);
+  }
+  if (ISGetSizeMinPool(&segmentor) != segmentor._sizeMinPool) {
+    GenAlgErr->_type = PBErrTypeUnitTestFailed;
+    sprintf(GenAlgErr->_msg, "ISGetSizeMinPool failed");
+    PBErrCatch(GenAlgErr);
+  }
+  ISSetSizeMaxPool(&segmentor, 100);
+  if (ISGetSizeMaxPool(&segmentor) != 100) {
+    GenAlgErr->_type = PBErrTypeUnitTestFailed;
+    sprintf(GenAlgErr->_msg, "ISSetSizeMaxPool failed");
+    PBErrCatch(GenAlgErr);
+  }
+  ISSetSizeMinPool(&segmentor, 100);
+  if (ISGetSizeMinPool(&segmentor) != 100) {
+    GenAlgErr->_type = PBErrTypeUnitTestFailed;
+    sprintf(GenAlgErr->_msg, "ISSetSizeMinPool failed");
+    PBErrCatch(GenAlgErr);
+  }
   ImgSegmentorFreeStatic(&segmentor);
   printf("UnitTestImgSegmentorAddCriterionGetSet OK\n");
 }
@@ -355,10 +377,12 @@ void UnitTestImgSegmentorTrain01() {
     ".", "UnitTestImgSegmentorTrain", "dataset.json");
   GDataSetGenBrushPair dataSet = 
     GDataSetGenBrushPairCreateStatic(cfgFilePath);
-  ISSetSizePool(&segmentor, 20);
+  ISSetSizePool(&segmentor, 16);
+  ISSetSizeMaxPool(&segmentor, 128);
+  ISSetSizeMinPool(&segmentor, 8);
   ISSetNbElite(&segmentor, 5);
   ISSetNbEpoch(&segmentor, 50);
-  ISSetTargetBestValue(&segmentor, 0.9);
+  ISSetTargetBestValue(&segmentor, 0.99);
   ISSetFlagTextOMeter(&segmentor, true);
   ISTrain(&segmentor, &dataSet);
   char resFileName[] = "unitTestImgSegmentorTrain01.json";
@@ -416,10 +440,12 @@ void UnitTestImgSegmentorTrain02() {
     ".", "UnitTestImgSegmentorTrain", "dataset.json");
   GDataSetGenBrushPair dataSet = 
     GDataSetGenBrushPairCreateStatic(cfgFilePath);
-  ISSetSizePool(&segmentor, 20);
+  ISSetSizePool(&segmentor, 16);
+  ISSetSizeMaxPool(&segmentor, 128);
+  ISSetSizeMinPool(&segmentor, 8);
   ISSetNbElite(&segmentor, 5);
   ISSetNbEpoch(&segmentor, 50);
-  ISSetTargetBestValue(&segmentor, 0.9);
+  ISSetTargetBestValue(&segmentor, 0.99);
   ISSetFlagTextOMeter(&segmentor, true);
   ISTrain(&segmentor, &dataSet);
   char resFileName[] = "unitTestImgSegmentorTrain02.json";
@@ -482,10 +508,12 @@ void UnitTestImgSegmentorTrain03() {
     ".", "UnitTestImgSegmentorTrain", "dataset.json");
   GDataSetGenBrushPair dataSet = 
     GDataSetGenBrushPairCreateStatic(cfgFilePath);
-  ISSetSizePool(&segmentor, 20);
+  ISSetSizePool(&segmentor, 16);
+  ISSetSizeMaxPool(&segmentor, 128);
+  ISSetSizeMinPool(&segmentor, 8);
   ISSetNbElite(&segmentor, 5);
   ISSetNbEpoch(&segmentor, 50);
-  ISSetTargetBestValue(&segmentor, 0.9);
+  ISSetTargetBestValue(&segmentor, 0.99);
   ISSetFlagTextOMeter(&segmentor, true);
   ISTrain(&segmentor, &dataSet);
   char resFileName[] = "unitTestImgSegmentorTrain03.json";

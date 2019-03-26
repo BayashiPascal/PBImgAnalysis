@@ -179,6 +179,10 @@ typedef struct ImgSegmentor {
   // Size pool for training
   // By default GENALG_NBENTITIES
   int _sizePool;
+  // Nb min of adns
+  int _sizeMinPool;
+  // Nb max of adns
+  int _sizeMaxPool;
   // Nb elite for training
   // By default GENALG_NBELITES
   int _nbElite;
@@ -349,6 +353,30 @@ int ISGetNbElite(const ImgSegmentor* const that);
 inline
 #endif
 void ISSetNbElite(ImgSegmentor* const that, int nb);
+
+// Return the max nb of adns of the ImgSegmentor 'that'
+#if BUILDMODE != 0
+inline
+#endif
+int ISGetSizeMaxPool(const ImgSegmentor* const that);
+
+// Return the min nb of adns of the ImgSegmentor 'that'
+#if BUILDMODE != 0
+inline
+#endif
+int ISGetSizeMinPool(const ImgSegmentor* const that);
+
+// Set the min nb of adns of the ImgSegmentor 'that' to 'nb'
+#if BUILDMODE != 0
+inline
+#endif
+void ISSetSizeMaxPool(ImgSegmentor* const that, const int nb);
+
+// Set the min nb of adns of the ImgSegmentor 'that' to 'nb'
+#if BUILDMODE != 0
+inline
+#endif
+void ISSetSizeMinPool(ImgSegmentor* const that, const int nb);
 
 // Set the threshold controlling the binarization of the result of 
 // prediction of the ImgSegmentor 'that' to 'threshold'

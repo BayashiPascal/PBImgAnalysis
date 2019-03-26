@@ -448,6 +448,65 @@ bool ISGetFlagTextOMeter(const ImgSegmentor* const that) {
   return that->_flagTextOMeter;
 }
 
+// Return the max nb of adns of the ImgSegmentor 'that'
+#if BUILDMODE != 0
+inline
+#endif
+int ISGetSizeMaxPool(const ImgSegmentor* const that) {
+#if BUILDMODE == 0
+  if (that == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'that' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+#endif
+  return that->_sizeMaxPool;
+}
+
+// Return the min nb of adns of the ImgSegmentor 'that'
+#if BUILDMODE != 0
+inline
+#endif
+int ISGetSizeMinPool(const ImgSegmentor* const that) {
+#if BUILDMODE == 0
+  if (that == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'that' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+#endif
+  return that->_sizeMinPool;
+}
+
+// Set the min nb of adns of the ImgSegmentor 'that' to 'nb'
+#if BUILDMODE != 0
+inline
+#endif
+void ISSetSizeMaxPool(ImgSegmentor* const that, const int nb) {
+#if BUILDMODE == 0
+  if (that == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'that' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+#endif
+  that->_sizeMaxPool = MAX(ISGetSizeMinPool(that), nb);
+}
+
+// Set the min nb of adns of the ImgSegmentor 'that' to 'nb'
+#if BUILDMODE != 0
+inline
+#endif
+void ISSetSizeMinPool(ImgSegmentor* const that, const int nb) {
+#if BUILDMODE == 0
+  if (that == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'that' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+#endif
+  that->_sizeMinPool = MIN(ISGetSizeMaxPool(that), nb);
+}
 
 // ---- ImgSegmentorCriterionRGB
 
