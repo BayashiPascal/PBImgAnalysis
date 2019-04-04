@@ -365,7 +365,7 @@ void UnitTestImgSegmentorPredict() {
 }
 
 void UnitTestImgSegmentorTrain01() {
-  srandom(0);
+  srandom(2);
   int nbClass = 2;
   ImgSegmentor segmentor = ImgSegmentorCreateStatic(nbClass);
   if (ISAddCriterionRGB(&segmentor, NULL) == NULL) {
@@ -378,9 +378,9 @@ void UnitTestImgSegmentorTrain01() {
   GDataSetGenBrushPair dataSet = 
     GDataSetGenBrushPairCreateStatic(cfgFilePath);
   ISSetSizePool(&segmentor, 16);
-  ISSetSizeMaxPool(&segmentor, 128);
-  ISSetSizeMinPool(&segmentor, 8);
   ISSetNbElite(&segmentor, 5);
+  ISSetSizeMaxPool(&segmentor, 128);
+  ISSetSizeMinPool(&segmentor, 16);
   ISSetNbEpoch(&segmentor, 50);
   ISSetTargetBestValue(&segmentor, 0.99);
   ISSetFlagTextOMeter(&segmentor, true);
@@ -421,7 +421,7 @@ void UnitTestImgSegmentorTrain01() {
 }
 
 void UnitTestImgSegmentorTrain02() {
-  srandom(1);
+  srandom(2);
   int nbClass = 2;
   ImgSegmentor segmentor = ImgSegmentorCreateStatic(nbClass);
   ImgSegmentorCriterionRGB2HSV* criterionHSV = 
@@ -441,9 +441,9 @@ void UnitTestImgSegmentorTrain02() {
   GDataSetGenBrushPair dataSet = 
     GDataSetGenBrushPairCreateStatic(cfgFilePath);
   ISSetSizePool(&segmentor, 16);
-  ISSetSizeMaxPool(&segmentor, 128);
-  ISSetSizeMinPool(&segmentor, 8);
   ISSetNbElite(&segmentor, 5);
+  ISSetSizeMaxPool(&segmentor, 128);
+  ISSetSizeMinPool(&segmentor, 16);
   ISSetNbEpoch(&segmentor, 50);
   ISSetTargetBestValue(&segmentor, 0.99);
   ISSetFlagTextOMeter(&segmentor, true);
@@ -509,9 +509,9 @@ void UnitTestImgSegmentorTrain03() {
   GDataSetGenBrushPair dataSet = 
     GDataSetGenBrushPairCreateStatic(cfgFilePath);
   ISSetSizePool(&segmentor, 16);
-  ISSetSizeMaxPool(&segmentor, 128);
-  ISSetSizeMinPool(&segmentor, 8);
   ISSetNbElite(&segmentor, 5);
+  ISSetSizeMaxPool(&segmentor, 128);
+  ISSetSizeMinPool(&segmentor, 16);
   ISSetNbEpoch(&segmentor, 50);
   ISSetTargetBestValue(&segmentor, 0.99);
   ISSetFlagTextOMeter(&segmentor, true);
