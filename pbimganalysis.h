@@ -153,10 +153,12 @@ float GBSimilarityCoeff(const GenBrush* const that,
 
 // ================= Define ==================
 
-#define IS_TRAINTXTOMETER_LINE1 \
-  "Epoch xxxxx/xxxxx Entity xxx/xxx Sample xxxxx/xxxxx\n"
-#define IS_TRAINTXTOMETER_FORMAT1 \
-  "Epoch %05ld/%05ld Entity %03d/%03d Sample %05ld/%05ld\n"
+#define IS_TRAINTXTOMETER_LINE1 "Epoch xxxxx/xxxxx Entity xxx/xxx\n"
+#define IS_TRAINTXTOMETER_FORMAT1 "Epoch %05ld/%05ld Entity %03d/%03d\n"
+#define IS_EVALTXTOMETER_LINE1 "Sample xxxxx/xxxxx\n"
+#define IS_EVALTXTOMETER_FORMAT1 "Sample %05ld/%05ld\n"
+
+#define IS_CHECKPOINTFILENAME "checkpoint.json"
 
 // ================= Data structure ===================
 
@@ -192,6 +194,9 @@ typedef struct ImgSegmentor {
   bool _flagTextOMeter;
   // TextOMeter to display info during training
   TextOMeter* _textOMeter;
+  // Strings for the TextOMeter
+  char _line1[50]; 
+  char _line2[50]; 
 } ImgSegmentor;
 
 typedef struct ImgSegmentorPerf {
@@ -205,7 +210,7 @@ typedef struct ImgSegmentorTrainParam {
 } ImgSegmentorParam;
 
 typedef enum ISCType {
-  ISCType_RGB, ISCType_RGB2HSV
+  ISCType_RGB, ISCType_RGB2HSV, ISCType_Dust
 } ISCType;
 
 typedef struct ImgSegmentorCriterion {
@@ -226,6 +231,13 @@ typedef struct ImgSegmentorCriterionRGB2HSV {
   // ImgSegmentorCriterion
   ImgSegmentorCriterion _criterion;
 } ImgSegmentorCriterionRGB2HSV;
+
+typedef struct ImgSegmentorCriterionDust {
+  // ImgSegmentorCriterion
+  ImgSegmentorCriterion _criterion;
+  // Dust size for each class
+  VecLong* _size;
+} ImgSegmentorCriterionDust;
 
 // ================ Functions declaration ====================
 
@@ -253,9 +265,7 @@ bool ISGetFlagTextOMeter(const ImgSegmentor* const that);
 
 // Refresh the content of the TextOMeter attached to the 
 // ImgSegmentor 'that'
-void ISTrainUpdateTextOMeter(const ImgSegmentor* const that, 
-  const long epoch, const long nbEpoch, int nbAdn, const int iEnt, 
-  const unsigned long iSample, const unsigned long sizeCat);
+void ISUpdateTextOMeter(const ImgSegmentor* const that);
 
 // Add a new ImageSegmentorCriterionRGB to the ImgSegmentor 'that'
 // under the node 'parent'
@@ -401,10 +411,18 @@ inline
 const GenTree* ISCriteria(const ImgSegmentor* const that);
 
 // Train the ImageSegmentor 'that' on the data set 'dataSet' using
-// the data of the first category in 'dataSet'
-// srandom must have been caled before calling ISTrain
+// the data of the first category in 'dataSet'. If the data set has a 
+// second category it will be used for evaluation
+// srandom must have been called before calling ISTrain
 void ISTrain(ImgSegmentor* const that, 
   const GDataSetGenBrushPair* const dataset);
+
+// Evaluate the ImageSegmentor 'that' on the data set 'dataSet' using
+// the data of the 'iCat' category in 'dataSet'
+// srandom must have been called before calling ISTrain
+// Return a value in [0.0, 1.0], 0.0 being worst and 1.0 being best
+float ISEvaluate(ImgSegmentor* const that, 
+  const GDataSetGenBrushPair* const dataset, const int iCat);
 
 // Load the ImgSegmentor from the stream
 // If the ImgSegmentor is already allocated, it is freed before loading
@@ -556,6 +574,67 @@ void ISCRGB2HSVSetAdnInt(const ImgSegmentorCriterionRGB2HSV* const that,
 void ISCRGB2HSVSetAdnFloat(const ImgSegmentorCriterionRGB2HSV* const that,
   const GenAlgAdn* const adn, const long shift);
   
+// ---- ImgSegmentorCriterionDust
+
+// Create a new ImgSegmentorCriterionDust with 'nbClass' output
+ImgSegmentorCriterionDust* ImgSegmentorCriterionDustCreate(
+  int nbClass);
+
+// Free the memory used by the ImgSegmentorCriterionDust 'that'
+void ImgSegmentorCriterionDustFree(
+  ImgSegmentorCriterionDust** that);
+
+// Make the prediction on the 'input' values with the 
+// ImgSegmentorCriterionDust that
+// 'input' 's format is width*height*3, values in [0.0, 1.0]
+// Return values are width*height*nbClass, values in [-1.0, 1.0]
+VecFloat* ISCDustPredict(
+  const ImgSegmentorCriterionDust* const that,
+  const VecFloat* input, const VecShort2D* const dim);
+
+// Return the number of int parameters for the criterion 'that'
+long ISCDustGetNbParamInt(
+  const ImgSegmentorCriterionDust* const that);
+
+// Return the number of float parameters for the criterion 'that'
+long ISCDustGetNbParamFloat(
+  const ImgSegmentorCriterionDust* const that);
+
+// Set the bounds of int parameters for training of the criterion 'that'
+void ISCDustSetBoundsAdnInt(
+  const ImgSegmentorCriterionDust* const that,
+  GenAlg* const ga, const long shift);
+
+// Set the bounds of float parameters for training of the criterion 'that'
+void ISCDustSetBoundsAdnFloat(
+  const ImgSegmentorCriterionDust* const that,
+  GenAlg* const ga, const long shift);
+
+// Set the values of int parameters for training of the criterion 'that'
+void ISCDustSetAdnInt(const ImgSegmentorCriterionDust* const that,
+  const GenAlgAdn* const adn, const long shift);
+
+// Set the values of float parameters for training of the criterion 'that'
+void ISCDustSetAdnFloat(const ImgSegmentorCriterionDust* const that,
+  const GenAlgAdn* const adn, const long shift);
+
+// Return the dust size of the ImgSegmentorCriterionDust 'that' for 
+// the class 'iClass'
+#if BUILDMODE != 0
+inline
+#endif
+long ISCDustSize(
+  const ImgSegmentorCriterionDust* const that, const int iClass);
+
+// Set the dust size of the ImgSegmentorCriterionDust 'that' for 
+// the class 'iClass' to 'size'
+#if BUILDMODE != 0
+inline
+#endif
+void ISCDustSetSize(
+  const ImgSegmentorCriterionDust* const that, const int iClass, 
+  const long size);
+  
 // ================= Polymorphism ==================
 
 #define ISCGetNbClass(That) _Generic(That, \
@@ -565,6 +644,8 @@ void ISCRGB2HSVSetAdnFloat(const ImgSegmentorCriterionRGB2HSV* const that,
   const ImgSegmentorCriterionRGB*: _ISCGetNbClass, \
   ImgSegmentorCriterionRGB2HSV*: _ISCGetNbClass, \
   const ImgSegmentorCriterionRGB2HSV*: _ISCGetNbClass, \
+  ImgSegmentorCriterionDust*: _ISCGetNbClass, \
+  const ImgSegmentorCriterionDust*: _ISCGetNbClass, \
   default: PBErrInvalidPolymorphism) ((const ImgSegmentorCriterion*)That)
 
 #define ISCGetNbParamInt(That) _Generic(That, \
@@ -574,6 +655,8 @@ void ISCRGB2HSVSetAdnFloat(const ImgSegmentorCriterionRGB2HSV* const that,
   const ImgSegmentorCriterionRGB*: ISCRGBGetNbParamInt, \
   ImgSegmentorCriterionRGB2HSV*: ISCRGB2HSVGetNbParamInt, \
   const ImgSegmentorCriterionRGB2HSV*: ISCRGB2HSVGetNbParamInt, \
+  ImgSegmentorCriterionDust*: ISCDustGetNbParamInt, \
+  const ImgSegmentorCriterionDust*: ISCDustGetNbParamInt, \
   default: PBErrInvalidPolymorphism) ((const ImgSegmentorCriterion*)That)
 
 #define ISCGetNbParamFloat(That) _Generic(That, \
@@ -583,6 +666,8 @@ void ISCRGB2HSVSetAdnFloat(const ImgSegmentorCriterionRGB2HSV* const that,
   const ImgSegmentorCriterionRGB*: ISCRGBGetNbParamFloat, \
   ImgSegmentorCriterionRGB2HSV*: ISCRGB2HSVGetNbParamFloat, \
   const ImgSegmentorCriterionRGB2HSV*: ISCRGB2HSVGetNbParamFloat, \
+  ImgSegmentorCriterionDust*: ISCDustGetNbParamFloat, \
+  const ImgSegmentorCriterionDust*: ISCDustGetNbParamFloat, \
   default: PBErrInvalidPolymorphism) ((const ImgSegmentorCriterion*)That)
 
 #define ISCSetBoundsAdnInt(That, GenAlg, Shift) _Generic(That, \
@@ -592,6 +677,8 @@ void ISCRGB2HSVSetAdnFloat(const ImgSegmentorCriterionRGB2HSV* const that,
   const ImgSegmentorCriterionRGB*: ISCRGBSetBoundsAdnInt, \
   ImgSegmentorCriterionRGB2HSV*: ISCRGB2HSVSetBoundsAdnInt, \
   const ImgSegmentorCriterionRGB2HSV*: ISCRGB2HSVSetBoundsAdnInt, \
+  ImgSegmentorCriterionDust*: ISCDustSetBoundsAdnInt, \
+  const ImgSegmentorCriterionDust*: ISCDustSetBoundsAdnInt, \
   default: PBErrInvalidPolymorphism) ( \
     (const ImgSegmentorCriterion*)That, GenAlg, Shift)
   
@@ -602,6 +689,8 @@ void ISCRGB2HSVSetAdnFloat(const ImgSegmentorCriterionRGB2HSV* const that,
   const ImgSegmentorCriterionRGB*: ISCRGBSetBoundsAdnFloat, \
   ImgSegmentorCriterionRGB2HSV*: ISCRGB2HSVSetBoundsAdnFloat, \
   const ImgSegmentorCriterionRGB2HSV*: ISCRGB2HSVSetBoundsAdnFloat, \
+  ImgSegmentorCriterionDust*: ISCDustSetBoundsAdnFloat, \
+  const ImgSegmentorCriterionDust*: ISCDustSetBoundsAdnFloat, \
   default: PBErrInvalidPolymorphism) ( \
     (const ImgSegmentorCriterion*)That, GenAlg, Shift)
   
@@ -612,6 +701,8 @@ void ISCRGB2HSVSetAdnFloat(const ImgSegmentorCriterionRGB2HSV* const that,
   const ImgSegmentorCriterionRGB*: ISCRGBSetAdnInt, \
   ImgSegmentorCriterionRGB2HSV*: ISCRGB2HSVSetAdnInt, \
   const ImgSegmentorCriterionRGB2HSV*: ISCRGB2HSVSetAdnInt, \
+  ImgSegmentorCriterionDust*: ISCDustSetAdnInt, \
+  const ImgSegmentorCriterionDust*: ISCDustSetAdnInt, \
   default: PBErrInvalidPolymorphism) ( \
     (const ImgSegmentorCriterion*)That, Adn, Shift)
   
@@ -622,6 +713,8 @@ void ISCRGB2HSVSetAdnFloat(const ImgSegmentorCriterionRGB2HSV* const that,
   const ImgSegmentorCriterionRGB*: ISCRGBSetAdnFloat, \
   ImgSegmentorCriterionRGB2HSV*: ISCRGB2HSVSetAdnFloat, \
   const ImgSegmentorCriterionRGB2HSV*: ISCRGB2HSVSetAdnFloat, \
+  ImgSegmentorCriterionDust*: ISCDustSetAdnFloat, \
+  const ImgSegmentorCriterionDust*: ISCDustSetAdnFloat, \
   default: PBErrInvalidPolymorphism) ( \
     (const ImgSegmentorCriterion*)That, Adn, Shift)
   

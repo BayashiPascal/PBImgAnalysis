@@ -526,5 +526,42 @@ const NeuraNet* ISCRGBNeuraNet(
   return that->_nn;
 }
 
+// ---- ImgSegmentorCriterionDust
+
+// Return the dust size of the ImgSegmentorCriterionDust 'that' for 
+// the class 'iClass'
+#if BUILDMODE != 0
+inline
+#endif
+long ISCDustSize(
+  const ImgSegmentorCriterionDust* const that, const int iClass) {
+#if BUILDMODE == 0
+  if (that == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'that' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+#endif
+  return VecGet(that->_size, iClass);
+}
+
+// Set the dust size of the ImgSegmentorCriterionDust 'that' for 
+// the class 'iClass' to 'size'
+#if BUILDMODE != 0
+inline
+#endif
+void ISCDustSetSize(
+  const ImgSegmentorCriterionDust* const that, const int iClass, 
+  const long size) {
+#if BUILDMODE == 0
+  if (that == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'that' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+#endif
+  VecSet(that->_size, iClass, size);
+}
+
 
 
