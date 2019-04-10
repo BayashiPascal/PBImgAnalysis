@@ -693,7 +693,7 @@ GenBrush** ISPredict(const ImgSegmentor* const that,
 
 // Train the ImageSegmentor 'that' on the data set 'dataSet' using
 // the data of the first category in 'dataSet'. If the data set has a 
-// second category it will be used for evaluation
+// second category it will be used for validation
 // srandom must have been called before calling ISTrain
 void ISTrain(ImgSegmentor* const that, 
   const GDataSetGenBrushPair* const dataset) {
@@ -798,7 +798,7 @@ void ISTrain(ImgSegmentor* const that,
           // dataset
           const int iCatTraining = 0;
           float value = ISEvaluate(that, dataset, iCatTraining);
-          // Update the adn value of this entity
+          // Update the value of this entity's adn
           GASetAdnValue(ga, GAAdn(ga, iEnt), value);
           // If the value is the best value
           if (value - bestValue > PBMATH_EPSILON) {
@@ -809,10 +809,10 @@ void ISTrain(ImgSegmentor* const that,
               ISGetTargetBestValue(that));
             // If the dataset has an evaluation category
             if (GDSGetSize(dataset) > 1) {
-              // Evaluate the new best entity on the evaluation category
-              const int iCatEval = 1;
-              float evalValue = ISEvaluate(that, dataset, iCatEval);
-              printf("EvalAcc[0,1] %f ", evalValue);
+              // Evaluate the new best entity on the validation category
+              const int iCatValid = 1;
+              float evalValue = ISEvaluate(that, dataset, iCatValid);
+              printf("ValidAcc[0,1] %f ", evalValue);
             }
             printf("\n");
             fflush(stdout);
@@ -844,6 +844,14 @@ void ISTrain(ImgSegmentor* const that,
     // Free memory
     GenAlgFree(&ga);
   }
+  // Reload the checkpoint at the end of the training to
+  // return the ImgSegmentor in its best version
+  FILE* fpCheckpoint = fopen(IS_CHECKPOINTFILENAME, "r");
+  if (!ISLoad(that, fpCheckpoint)) {
+    fprintf(stderr, "Couldn't reload the checkpoint %s\n",  
+      IS_CHECKPOINTFILENAME);
+  }
+  fclose(fpCheckpoint);
   // Free memory
   GenTreeIterFreeStatic(&iter);
   VecFree(&nbParamInt);

@@ -412,7 +412,7 @@ const GenTree* ISCriteria(const ImgSegmentor* const that);
 
 // Train the ImageSegmentor 'that' on the data set 'dataSet' using
 // the data of the first category in 'dataSet'. If the data set has a 
-// second category it will be used for evaluation
+// second category it will be used for validation
 // srandom must have been called before calling ISTrain
 void ISTrain(ImgSegmentor* const that, 
   const GDataSetGenBrushPair* const dataset);
