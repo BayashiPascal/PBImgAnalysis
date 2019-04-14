@@ -11,6 +11,11 @@
 
 // ================= Define ==================
 
+// ================= Global variable ==================
+
+// Variable to handle the signal Ctrl-C during training
+static volatile bool PBIA_CtrlC = false;
+
 // ================ Functions declaration ====================
 
 // Get the input values for the pixel at position 'pos' according to
@@ -732,6 +737,14 @@ GenBrush** ISPredict(const ImgSegmentor* const that,
   return res;
 }
 
+// Handler for the signal Ctrl-C
+void ISTrainHandlerCtrlC(int sig) {
+  (void)sig;
+  PBIA_CtrlC = true;
+  printf("\n!!! ISTrain Interrupted by Ctrl-C !!!\n");
+  fflush(stdout);
+}
+ 
 // Train the ImageSegmentor 'that' on the data set 'dataSet' using
 // the data of the first category in 'dataSet'. If the data set has a 
 // second category it will be used for validation
@@ -757,6 +770,8 @@ void ISTrain(ImgSegmentor* const that,
     PBErrCatch(PBImgAnalysisErr);
   }
 #endif
+  // Set the handler to catch the signal Ctrl-C
+  signal(SIGINT, ISTrainHandlerCtrlC);
   // If there is no criterion, nothing to do
   if (ISGetNbCriterion(that) == 0)
     return;
@@ -815,7 +830,7 @@ void ISTrain(ImgSegmentor* const that,
     // Loop over epochs
     do {
       // Loop over the GenAlg entities
-      for (int iEnt = 0; iEnt < GAGetNbAdns(ga); ++iEnt) {
+      for (int iEnt = 0; iEnt < GAGetNbAdns(ga) && !PBIA_CtrlC; ++iEnt) {
         // If this entity is a new one
         if (GAAdnIsNew(GAAdn(ga, iEnt))) {
           // Loop on the criterion to set the criteria parameters with 
@@ -851,7 +866,7 @@ void ISTrain(ImgSegmentor* const that,
               ISGetTargetBestValue(that));
             // If the dataset has an evaluation category
             float evalValue = 0.0;
-            if (GDSGetSize(dataset) > 1) {
+            if (GDSGetNbCat(dataset) > 1) {
               // Evaluate the new best entity on the validation category
               const int iCatValid = 1;
               evalValue = ISEvaluate(that, dataset, iCatValid);
@@ -860,7 +875,7 @@ void ISTrain(ImgSegmentor* const that,
             printf("\n");
             fflush(stdout);
             // Save the ImgSegmentor
-            if (GDSGetSize(dataset) > 1) {
+            if (GDSGetNbCat(dataset) > 1) {
               sprintf(cpFilename, "%05ld_%f_%f_" IS_CHECKPOINTFILENAME, GAGetCurEpoch(ga) + 1L, bestValue, evalValue);
             } else {
               sprintf(cpFilename, "%05ld_%f_" IS_CHECKPOINTFILENAME, GAGetCurEpoch(ga) + 1L, bestValue);
@@ -877,7 +892,7 @@ void ISTrain(ImgSegmentor* const that,
       // Step the GenAlg
       GAStep(ga);
     } while (GAGetCurEpoch(ga) < ISGetNbEpoch(that) &&
-      bestValue < ISGetTargetBestValue(that));
+      bestValue < ISGetTargetBestValue(that) && !PBIA_CtrlC);
     // Loop on the criterion to set the criteria to the best one
     GenTreeIterReset(&iter);
     shiftParamInt = 0;
@@ -908,6 +923,8 @@ void ISTrain(ImgSegmentor* const that,
   VecFree(&nbParamFloat);
   // Put back the flag for binarization in its original state
   ISSetFlagBinaryResult(that, curFlagBinary);
+  // Reset the signal handler for the signal Ctrl-C to its default
+  signal(SIGINT, SIG_DFL);
 }
 
 // Evaluate the ImageSegmentor 'that' on the data set 'dataSet' using
@@ -948,7 +965,7 @@ float ISEvaluate(ImgSegmentor* const that,
     free(pred);
     GDSGenBrushPairFree(&sample);
     ++iSample;
-  } while (GDSStepSample(dataset, iCat));
+  } while (GDSStepSample(dataset, iCat) && !PBIA_CtrlC);
   // Get the average value over all samples
   value /= (float)GDSGetSizeCat(dataset, iCat);
   // Return the result of the evaluation
