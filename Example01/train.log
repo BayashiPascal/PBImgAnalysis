@@ -1,9 +1,0 @@
-Start training on Mon Apr  8 22:09:33 2019
-Epoch 00001/01000 TrainAcc[0,1] 0.062010/0.990000 ValidAcc[0,1] 0.056292 
-Epoch 00001/01000 TrainAcc[0,1] 0.959596/0.990000 ValidAcc[0,1] 0.955939 
-Epoch 00001/01000 TrainAcc[0,1] 0.975578/0.990000 ValidAcc[0,1] 0.972963 
-Epoch 00002/01000 TrainAcc[0,1] 0.990650/0.990000 ValidAcc[0,1] 0.989619 
-End training on Mon Apr  8 22:14:12 2019
-Start evaluation on Mon Apr  8 22:14:12 2019
-EvalAcc[0,1] 0.989871
-End evaluation on Mon Apr  8 22:14:15 2019

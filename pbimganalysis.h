@@ -244,8 +244,14 @@ typedef struct ImgSegmentorCriterionDust {
 // Create a new static ImgSegmentor with 'nbClass' output
 ImgSegmentor ImgSegmentorCreateStatic(int nbClass);
 
+// Create a new ImgSegmentor with 'nbClass' output
+ImgSegmentor* ImgSegmentorCreate(int nbClass);
+
 // Free the memory used by the static ImgSegmentor 'that'
 void ImgSegmentorFreeStatic(ImgSegmentor* that);
+
+// Free the memory used by the ImgSegmentor 'that'
+void ImgSegmentorFree(ImgSegmentor** that);
 
 // Return the nb of criterion of the ImgSegmentor 'that'
 #if BUILDMODE != 0

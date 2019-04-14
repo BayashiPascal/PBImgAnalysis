@@ -29,3 +29,5 @@ main.o: \
 		$($(repo)_EXE_DEP)
 	$(COMPILER) $(BUILD_ARG) $(genbrush_BUILD_ARG) $($(repo)_BUILD_ARG) `echo "$($(repo)_INC_DIR)" | tr ' ' '\n' | sort -u` -c main.c
 	
+run:
+	rm *_checkpoint.json weights.json res.tga; main -help -nbEpoch 1000 -bestVal 0.99 -train -test -pred Data/img001.tga res.tga

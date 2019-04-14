@@ -486,6 +486,38 @@ ImgSegmentor ImgSegmentorCreateStatic(int nbClass) {
   return that;
 }
 
+// Create a new ImgSegmentor with 'nbClass' output
+ImgSegmentor* ImgSegmentorCreate(int nbClass) {
+#if BUILDMODE == 0
+  if (nbClass <= 0) {
+    PBImgAnalysisErr->_type = PBErrTypeInvalidArg;
+    sprintf(PBImgAnalysisErr->_msg, "'nbClass' is invalid (%d>0)",
+      nbClass);
+    PBErrCatch(PBImgAnalysisErr);
+  }
+#endif
+  // Declare the new ImgSegmentor
+  ImgSegmentor* that = PBErrMalloc(PBImgAnalysisErr, 
+    sizeof(ImgSegmentor));
+  // Init properties
+  that->_nbClass = nbClass;
+  that->_criteria = GenTreeCreateStatic();
+  that->_flagBinaryResult = false;
+  that->_thresholdBinaryResult = 0.5;
+  that->_nbEpoch = 1;
+  that->_sizePool = GENALG_NBENTITIES;
+  that->_sizeMinPool = that->_sizePool;
+  that->_sizeMaxPool = that->_sizePool;
+  that->_nbElite = GENALG_NBELITES;
+  that->_targetBestValue = 0.9999;
+  that->_flagTextOMeter = false;
+  that->_textOMeter = NULL;
+  sprintf(that->_line1, IS_TRAINTXTOMETER_LINE1);
+  sprintf(that->_line2, IS_EVALTXTOMETER_LINE1);
+  // Return the new ImgSegmentor
+  return that;
+}
+
 // Free the memory used by the static ImgSegmentor 'that'
 void ImgSegmentorFreeStatic(ImgSegmentor* that) {
   if (that == NULL)
@@ -520,6 +552,15 @@ void ImgSegmentorFreeStatic(ImgSegmentor* that) {
     GenTreeIterFreeStatic(&iter);
   }
   GenTreeFreeStatic((GenTree*)ISCriteria(that));
+}
+
+// Free the memory used by the ImgSegmentor 'that'
+void ImgSegmentorFree(ImgSegmentor** that) {
+  if (that == NULL || *that == NULL)
+    return;
+  ImgSegmentorFreeStatic(*that);
+  free(*that);
+  *that = NULL;
 }
 
 // Make a prediction on the GenBrush 'img' with the ImgSegmentor 'that'
@@ -744,6 +785,7 @@ void ISTrain(ImgSegmentor* const that,
     nbTotalParamFloat += nb;
     ++iCrit;
   } while (GenTreeIterStep(&iter));
+  char cpFilename[200] = {'\0'};
   // If there are parameters
   if (nbTotalParamInt > 0 || nbTotalParamFloat > 0) {
     // Create the GenAlg to search parameters' value
@@ -808,19 +850,25 @@ void ISTrain(ImgSegmentor* const that,
             printf("TrainAcc[0,1] %f/%f ", bestValue, 
               ISGetTargetBestValue(that));
             // If the dataset has an evaluation category
+            float evalValue = 0.0;
             if (GDSGetSize(dataset) > 1) {
               // Evaluate the new best entity on the validation category
               const int iCatValid = 1;
-              float evalValue = ISEvaluate(that, dataset, iCatValid);
-              printf("ValidAcc[0,1] %f ", evalValue);
+              evalValue = ISEvaluate(that, dataset, iCatValid);
+              printf("EvalAcc[0,1] %f ", evalValue);
             }
             printf("\n");
             fflush(stdout);
             // Save the ImgSegmentor
-            FILE* fpCheckpoint = fopen(IS_CHECKPOINTFILENAME, "w");
+            if (GDSGetSize(dataset) > 1) {
+              sprintf(cpFilename, "%05ld_%f_%f_" IS_CHECKPOINTFILENAME, GAGetCurEpoch(ga) + 1L, bestValue, evalValue);
+            } else {
+              sprintf(cpFilename, "%05ld_%f_" IS_CHECKPOINTFILENAME, GAGetCurEpoch(ga) + 1L, bestValue);
+            }
+            FILE* fpCheckpoint = fopen(cpFilename, "w");
             if (!ISSave(that, fpCheckpoint, false)) {
               fprintf(stderr, "Couldn't save the checkpoint %s\n",  
-                IS_CHECKPOINTFILENAME);
+                cpFilename);
             }
             fclose(fpCheckpoint);
           }
@@ -846,12 +894,14 @@ void ISTrain(ImgSegmentor* const that,
   }
   // Reload the checkpoint at the end of the training to
   // return the ImgSegmentor in its best version
-  FILE* fpCheckpoint = fopen(IS_CHECKPOINTFILENAME, "r");
-  if (!ISLoad(that, fpCheckpoint)) {
-    fprintf(stderr, "Couldn't reload the checkpoint %s\n",  
-      IS_CHECKPOINTFILENAME);
+  FILE* fpCheckpoint = fopen(cpFilename, "r");
+  if (!fpCheckpoint) {
+    if (!ISLoad(that, fpCheckpoint)) {
+      fprintf(stderr, "Couldn't reload the checkpoint %s\n",  
+        cpFilename);
+    }
+    fclose(fpCheckpoint);
   }
-  fclose(fpCheckpoint);
   // Free memory
   GenTreeIterFreeStatic(&iter);
   VecFree(&nbParamInt);

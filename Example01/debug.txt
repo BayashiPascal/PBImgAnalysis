@@ -1,0 +1,44 @@
+==17114== 1 errors in context 1 of 21:
+==17114== Invalid read of size 4
+==17114==    at 0x80741CE: GSetElemData (gset-inline.c:341)
+==17114==    by 0x8074332: _GSetTail (gset-inline.c:398)
+==17114==    by 0x80775F0: _GSetGenTreeGetTail (gset.h:824)
+==17114==    by 0x80775F0: _GenTreeIsLastBrother (gtree-inline.c:115)
+==17114==    by 0x8082695: ISPredict (pbimganalysis.c:582)
+==17114==    by 0x80846DC: ISEvaluate (pbimganalysis.c:894)
+==17114==    by 0x8084BFC: ISTrain (pbimganalysis.c:800)
+==17114==    by 0x8078EA5: Train (main.c:69)
+==17114==    by 0x8079476: main (main.c:192)
+==17114==  Address 0x1 is not stack'd, malloc'd or (recently) free'd
+==17114== 
+==17114== 
+==17114== 1 errors in context 2 of 21:
+==17114== Use of uninitialised value of size 4
+==17114==    at 0x80741CE: GSetElemData (gset-inline.c:341)
+==17114==    by 0x8074332: _GSetTail (gset-inline.c:398)
+==17114==    by 0x80775F0: _GSetGenTreeGetTail (gset.h:824)
+==17114==    by 0x80775F0: _GenTreeIsLastBrother (gtree-inline.c:115)
+==17114==    by 0x8082695: ISPredict (pbimganalysis.c:582)
+==17114==    by 0x80846DC: ISEvaluate (pbimganalysis.c:894)
+==17114==    by 0x8084BFC: ISTrain (pbimganalysis.c:800)
+==17114==    by 0x8078EA5: Train (main.c:69)
+==17114==    by 0x8079476: main (main.c:192)
+==17114==  Uninitialised value was created by a stack allocation
+==17114==    at 0x80847CE: ISTrain (pbimganalysis.c:699)
+==17114== 
+==17114== 
+==17114== 1 errors in context 3 of 21:
+==17114== Conditional jump or move depends on uninitialised value(s)
+==17114==    at 0x807418E: GSetElemData (gset-inline.c:334)
+==17114==    by 0x8074332: _GSetTail (gset-inline.c:398)
+==17114==    by 0x80775F0: _GSetGenTreeGetTail (gset.h:824)
+==17114==    by 0x80775F0: _GenTreeIsLastBrother (gtree-inline.c:115)
+==17114==    by 0x8082695: ISPredict (pbimganalysis.c:582)
+==17114==    by 0x80846DC: ISEvaluate (pbimganalysis.c:894)
+==17114==    by 0x8084BFC: ISTrain (pbimganalysis.c:800)
+==17114==    by 0x8078EA5: Train (main.c:69)
+==17114==    by 0x8079476: main (main.c:192)
+==17114==  Uninitialised value was created by a stack allocation
+==17114==    at 0x80847CE: ISTrain (pbimganalysis.c:699)
+==17114== 
+==17114== ERROR SUMMARY: 21 errors from 21 contexts (suppressed: 0 from 0)
