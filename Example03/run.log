@@ -1,0 +1,52 @@
+rm *_checkpoint.json weights.json res.tga; main -nbEpoch 1000 -bestVal 0.99 -train -test -pred ../Data/003/img001.tga res.tga
+Split randomly the dataset ../Data/003/dataset.json in 3 categories (70, 15, 15).
+Set nbEpoch to 1000
+Set targetBestValue to 0.990000
+Start training on Mon Apr 15 20:45:26 2019
+Epoch 00001/01000 TrainAcc[0,1] 0.062225/0.990000 EvalAcc[0,1] 0.049214 on Mon Apr 15 20:45:40 2019
+Epoch 00001/01000 TrainAcc[0,1] 0.790655/0.990000 EvalAcc[0,1] 0.783720 on Mon Apr 15 20:46:25 2019
+Epoch 00001/01000 TrainAcc[0,1] 0.940741/0.990000 EvalAcc[0,1] 0.934387 on Mon Apr 15 20:46:57 2019
+Epoch 00001/01000 TrainAcc[0,1] 0.967399/0.990000 EvalAcc[0,1] 0.963192 on Mon Apr 15 20:47:39 2019
+Epoch 00003/01000 TrainAcc[0,1] 0.972812/0.990000 EvalAcc[0,1] 0.969609 on Mon Apr 15 20:50:29 2019
+Epoch 00007/01000 TrainAcc[0,1] 0.974108/0.990000 EvalAcc[0,1] 0.971116 on Mon Apr 15 21:11:54 2019
+Epoch 00009/01000 TrainAcc[0,1] 0.974298/0.990000 EvalAcc[0,1] 0.972360 on Mon Apr 15 21:51:37 2019
+Epoch 00011/01000 TrainAcc[0,1] 0.974552/0.990000 EvalAcc[0,1] 0.971954 on Mon Apr 15 22:21:55 2019
+Epoch 00014/01000 TrainAcc[0,1] 0.974569/0.990000 EvalAcc[0,1] 0.971992 on Mon Apr 15 23:09:06 2019
+Epoch 00014/01000 TrainAcc[0,1] 0.974735/0.990000 EvalAcc[0,1] 0.972137 on Mon Apr 15 23:17:00 2019
+Epoch 00014/01000 TrainAcc[0,1] 0.974759/0.990000 EvalAcc[0,1] 0.972655 on Mon Apr 15 23:26:14 2019
+Epoch 00015/01000 TrainAcc[0,1] 0.975324/0.990000 EvalAcc[0,1] 0.972972 on Mon Apr 15 23:30:17 2019
+Epoch 00017/01000 TrainAcc[0,1] 0.975573/0.990000 EvalAcc[0,1] 0.972837 on Mon Apr 15 23:48:13 2019
+Epoch 00020/01000 TrainAcc[0,1] 0.975653/0.990000 EvalAcc[0,1] 0.972899 on Tue Apr 16 00:20:50 2019
+Epoch 00022/01000 TrainAcc[0,1] 0.976047/0.990000 EvalAcc[0,1] 0.972050 on Tue Apr 16 00:48:58 2019
+Epoch 00023/01000 TrainAcc[0,1] 0.976716/0.990000 EvalAcc[0,1] 0.973085 on Tue Apr 16 01:08:32 2019
+Epoch 00030/01000 TrainAcc[0,1] 0.976782/0.990000 EvalAcc[0,1] 0.972590 on Tue Apr 16 03:37:59 2019
+Epoch 00030/01000 TrainAcc[0,1] 0.976990/0.990000 EvalAcc[0,1] 0.973199 on Tue Apr 16 03:48:48 2019
+Epoch 00031/01000 TrainAcc[0,1] 0.977009/0.990000 EvalAcc[0,1] 0.973235 on Tue Apr 16 03:54:25 2019
+Epoch 00032/01000 TrainAcc[0,1] 0.977054/0.990000 EvalAcc[0,1] 0.973287 on Tue Apr 16 04:09:29 2019
+Epoch 00038/01000 TrainAcc[0,1] 0.978697/0.990000 EvalAcc[0,1] 0.959709 on Tue Apr 16 05:22:09 2019
+Epoch 00041/01000 TrainAcc[0,1] 0.979211/0.990000 EvalAcc[0,1] 0.976514 on Tue Apr 16 06:31:32 2019
+Epoch 00046/01000 TrainAcc[0,1] 0.979558/0.990000 EvalAcc[0,1] 0.978242 on Tue Apr 16 08:26:27 2019
+Epoch 00047/01000 TrainAcc[0,1] 0.980098/0.990000 EvalAcc[0,1] 0.978219 on Tue Apr 16 08:40:23 2019
+Epoch 00049/01000 TrainAcc[0,1] 0.980578/0.990000 EvalAcc[0,1] 0.978146 on Tue Apr 16 08:52:07 2019
+Epoch 00055/01000 TrainAcc[0,1] 0.980950/0.990000 EvalAcc[0,1] 0.978815 on Tue Apr 16 10:52:49 2019
+Epoch 00059/01000 TrainAcc[0,1] 0.981114/0.990000 EvalAcc[0,1] 0.978677 on Tue Apr 16 12:02:25 2019
+Epoch 00064/01000 TrainAcc[0,1] 0.981249/0.990000 EvalAcc[0,1] 0.978890 on Tue Apr 16 14:01:51 2019
+Epoch 00067/01000 TrainAcc[0,1] 0.981341/0.990000 EvalAcc[0,1] 0.979008 on Tue Apr 16 15:08:01 2019
+Epoch 00071/01000 TrainAcc[0,1] 0.981367/0.990000 EvalAcc[0,1] 0.980194 on Tue Apr 16 16:53:10 2019
+Epoch 00072/01000 TrainAcc[0,1] 0.981656/0.990000 EvalAcc[0,1] 0.980273 on Tue Apr 16 16:58:37 2019
+Epoch 00072/01000 TrainAcc[0,1] 0.981693/0.990000 EvalAcc[0,1] 0.980373 on Tue Apr 16 17:01:40 2019
+Epoch 00073/01000 TrainAcc[0,1] 0.981816/0.990000 EvalAcc[0,1] 0.980558 on Tue Apr 16 17:14:16 2019
+Epoch 00075/01000 TrainAcc[0,1] 0.981917/0.990000 EvalAcc[0,1] 0.980444 on Tue Apr 16 17:22:06 2019
+Epoch 00079/01000 TrainAcc[0,1] 0.982009/0.990000 EvalAcc[0,1] 0.980219 on Tue Apr 16 18:01:49 2019
+Epoch 00106/01000 TrainAcc[0,1] 0.982069/0.990000 EvalAcc[0,1] 0.980453 on Wed Apr 17 04:20:24 2019
+Epoch 00113/01000 TrainAcc[0,1] 0.982135/0.990000 EvalAcc[0,1] 0.980218 on Wed Apr 17 06:57:37 2019
+Epoch 00113/01000 TrainAcc[0,1] 0.982200/0.990000 EvalAcc[0,1] 0.980290 on Wed Apr 17 07:06:36 2019
+Epoch 00121/01000 TrainAcc[0,1] 0.982280/0.990000 EvalAcc[0,1] 0.980218 on Wed Apr 17 10:14:02 2019
+End training on Wed Apr 17 23:00:02 2019
+Saved the result to weights.json
+Start test on Wed Apr 17 23:03:17 2019
+TestAcc[0,1] 0.984014
+End test on Wed Apr 17 23:03:21 2019
+Loaded the ImgSegmentor in 0.290000ms
+Predicted ../Data/003/img001.tga in 122.172997ms
+Saved result of prediction to res.tga

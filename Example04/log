@@ -1,0 +1,1 @@
+rm *_checkpoint.json weights.json res.tga; main -nbEpoch 1000 -bestVal 0.99 -train -test -pred ../Data/004/img001.tga res.tga

@@ -1,0 +1,23 @@
+rm *_checkpoint.json weights.json res.tga; main -help -nbEpoch 1000 -bestVal 0.99 -train -test -pred Data/img001.tga res.tga
+Split randomly the dataset ./Data/dataset.json in 3 categories (70, 15, 15).
+main [-help] [-train] [-nbEpoch <nb training epoch>][-bestVal <target best value for training>] [-test] [-pred <path to input image> [<path to ouput image>]]
+Set nbEpoch to 1000
+Set targetBestValue to 0.990000
+Start training on Sun Apr 14 23:13:58 2019
+Epoch 00001/01000 TrainAcc[0,1] 0.059202/0.990000 EvalAcc[0,1] 0.057930 
+Epoch 00001/01000 TrainAcc[0,1] 0.172058/0.990000 EvalAcc[0,1] 0.111034 
+Epoch 00001/01000 TrainAcc[0,1] 0.600263/0.990000 EvalAcc[0,1] 0.387623 
+Epoch 00001/01000 TrainAcc[0,1] 0.783461/0.990000 EvalAcc[0,1] 0.663590 
+Epoch 00002/01000 TrainAcc[0,1] 0.938439/0.990000 EvalAcc[0,1] 0.940390 
+Epoch 00002/01000 TrainAcc[0,1] 0.967073/0.990000 EvalAcc[0,1] 0.882004 
+Epoch 00003/01000 TrainAcc[0,1] 0.975592/0.990000 EvalAcc[0,1] 0.889433 
+Epoch 00008/01000 TrainAcc[0,1] 0.976462/0.990000 EvalAcc[0,1] 0.923844 
+Epoch 00008/01000 TrainAcc[0,1] 0.976741/0.990000 EvalAcc[0,1] 0.911374 
+Epoch 00010/01000 TrainAcc[0,1] 0.976854/0.990000 EvalAcc[0,1] 0.922634 
+Epoch 00014/01000 TrainAcc[0,1] 0.977570/0.990000 EvalAcc[0,1] 0.881201 
+Epoch 00017/01000 TrainAcc[0,1] 0.978072/0.990000 EvalAcc[0,1] 0.908354 
+Epoch 00017/01000 TrainAcc[0,1] 0.978198/0.990000 EvalAcc[0,1] 0.876532 
+Epoch 00017/01000 TrainAcc[0,1] 0.979334/0.990000 EvalAcc[0,1] 0.918242 
+Epoch 00021/01000 TrainAcc[0,1] 0.979586/0.990000 EvalAcc[0,1] 0.927341 
+Epoch 00037/01000 TrainAcc[0,1] 0.979650/0.990000 EvalAcc[0,1] 0.927341 
+Epoch 00042/01000 TrainAcc[0,1] 0.979693/0.990000 EvalAcc[0,1] 0.927821 

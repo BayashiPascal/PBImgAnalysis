@@ -11,6 +11,7 @@
 #include <execinfo.h>
 #include <errno.h>
 #include <string.h>
+#include <time.h>
 #include <signal.h>
 #include "pberr.h"
 #include "pbdataanalysis.h"

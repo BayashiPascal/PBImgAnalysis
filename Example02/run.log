@@ -1,0 +1,21 @@
+rm *_checkpoint.json weights.json res.tga; main -nbEpoch 1000 -bestVal 0.99 -train -test -pred ../Data/002/img001.tga res.tga
+Split randomly the dataset ../Data/002/dataset.json in 3 categories (70, 15, 15).
+Set nbEpoch to 1000
+Set targetBestValue to 0.990000
+Start training on Mon Apr 15 20:31:05 2019
+Epoch 00001/01000 TrainAcc[0,1] 0.033974/0.990000 EvalAcc[0,1] 0.010611 on Mon Apr 15 20:31:20 2019
+Epoch 00001/01000 TrainAcc[0,1] 0.044586/0.990000 EvalAcc[0,1] 0.047093 on Mon Apr 15 20:31:52 2019
+Epoch 00001/01000 TrainAcc[0,1] 0.058650/0.990000 EvalAcc[0,1] 0.068626 on Mon Apr 15 20:32:14 2019
+Epoch 00001/01000 TrainAcc[0,1] 0.950540/0.990000 EvalAcc[0,1] 0.954232 on Mon Apr 15 20:32:27 2019
+Epoch 00001/01000 TrainAcc[0,1] 0.970763/0.990000 EvalAcc[0,1] 0.971327 on Mon Apr 15 20:32:59 2019
+Epoch 00003/01000 TrainAcc[0,1] 0.978824/0.990000 EvalAcc[0,1] 0.979852 on Mon Apr 15 20:36:00 2019
+Epoch 00005/01000 TrainAcc[0,1] 0.988348/0.990000 EvalAcc[0,1] 0.990280 on Mon Apr 15 20:43:56 2019
+Epoch 00006/01000 TrainAcc[0,1] 0.990141/0.990000 EvalAcc[0,1] 0.991174 on Mon Apr 15 20:45:09 2019
+End training on Mon Apr 15 20:45:09 2019
+Saved the result to weights.json
+Start test on Mon Apr 15 20:45:09 2019
+TestAcc[0,1] 0.991444
+End test on Mon Apr 15 20:45:12 2019
+Loaded the ImgSegmentor in 0.335000ms
+Predicted ../Data/002/img001.tga in 108.884003ms
+Saved result of prediction to res.tga

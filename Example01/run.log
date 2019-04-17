@@ -1,21 +1,22 @@
-rm *_checkpoint.json weights.json res.tga; main -help -nbEpoch 1000 -bestVal 0.99 -train -test -pred Data/img001.tga res.tga
-Split randomly the dataset ./Data/dataset.json in 3 categories (70, 15, 15).
-main [-help] [-train] [-nbEpoch <nb training epoch>][-bestVal <target best value for training>] [-test] [-pred <path to input image> [<path to ouput image>]]
+rm *_checkpoint.json weights.json res.tga; main -nbEpoch 1000 -bestVal 0.99 -train -test -pred ../Data/001/img001.tga res.tga
+Split randomly the dataset ../Data/001/dataset.json in 3 categories (70, 15, 15).
 Set nbEpoch to 1000
 Set targetBestValue to 0.990000
-Start training on Sun Apr 14 20:54:28 2019
-Epoch 00001/01000 TrainAcc[0,1] 0.002442/0.990000 EvalAcc[0,1] 0.001557 
-Epoch 00001/01000 TrainAcc[0,1] 0.067602/0.990000 EvalAcc[0,1] 0.045740 
-Epoch 00001/01000 TrainAcc[0,1] 0.961453/0.990000 EvalAcc[0,1] 0.952387 
-Epoch 00004/01000 TrainAcc[0,1] 0.970533/0.990000 EvalAcc[0,1] 0.966501 
-Epoch 00004/01000 TrainAcc[0,1] 0.989395/0.990000 EvalAcc[0,1] 0.987508 
-Epoch 00005/01000 TrainAcc[0,1] 0.990914/0.990000 EvalAcc[0,1] 0.989201 
-Epoch 00005/01000 TrainAcc[0,1] 0.991882/0.990000 EvalAcc[0,1] 0.990113 
-End training on Sun Apr 14 21:08:05 2019
+Start training on Mon Apr 15 20:08:36 2019
+Epoch 00001/01000 TrainAcc[0,1] 0.061864/0.990000 EvalAcc[0,1] 0.058586 on Mon Apr 15 20:08:50 2019
+Epoch 00001/01000 TrainAcc[0,1] 0.160091/0.990000 EvalAcc[0,1] 0.198188 on Mon Apr 15 20:09:01 2019
+Epoch 00001/01000 TrainAcc[0,1] 0.838949/0.990000 EvalAcc[0,1] 0.786579 on Mon Apr 15 20:10:32 2019
+Epoch 00002/01000 TrainAcc[0,1] 0.927902/0.990000 EvalAcc[0,1] 0.818971 on Mon Apr 15 20:13:15 2019
+Epoch 00003/01000 TrainAcc[0,1] 0.976553/0.990000 EvalAcc[0,1] 0.978837 on Mon Apr 15 20:14:27 2019
+Epoch 00005/01000 TrainAcc[0,1] 0.979661/0.990000 EvalAcc[0,1] 0.980815 on Mon Apr 15 20:17:08 2019
+Epoch 00007/01000 TrainAcc[0,1] 0.984054/0.990000 EvalAcc[0,1] 0.982006 on Mon Apr 15 20:27:21 2019
+Epoch 00008/01000 TrainAcc[0,1] 0.988245/0.990000 EvalAcc[0,1] 0.985878 on Mon Apr 15 20:28:33 2019
+Epoch 00009/01000 TrainAcc[0,1] 0.996838/0.990000 EvalAcc[0,1] 0.996841 on Mon Apr 15 20:30:56 2019
+End training on Mon Apr 15 20:30:56 2019
 Saved the result to weights.json
-Start test on Sun Apr 14 21:08:05 2019
-TestAcc[0,1] 0.990119
-End test on Sun Apr 14 21:08:09 2019
-Loaded the ImgSegmentor in 0.340000ms
-Predicted Data/img001.tga in 114.585999ms
+Start test on Mon Apr 15 20:30:56 2019
+TestAcc[0,1] 0.998163
+End test on Mon Apr 15 20:30:59 2019
+Loaded the ImgSegmentor in 0.330000ms
+Predicted ../Data/001/img001.tga in 125.967003ms
 Saved result of prediction to res.tga

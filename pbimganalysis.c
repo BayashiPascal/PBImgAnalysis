@@ -741,7 +741,9 @@ GenBrush** ISPredict(const ImgSegmentor* const that,
 void ISTrainHandlerCtrlC(int sig) {
   (void)sig;
   PBIA_CtrlC = true;
-  printf("\n!!! ISTrain Interrupted by Ctrl-C !!!\n");
+  time_t intTime = time(NULL);
+  char* strIntTime = ctime(&intTime);
+  printf("\n%s!!! ISTrain Interrupted by Ctrl-C !!!\n", strIntTime);
   fflush(stdout);
 }
  
@@ -830,7 +832,8 @@ void ISTrain(ImgSegmentor* const that,
     // Loop over epochs
     do {
       // Loop over the GenAlg entities
-      for (int iEnt = 0; iEnt < GAGetNbAdns(ga) && !PBIA_CtrlC; ++iEnt) {
+      for (int iEnt = 0; iEnt < GAGetNbAdns(ga) && 
+        bestValue < ISGetTargetBestValue(that) && !PBIA_CtrlC; ++iEnt) {
         // If this entity is a new one
         if (GAAdnIsNew(GAAdn(ga, iEnt))) {
           // Loop on the criterion to set the criteria parameters with 
@@ -872,7 +875,9 @@ void ISTrain(ImgSegmentor* const that,
               evalValue = ISEvaluate(that, dataset, iCatValid);
               printf("EvalAcc[0,1] %f ", evalValue);
             }
-            printf("\n");
+            time_t improvTime = time(NULL);
+            char* strImprovTime = ctime(&improvTime);
+            printf("on %s", strImprovTime);
             fflush(stdout);
             // Save the ImgSegmentor
             if (GDSGetNbCat(dataset) > 1) {

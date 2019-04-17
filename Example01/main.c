@@ -170,7 +170,7 @@ int main(int argc, char** argv) {
   srandom(time(NULL));
 
   // Path to the dataset
-  char* cfgFilePath = PBFSJoinPath(".", "Data", "dataset.json");
+  char* cfgFilePath = PBFSJoinPath("..", "Data", "001", "dataset.json");
   GDataSetGenBrushPair dataSet = 
     GDataSetGenBrushPairCreateStatic(cfgFilePath);
 
