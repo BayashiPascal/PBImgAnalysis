@@ -191,6 +191,46 @@ ImgSegmentorCriterionRGB* ISAddCriterionRGB(ImgSegmentor* const that,
   return NULL;
 }
 
+// Add a new ImageSegmentorCriterionTex to the ImgSegmentor 'that'
+// under the node 'parent'
+// If 'parent' is null it is inserted to the root of the ImgSegmentor
+// Return the added criterion if successful, null else
+#if BUILDMODE != 0
+inline
+#endif
+ImgSegmentorCriterionTex* ISAddCriterionTex(ImgSegmentor* const that, 
+  void* const parent, const int rank, const int size) {
+#if BUILDMODE == 0
+  if (that == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'that' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+#endif
+  // Create and add the criterion to the set of criteria
+  if (parent == NULL) {
+    ImgSegmentorCriterionTex* criterion = 
+      ImgSegmentorCriterionTexCreate(ISGetNbClass(that), rank, size);
+    GenTreeAppendData(&(that->_criteria), criterion);
+    return criterion;
+  } else {
+    GenTreeIterDepth iter = 
+      GenTreeIterDepthCreateStatic(&(that->_criteria));
+    ImgSegmentorCriterionTex* criterion = 
+      ImgSegmentorCriterionTexCreate(ISGetNbClass(that), rank, size);
+    bool ret = GenTreeAppendToNode(
+      &(that->_criteria), criterion, parent, &iter);
+    GenTreeIterFreeStatic(&iter);
+    if (ret) {
+      return criterion;
+    } else {
+      ImgSegmentorCriterionTexFree(&criterion);
+      return NULL;
+    }
+  }
+  return NULL;
+}
+
 // Add a new ImageSegmentorCriterionRGB2HSV to the ImgSegmentor 'that'
 // under the node 'parent'
 // If 'parent' is null it is inserted to the root of the ImgSegmentor
@@ -563,5 +603,52 @@ void ISCDustSetSize(
   VecSet(that->_size, iClass, size);
 }
 
+// ---- ImgSegmentorCriterionTex
+
+// Return the NeuraNet of the ImgSegmentorCriterionTex 'that'
+#if BUILDMODE != 0
+inline
+#endif
+const NeuraNet* ISCTexNeuraNet(
+  const ImgSegmentorCriterionTex* const that) {
+#if BUILDMODE == 0
+  if (that == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'that' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+#endif
+  return that->_nn;
+}
+
+// Return the rank of the ImgSegmentorCriterionTex 'that'
+#if BUILDMODE != 0
+inline
+#endif
+int ISCTexGetRank(const ImgSegmentorCriterionTex* const that) {
+#if BUILDMODE == 0
+  if (that == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'that' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+#endif
+  return that->_rank;
+}
+
+// Return the size of the ImgSegmentorCriterionTex 'that'
+#if BUILDMODE != 0
+inline
+#endif
+int ISCTexGetSize(const ImgSegmentorCriterionTex* const that) {
+#if BUILDMODE == 0
+  if (that == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'that' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+#endif
+  return that->_size;
+}
 
 

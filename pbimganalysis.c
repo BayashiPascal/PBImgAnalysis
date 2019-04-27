@@ -457,7 +457,24 @@ bool ISCRGBDecodeAsJSON(
 bool ISCRGB2HSVDecodeAsJSON(
   ImgSegmentorCriterionRGB2HSV** const that, const JSONNode* const json);
   
+// Function which return the JSON encoding of 'that' 
+void ISCDustEncodeAsJSON(const ImgSegmentorCriterionDust* const that, 
+  JSONNode* const json);
 
+// Function which decodes the JSON encoding of a 
+// ImgSegmentorCriterionDust 
+bool ISCDustDecodeAsJSON(
+  ImgSegmentorCriterionDust** const that, const JSONNode* const json);
+  
+// Function which return the JSON encoding of 'that' 
+void ISCTexEncodeAsJSON(const ImgSegmentorCriterionTex* const that, 
+  JSONNode* const json);
+
+// Function which decodes the JSON encoding of a 
+// ImgSegmentorCriterionTex 
+bool ISCTexDecodeAsJSON(
+  ImgSegmentorCriterionTex** const that, const JSONNode* const json);
+  
 // ================ Functions implementation ====================
 
 // Create a new static ImgSegmentor with 'nbClass' output
@@ -545,6 +562,10 @@ void ImgSegmentorFreeStatic(ImgSegmentor* that) {
         case ISCType_Dust:
           ImgSegmentorCriterionDustFree(
             (ImgSegmentorCriterionDust**)&criterion);
+          break;
+        case ISCType_Tex:
+          ImgSegmentorCriterionTexFree(
+            (ImgSegmentorCriterionTex**)&criterion);
           break;
         default:
           PBImgAnalysisErr->_type = PBErrTypeNotYetImplemented;
@@ -1378,6 +1399,14 @@ VecFloat* ISCPredict(const ImgSegmentorCriterion* const that,
       res = ISCRGB2HSVPredict((const ImgSegmentorCriterionRGB2HSV*)that, 
         input, dim);
       break;
+    case ISCType_Dust:
+      res = ISCDustPredict((const ImgSegmentorCriterionDust*)that, 
+        input, dim);
+      break;
+    case ISCType_Tex:
+      res = ISCTexPredict((const ImgSegmentorCriterionTex*)that, 
+        input, dim);
+      break;
     default:
       PBImgAnalysisErr->_type = PBErrTypeNotYetImplemented;
       sprintf(PBImgAnalysisErr->_msg, 
@@ -1416,6 +1445,14 @@ JSONNode* ISCEncodeAsJSON(
     case ISCType_RGB2HSV:
       ISCRGB2HSVEncodeAsJSON(
         (const ImgSegmentorCriterionRGB2HSV*)that, json);
+      break;
+    case ISCType_Dust:
+      ISCDustEncodeAsJSON(
+        (const ImgSegmentorCriterionDust*)that, json);
+      break;
+    case ISCType_Tex:
+      ISCTexEncodeAsJSON(
+        (const ImgSegmentorCriterionTex*)that, json);
       break;
     default:
       PBImgAnalysisErr->_type = PBErrTypeNotYetImplemented;
@@ -1460,6 +1497,12 @@ bool ISCDecodeAsJSON(
       ret = ISCRGB2HSVDecodeAsJSON(
         (ImgSegmentorCriterionRGB2HSV**)that, json);
       break;
+    case ISCType_Dust:
+      ret = ISCDustDecodeAsJSON((ImgSegmentorCriterionDust**)that, json);
+      break;
+    case ISCType_Tex:
+      ret = ISCTexDecodeAsJSON((ImgSegmentorCriterionTex**)that, json);
+      break;
     default:
       ret = false;
       break;
@@ -1487,6 +1530,12 @@ long _ISCGetNbParamInt(const ImgSegmentorCriterion* const that) {
     case ISCType_RGB2HSV:
       res = ISCRGB2HSVGetNbParamInt(
         (const ImgSegmentorCriterionRGB2HSV*)that);
+      break;
+    case ISCType_Dust:
+      res = ISCDustGetNbParamInt((const ImgSegmentorCriterionDust*)that);
+      break;
+    case ISCType_Tex:
+      res = ISCTexGetNbParamInt((const ImgSegmentorCriterionTex*)that);
       break;
     default:
       PBImgAnalysisErr->_type = PBErrTypeNotYetImplemented;
@@ -1518,6 +1567,13 @@ long _ISCGetNbParamFloat(const ImgSegmentorCriterion* const that) {
     case ISCType_RGB2HSV:
       res = ISCRGB2HSVGetNbParamFloat(
         (const ImgSegmentorCriterionRGB2HSV*)that);
+      break;
+    case ISCType_Dust:
+      res = ISCDustGetNbParamFloat(
+        (const ImgSegmentorCriterionDust*)that);
+      break;
+    case ISCType_Tex:
+      res = ISCTexGetNbParamFloat((const ImgSegmentorCriterionTex*)that);
       break;
     default:
       PBImgAnalysisErr->_type = PBErrTypeNotYetImplemented;
@@ -1552,7 +1608,15 @@ void _ISCSetBoundsAdnInt(const ImgSegmentorCriterion* const that,
         ga, shift);
       break;
     case ISCType_RGB2HSV:
-      ISCRGB2HSVSetBoundsAdnInt((const ImgSegmentorCriterionRGB2HSV*)that,
+      ISCRGB2HSVSetBoundsAdnInt(
+        (const ImgSegmentorCriterionRGB2HSV*)that, ga, shift);
+      break;
+    case ISCType_Dust:
+      ISCDustSetBoundsAdnInt((const ImgSegmentorCriterionDust*)that,
+        ga, shift);
+      break;
+    case ISCType_Tex:
+      ISCTexSetBoundsAdnInt((const ImgSegmentorCriterionTex*)that,
         ga, shift);
       break;
     default:
@@ -1589,6 +1653,14 @@ void _ISCSetBoundsAdnFloat(const ImgSegmentorCriterion* const that,
     case ISCType_RGB2HSV:
       ISCRGB2HSVSetBoundsAdnFloat(
         (const ImgSegmentorCriterionRGB2HSV*)that, ga, shift);
+      break;
+    case ISCType_Dust:
+      ISCDustSetBoundsAdnFloat((const ImgSegmentorCriterionDust*)that,
+        ga, shift);
+      break;
+    case ISCType_Tex:
+      ISCTexSetBoundsAdnFloat((const ImgSegmentorCriterionTex*)that,
+        ga, shift);
       break;
     default:
       PBImgAnalysisErr->_type = PBErrTypeNotYetImplemented;
@@ -1667,6 +1739,10 @@ void _ISCSetAdnFloat(const ImgSegmentorCriterion* const that,
       ISCDustSetAdnFloat((const ImgSegmentorCriterionDust*)that,
         adn, shift);
       break;
+    case ISCType_Tex:
+      ISCTexSetAdnFloat((const ImgSegmentorCriterionTex*)that,
+        adn, shift);
+      break;
     default:
       PBImgAnalysisErr->_type = PBErrTypeNotYetImplemented;
       sprintf(PBImgAnalysisErr->_msg, 
@@ -1679,7 +1755,8 @@ void _ISCSetAdnFloat(const ImgSegmentorCriterion* const that,
 // ---- ImgSegmentorCriterionRGB
 
 // Create a new ImgSegmentorCriterionRGB with 'nbClass' output
-ImgSegmentorCriterionRGB* ImgSegmentorCriterionRGBCreate(int nbClass) {
+ImgSegmentorCriterionRGB* ImgSegmentorCriterionRGBCreate(
+  const int nbClass) {
 #if BUILDMODE == 0
   if (nbClass <= 0) {
     PBImgAnalysisErr->_type = PBErrTypeInvalidArg;
@@ -1781,8 +1858,8 @@ bool ISCRGBDecodeAsJSON(
 
 // Make the prediction on the 'input' values with the 
 // ImgSegmentorCriterionRGB that
-// 'input' 's format is width*height*3, values in [0.0, 1.0]
-// Return values are width*height*nbClass, values in [-1.0, 1.0]
+// 'input' 's format is 3*width*height, values in [0.0, 1.0]
+// Return values are nbClass*width*height, values in [-1.0, 1.0]
 VecFloat* ISCRGBPredict(const ImgSegmentorCriterionRGB* const that,
   const VecFloat* input, const VecShort2D* const dim) {
 #if BUILDMODE == 0
@@ -1951,7 +2028,7 @@ void ISCRGBSetAdnFloat(const ImgSegmentorCriterionRGB* const that,
 
 // Create a new ImgSegmentorCriterionRGB2HSV with 'nbClass' output
 ImgSegmentorCriterionRGB2HSV* ImgSegmentorCriterionRGB2HSVCreate(
-  int nbClass) {
+  const int nbClass) {
 #if BUILDMODE == 0
   if (nbClass <= 0) {
     PBImgAnalysisErr->_type = PBErrTypeInvalidArg;
@@ -2039,8 +2116,8 @@ bool ISCRGB2HSVDecodeAsJSON(
 
 // Make the prediction on the 'input' values with the 
 // ImgSegmentorCriterionRGB2HSV that
-// 'input' 's format is width*height*3, values in [0.0, 1.0]
-// Return values are width*height*3, values in [0.0, 1.0]
+// 'input' 's format is 3*width*height, values in [0.0, 1.0]
+// Return values are nbClass*width*height, values in [-1.0, 1.0]
 VecFloat* ISCRGB2HSVPredict(
   const ImgSegmentorCriterionRGB2HSV* const that,
   const VecFloat* input, const VecShort2D* const dim) {
@@ -2208,7 +2285,7 @@ void ISCRGB2HSVSetAdnFloat(
 
 // Create a new ImgSegmentorCriterionDust with 'nbClass' output
 ImgSegmentorCriterionDust* ImgSegmentorCriterionDustCreate(
-  int nbClass) {
+  const int nbClass) {
 #if BUILDMODE == 0
   if (nbClass <= 0) {
     PBImgAnalysisErr->_type = PBErrTypeInvalidArg;
@@ -2307,8 +2384,8 @@ bool ISCDustDecodeAsJSON(
 
 // Make the prediction on the 'input' values with the 
 // ImgSegmentorCriterionDust that
-// 'input' 's format is width*height*3, values in [0.0, 1.0]
-// Return values are width*height*3, values in [0.0, 1.0]
+// 'input' 's format is 3*width*height, values in [0.0, 1.0]
+// Return values are nbClass*width*height, values in [-1.0, 1.0]
 VecFloat* ISCDustPredict(
   const ImgSegmentorCriterionDust* const that,
   const VecFloat* input, const VecShort2D* const dim) {
@@ -2479,6 +2556,388 @@ void ISCDustSetAdnFloat(
   // Nothing to do
   (void)that;(void)adn;(void)shift;
 }
+
+// ---- ImgSegmentorCriterionTex
+
+// Create a new ImgSegmentorCriterionTex with 'nbClass' output,
+// 'rank' hidden layers and 3^'size' x 3^'size' down to 1x1 square 
+// fragments of the image as input
+ImgSegmentorCriterionTex* ImgSegmentorCriterionTexCreate(
+  const int nbClass, const int rank, const int size) {
+#if BUILDMODE == 0
+  if (nbClass <= 0) {
+    PBImgAnalysisErr->_type = PBErrTypeInvalidArg;
+    sprintf(PBImgAnalysisErr->_msg, "'nbClass' is invalid (%d>0)",
+      nbClass);
+    PBErrCatch(PBImgAnalysisErr);
+  }
+  if (rank <= 0) {
+    PBImgAnalysisErr->_type = PBErrTypeInvalidArg;
+    sprintf(PBImgAnalysisErr->_msg, "'rank' is invalid (%d>0)",
+      rank);
+    PBErrCatch(PBImgAnalysisErr);
+  }
+  if (size <= 0) {
+    PBImgAnalysisErr->_type = PBErrTypeInvalidArg;
+    sprintf(PBImgAnalysisErr->_msg, "'size' is invalid (%d>0)",
+      size);
+    PBErrCatch(PBImgAnalysisErr);
+  }
+#endif
+  // Allocate memory for the new ImgSegmentorCriterionTex
+  ImgSegmentorCriterionTex* that = PBErrMalloc(PBImgAnalysisErr,
+    sizeof(ImgSegmentorCriterionTex));
+  // Create the parent ImgSegmentorCriterion
+  that->_criterion = ImgSegmentorCriterionCreateStatic(nbClass, 
+    ISCType_RGB);
+  // Set the properties
+  that->_size = size;
+  that->_rank = rank;
+  // Create the NeuraNet
+  const int nbInput = 3 * (1 + (rank == 1 ? 0 : (rank - 1) * 9));
+  const int nbHiddenPerLayer = nbInput * nbClass;
+  VecLong* hidden = VecLongCreate(rank);
+  for (int iLayer = rank; iLayer--;)
+    VecSet(hidden, iLayer, nbHiddenPerLayer);
+  that->_nn = NeuraNetCreateFullyConnected(nbInput, nbClass, hidden);
+  VecFree(&hidden);
+  // Return the new ImgSegmentorCriterionTex
+  return that;
+}
+
+// Free the memory used by the ImgSegmentorCriterionTex 'that'
+void ImgSegmentorCriterionTexFree(ImgSegmentorCriterionTex** that) {
+  if (that == NULL || *that == NULL)
+    return;
+  // Free memory
+  ImgSegmentorCriterionFreeStatic((ImgSegmentorCriterion*)(*that));
+  NeuraNetFree(&((*that)->_nn));
+  free(*that);
+}
+
+// Function which return the JSON encoding of 'that' 
+void ISCTexEncodeAsJSON(
+  const ImgSegmentorCriterionTex* const that, JSONNode* const json) {
+#if BUILDMODE == 0
+  if (that == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'that' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+#endif
+  // Declare a buffer to convert value into string
+  char val[100];
+  // Rank
+  sprintf(val, "%d", that->_rank);
+  JSONAddProp(json, "_rank", val);
+  // Size 
+  sprintf(val, "%d", that->_size);
+  JSONAddProp(json, "_size", val);
+  // NeuraNet model
+  JSONAddProp(json, "_neuranet", NNEncodeAsJSON(that->_nn));
+}
+  
+// Function which decodes the JSON encoding of a 
+// ImgSegmentorCriterionTex 
+bool ISCTexDecodeAsJSON(
+  ImgSegmentorCriterionTex** const that, const JSONNode* const json) {
+#if BUILDMODE == 0
+  if (that == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'that' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+  if (json == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'json' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+#endif
+  // If the criterion exists
+  if (*that != NULL) {
+    // Free the memory
+    ImgSegmentorCriterionTexFree(that);
+  }
+  // Get the number of class
+  JSONNode* prop = JSONProperty(json, "_nbClass");
+  if (prop == NULL) {
+    return false;
+  }
+  int nbClass = atoi(JSONLabel(JSONValue(prop, 0)));
+  // If the number of class is invalid
+  if (nbClass < 1)
+    // Return the error code
+    return false;
+  // Get the size
+  prop = JSONProperty(json, "_size");
+  if (prop == NULL) {
+    return false;
+  }
+  int size = atoi(JSONLabel(JSONValue(prop, 0)));
+  // If the size is invalid
+  if (size < 1)
+    // Return the error code
+    return false;
+  // Get the rank
+  prop = JSONProperty(json, "_rank");
+  if (prop == NULL) {
+    return false;
+  }
+  int rank = atoi(JSONLabel(JSONValue(prop, 0)));
+  // If the rank is invalid
+  if (rank < 1)
+    // Return the error code
+    return false;
+  // Create the criterion
+  *that = ImgSegmentorCriterionTexCreate(nbClass, rank, size);
+  // If we couldn't create the criterion
+  if (*that == NULL)
+    // Return the failure code
+    return false;
+  // Decode the NeuraNet
+  prop = JSONProperty(json, "_neuranet");
+  if (prop == NULL) {
+    return false;
+  }
+  if (!NNDecodeAsJSON(&((*that)->_nn), prop))
+    return false;
+  // Return the success code
+  return true;
+}
+
+// Make the prediction on the 'input' values with the 
+// ImgSegmentorCriterionTex that
+// 'input' 's format is 3*width*height, values in [0.0, 1.0]
+// Return values are nbClass*width*height, values in [-1.0, 1.0]
+VecFloat* ISCTexPredict(const ImgSegmentorCriterionTex* const that,
+  const VecFloat* input, const VecShort2D* const dim) {
+#if BUILDMODE == 0
+  if (that == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'that' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+  if (input == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'input' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+  if (dim == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'dim' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+  if ((VecGet(dim, 0) * VecGet(dim, 1) * 3) != VecGetDim(input)) {
+    PBImgAnalysisErr->_type = PBErrTypeInvalidArg;
+    sprintf(PBImgAnalysisErr->_msg, 
+      "'input' 's dim is invalid (%ld=%d*%d*3)", VecGetDim(input),
+        VecGet(dim, 0), VecGet(dim, 1));
+    PBErrCatch(PBImgAnalysisErr);
+  }
+#endif
+  // Calculate the area of the input image
+  long area = VecGet(dim, 0) * VecGet(dim, 1);
+  // Allocate memory for the result
+  VecFloat* res = VecFloatCreate(area * (long)ISCGetNbClass(that));
+  // Declare variables to memorize the input/output of the NeuraNet
+  VecFloat* out = VecFloatCreate(ISCGetNbClass(that));
+  int nbIn = 3 * (1 + (ISCTexGetRank(that) == 1 ? 0 :
+    (ISCTexGetRank(that) - 1) * 9));
+  VecFloat* in = VecFloatCreate(nbIn);
+  // Calculate the size of the biggest fragment
+  int sizeFragMax = powi(3, ISCTexGetSize(that) - 1);
+  // Declare a variable to memorize the index of current pixel in the 
+  // input
+  long iInput = 0;
+  // Declare a variable to memorize the dimension of the fragment
+  VecShort2D dimFrag = VecShortCreateStatic2D();
+  // Loop on the image 
+  VecShort2D pos = VecShortCreateStatic2D();
+  do {
+    // Ignore the border of the image where there is not enough
+    // space to create the fragments
+    if (VecGet(&pos, 0) >= sizeFragMax - 1 && 
+      VecGet(&pos, 0) <= (VecGet(dim, 0) - sizeFragMax) && 
+      VecGet(&pos, 1) >= sizeFragMax - 1 && 
+      VecGet(&pos, 1) <= (VecGet(dim, 1) - sizeFragMax)) {
+      // Current pixel (fragment of size 1x1)
+      for (long i = 3; i--;)
+        VecSet(in, i, VecGet(input, iInput * 3L + i));
+      // Loop on fragment sizes bigger than 1x1
+      for (int iSize = 1; iSize <= ISCTexGetSize(that); ++iSize) {
+        // Get the size of the current fragment
+        int sizeFrag = powi(3, iSize);
+        VecSet(&dimFrag, 0, sizeFrag);
+        VecSet(&dimFrag, 1, sizeFrag);
+        // Get the area of the frag
+        long areaFrag = sizeFrag * sizeFrag;
+        // Get the half size of the current fragment
+        int halfSizeFrag = (sizeFrag - 1) / 2;
+        // Create the matrix of fragments' start position relative to 
+        // the current pixel
+        int relPos[18] = {
+          sizeFrag - 1, sizeFrag - 1,
+          sizeFrag - 1, halfSizeFrag,
+          sizeFrag - 1, 0,
+          halfSizeFrag, sizeFrag - 1,
+          halfSizeFrag, halfSizeFrag,
+          halfSizeFrag, 0,
+          0, sizeFrag - 1,
+          0, halfSizeFrag,
+          0, 0
+        };
+        // Loop on the 9 fragments for the current size
+        for (int iFrag = 9; iFrag--;) {
+          // Declare a variable to memorize the average value
+          float avg[3] = {0.0, 0.0, 0.0};
+          // Get the starting and ending pos for this fragment
+          VecShort2D startPosFrag = VecShortCreateStatic2D();
+          VecSet(&startPosFrag, 0, VecGet(&pos, 0) - relPos[iFrag]);
+          VecSet(&startPosFrag, 1, VecGet(&pos, 1) - relPos[iFrag]);
+          VecShort2D endPosFrag = VecShortCreateStatic2D();
+          VecSet(&endPosFrag, 0, VecGet(&startPosFrag, 0) + sizeFrag);
+          VecSet(&endPosFrag, 1, VecGet(&startPosFrag, 1) + sizeFrag);
+          // Loop on the fragment to calculate the average rgb value
+          VecShort2D posFrag = startPosFrag;
+          do {
+            long iPosFrag = GBPosIndex(&posFrag, &dimFrag);
+            for (long i = 3; i--;)
+              avg[i] += VecGet(input, iPosFrag + i);
+          } while (VecShiftStep(&posFrag, &startPosFrag, &endPosFrag));
+          for (long i = 3; i--;)
+            avg[i] /= (float)areaFrag;
+          // Set the average value in the input vector
+          for (long i = 3; i--;)
+            VecSet(in, 3 * (1 + (iSize - 1) * 9 + iFrag) + i, avg[i]);
+        }
+      }
+      // Apply the NeuraNet on inputs
+      NNEval(that->_nn, in, out);
+      // Store the result
+      for (long i = ISCGetNbClass(that); i--;)
+        VecSet(res, iInput * (long)ISCGetNbClass(that) + i,
+          VecGet(out, i));
+    }
+    // Increment the index of the current pixel in input
+    ++iInput;
+  } while (VecStep(&pos, dim));
+  // Free memory
+  VecFree(&out);
+  // Return the result
+  return res;
+}
+
+// Return the number of int parameters for the criterion 'that'
+long ISCTexGetNbParamInt(const ImgSegmentorCriterionTex* const that) {
+#if BUILDMODE == 0
+  if (that == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'that' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+#endif
+  (void)that;
+  return 0;
+}
+
+// Return the number of float parameters for the criterion 'that'
+long ISCTexGetNbParamFloat(const ImgSegmentorCriterionTex* const that) {
+#if BUILDMODE == 0
+  if (that == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'that' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+#endif
+  return NNGetGAAdnFloatLength(that->_nn);
+}
+
+// Set the bounds of int parameters for training of the criterion 'that'
+void ISCTexSetBoundsAdnInt(const ImgSegmentorCriterionTex* const that,
+  GenAlg* const ga, const long shift) {
+#if BUILDMODE == 0
+  if (that == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'that' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+  if (ga == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'ga' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+#endif
+  // Nothing to do
+  (void)that;(void)ga;(void)shift;
+}
+
+// Set the bounds of float parameters for training of the criterion 
+// 'that'
+void ISCTexSetBoundsAdnFloat(const ImgSegmentorCriterionTex* const that,
+  GenAlg* const ga, const long shift) {
+#if BUILDMODE == 0
+  if (that == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'that' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+  if (ga == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'ga' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+#endif
+  VecFloat2D bounds = VecFloatCreateStatic2D();
+  VecSet(&bounds, 0, -1.0);
+  VecSet(&bounds, 1, 1.0);
+  for (long iParam = ISCTexGetNbParamFloat(that); iParam--;) {
+    GASetBoundsAdnFloat(ga, iParam + shift, &bounds);
+  }
+}
+
+// Set the values of int parameters for training of the criterion 'that'
+void ISCTexSetAdnInt(const ImgSegmentorCriterionTex* const that,
+  const GenAlgAdn* const adn, const long shift) {
+#if BUILDMODE == 0
+  if (that == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'that' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+  if (adn == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'ga' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+#endif
+  // Nothing to do
+  (void)that;(void)adn;(void)shift;
+}
+
+// Set the values of float parameters for training of the criterion 
+// 'that'
+void ISCTexSetAdnFloat(const ImgSegmentorCriterionTex* const that,
+  const GenAlgAdn* const adn, const long shift) {
+#if BUILDMODE == 0
+  if (that == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'that' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+  if (adn == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'ga' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+#endif
+  const VecFloat* adnF = GAAdnAdnF(adn);
+  VecFloat* bases = VecFloatCreate(ISCTexGetNbParamFloat(that));
+  for (int i = ISCTexGetNbParamFloat(that); i--;)
+    VecSet(bases, i, VecGet(adnF, shift + i));
+  NNSetBases((NeuraNet*)ISCTexNeuraNet(that), bases);
+  VecFree(&bases);
+}
+
 
 // ------------------ General functions ----------------------
 

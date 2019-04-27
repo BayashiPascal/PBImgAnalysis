@@ -14,8 +14,8 @@
 #include <time.h>
 #include <signal.h>
 #include "pberr.h"
-#include "pbdataanalysis.h"
 #include "genbrush.h"
+#include "pbdataanalysis.h"
 #include "genalg.h"
 #include "neuranet.h"
 #include "gdataset.h"
@@ -212,7 +212,7 @@ typedef struct ImgSegmentorTrainParam {
 } ImgSegmentorParam;
 
 typedef enum ISCType {
-  ISCType_RGB, ISCType_RGB2HSV, ISCType_Dust
+  ISCType_RGB, ISCType_RGB2HSV, ISCType_Dust, ISCType_Tex
 } ISCType;
 
 typedef struct ImgSegmentorCriterion {
@@ -240,6 +240,17 @@ typedef struct ImgSegmentorCriterionDust {
   // Dust size for each class
   VecLong* _size;
 } ImgSegmentorCriterionDust;
+
+typedef struct ImgSegmentorCriterionTex {
+  // ImgSegmentorCriterion
+  ImgSegmentorCriterion _criterion;
+  // NeuraNet model
+  NeuraNet* _nn;
+  // Rank (nb of hidden layers in the NeuraNet)
+  int _rank;
+  // Size (consider from 3^size x 3^size to 1x1 square pixels fragments)
+  int _size;
+} ImgSegmentorCriterionTex;
 
 // ================ Functions declaration ====================
 
@@ -284,6 +295,16 @@ inline
 #endif
 ImgSegmentorCriterionRGB* ISAddCriterionRGB(ImgSegmentor* const that, 
   void* const parent);
+
+// Add a new ImageSegmentorCriterionTex to the ImgSegmentor 'that'
+// under the node 'parent'
+// If 'parent' is null it is inserted to the root of the ImgSegmentor
+// Return the added criterion if successful, null else
+#if BUILDMODE != 0
+inline
+#endif
+ImgSegmentorCriterionTex* ISAddCriterionTex(ImgSegmentor* const that, 
+  void* const parent, const int rank, const int size);
 
 // Add a new ImageSegmentorCriterionRGB2HSV to the ImgSegmentor 'that'
 // under the node 'parent'
@@ -497,15 +518,16 @@ void _ISCSetAdnFloat(const ImgSegmentorCriterion* const that,
 // ---- ImgSegmentorCriterionRGB
 
 // Create a new ImgSegmentorCriterionRGB with 'nbClass' output
-ImgSegmentorCriterionRGB* ImgSegmentorCriterionRGBCreate(int nbClass);
+ImgSegmentorCriterionRGB* ImgSegmentorCriterionRGBCreate(
+  const int nbClass);
 
 // Free the memory used by the ImgSegmentorCriterionRGB 'that'
 void ImgSegmentorCriterionRGBFree(ImgSegmentorCriterionRGB** that);
 
 // Make the prediction on the 'input' values with the 
 // ImgSegmentorCriterionRGB that
-// 'input' 's format is width*height*3, values in [0.0, 1.0]
-// Return values are width*height*nbClass, values in [-1.0, 1.0]
+// 'input' 's format is 3*width*height, values in [0.0, 1.0]
+// Return values are nbClass*width*height, values in [-1.0, 1.0]
 VecFloat* ISCRGBPredict(const ImgSegmentorCriterionRGB* const that,
   const VecFloat* input, const VecShort2D* const dim);
 
@@ -542,7 +564,7 @@ const NeuraNet* ISCRGBNeuraNet(
 
 // Create a new ImgSegmentorCriterionRGB2HSV with 'nbClass' output
 ImgSegmentorCriterionRGB2HSV* ImgSegmentorCriterionRGB2HSVCreate(
-  int nbClass);
+  const int nbClass);
 
 // Free the memory used by the ImgSegmentorCriterionRGB2HSV 'that'
 void ImgSegmentorCriterionRGB2HSVFree(
@@ -550,8 +572,8 @@ void ImgSegmentorCriterionRGB2HSVFree(
 
 // Make the prediction on the 'input' values with the 
 // ImgSegmentorCriterionRGB2HSV that
-// 'input' 's format is width*height*3, values in [0.0, 1.0]
-// Return values are width*height*nbClass, values in [-1.0, 1.0]
+// 'input' 's format is 3*width*height, values in [0.0, 1.0]
+// Return values are nbClass*width*height, values in [-1.0, 1.0]
 VecFloat* ISCRGB2HSVPredict(
   const ImgSegmentorCriterionRGB2HSV* const that,
   const VecFloat* input, const VecShort2D* const dim);
@@ -586,7 +608,7 @@ void ISCRGB2HSVSetAdnFloat(const ImgSegmentorCriterionRGB2HSV* const that,
 
 // Create a new ImgSegmentorCriterionDust with 'nbClass' output
 ImgSegmentorCriterionDust* ImgSegmentorCriterionDustCreate(
-  int nbClass);
+  const int nbClass);
 
 // Free the memory used by the ImgSegmentorCriterionDust 'that'
 void ImgSegmentorCriterionDustFree(
@@ -594,8 +616,8 @@ void ImgSegmentorCriterionDustFree(
 
 // Make the prediction on the 'input' values with the 
 // ImgSegmentorCriterionDust that
-// 'input' 's format is width*height*3, values in [0.0, 1.0]
-// Return values are width*height*nbClass, values in [-1.0, 1.0]
+// 'input' 's format is 3*width*height, values in [0.0, 1.0]
+// Return values are nbClass*width*height, values in [-1.0, 1.0]
 VecFloat* ISCDustPredict(
   const ImgSegmentorCriterionDust* const that,
   const VecFloat* input, const VecShort2D* const dim);
@@ -643,6 +665,65 @@ void ISCDustSetSize(
   const ImgSegmentorCriterionDust* const that, const int iClass, 
   const long size);
   
+// ---- ImgSegmentorCriterionTex
+
+// Create a new ImgSegmentorCriterionTex with 'nbClass' output,
+// 'rank' hidden layers and 3^'size' x 3^'size' down to 1x1 square 
+// fragments of the image as input
+ImgSegmentorCriterionTex* ImgSegmentorCriterionTexCreate(
+  const int nbClass, const int rank, const int size);
+
+// Free the memory used by the ImgSegmentorCriterionTex 'that'
+void ImgSegmentorCriterionTexFree(ImgSegmentorCriterionTex** that);
+
+// Make the prediction on the 'input' values with the 
+// ImgSegmentorCriterionTex that
+// 'input' 's format is 3*width*height, values in [0.0, 1.0]
+// Return values are nbClass*width*height, values in [-1.0, 1.0]
+VecFloat* ISCTexPredict(const ImgSegmentorCriterionTex* const that,
+  const VecFloat* input, const VecShort2D* const dim);
+
+// Return the number of int parameters for the criterion 'that'
+long ISCTexGetNbParamInt(const ImgSegmentorCriterionTex* const that);
+
+// Return the number of float parameters for the criterion 'that'
+long ISCTexGetNbParamFloat(const ImgSegmentorCriterionTex* const that);
+
+// Set the bounds of int parameters for training of the criterion 'that'
+void ISCTexSetBoundsAdnInt(const ImgSegmentorCriterionTex* const that,
+  GenAlg* const ga, const long shift);
+
+// Set the bounds of float parameters for training of the criterion 'that'
+void ISCTexSetBoundsAdnFloat(const ImgSegmentorCriterionTex* const that,
+  GenAlg* const ga, const long shift);
+
+// Set the values of int parameters for training of the criterion 'that'
+void ISCTexSetAdnInt(const ImgSegmentorCriterionTex* const that,
+  const GenAlgAdn* const adn, const long shift);
+
+// Set the values of float parameters for training of the criterion 'that'
+void ISCTexSetAdnFloat(const ImgSegmentorCriterionTex* const that,
+  const GenAlgAdn* const adn, const long shift);
+
+// Return the NeuraNet of the ImgSegmentorCriterionTex 'that'
+#if BUILDMODE != 0
+inline
+#endif
+const NeuraNet* ISCTexNeuraNet(
+  const ImgSegmentorCriterionTex* const that);
+
+// Return the rank of the ImgSegmentorCriterionTex 'that'
+#if BUILDMODE != 0
+inline
+#endif
+int ISCTexGetRank(const ImgSegmentorCriterionTex* const that);
+
+// Return the size of the ImgSegmentorCriterionTex 'that'
+#if BUILDMODE != 0
+inline
+#endif
+int ISCTexGetSize(const ImgSegmentorCriterionTex* const that);
+
 // ================= Polymorphism ==================
 
 #define ISCGetNbClass(That) _Generic(That, \
@@ -650,6 +731,8 @@ void ISCDustSetSize(
   const ImgSegmentorCriterion*: _ISCGetNbClass, \
   ImgSegmentorCriterionRGB*: _ISCGetNbClass, \
   const ImgSegmentorCriterionRGB*: _ISCGetNbClass, \
+  ImgSegmentorCriterionTex*: _ISCGetNbClass, \
+  const ImgSegmentorCriterionTex*: _ISCGetNbClass, \
   ImgSegmentorCriterionRGB2HSV*: _ISCGetNbClass, \
   const ImgSegmentorCriterionRGB2HSV*: _ISCGetNbClass, \
   ImgSegmentorCriterionDust*: _ISCGetNbClass, \
@@ -661,6 +744,8 @@ void ISCDustSetSize(
   const ImgSegmentorCriterion*: _ISCGetNbParamInt, \
   ImgSegmentorCriterionRGB*: ISCRGBGetNbParamInt, \
   const ImgSegmentorCriterionRGB*: ISCRGBGetNbParamInt, \
+  ImgSegmentorCriterionTex*: ISCTexGetNbParamInt, \
+  const ImgSegmentorCriterionTex*: ISCTexGetNbParamInt, \
   ImgSegmentorCriterionRGB2HSV*: ISCRGB2HSVGetNbParamInt, \
   const ImgSegmentorCriterionRGB2HSV*: ISCRGB2HSVGetNbParamInt, \
   ImgSegmentorCriterionDust*: ISCDustGetNbParamInt, \
@@ -672,6 +757,8 @@ void ISCDustSetSize(
   const ImgSegmentorCriterion*: _ISCGetNbParamFloat, \
   ImgSegmentorCriterionRGB*: ISCRGBGetNbParamFloat, \
   const ImgSegmentorCriterionRGB*: ISCRGBGetNbParamFloat, \
+  ImgSegmentorCriterionTex*: ISCTexGetNbParamFloat, \
+  const ImgSegmentorCriterionTex*: ISCTexGetNbParamFloat, \
   ImgSegmentorCriterionRGB2HSV*: ISCRGB2HSVGetNbParamFloat, \
   const ImgSegmentorCriterionRGB2HSV*: ISCRGB2HSVGetNbParamFloat, \
   ImgSegmentorCriterionDust*: ISCDustGetNbParamFloat, \
@@ -683,6 +770,8 @@ void ISCDustSetSize(
   const ImgSegmentorCriterion*: _ISCSetBoundsAdnInt, \
   ImgSegmentorCriterionRGB*: ISCRGBSetBoundsAdnInt, \
   const ImgSegmentorCriterionRGB*: ISCRGBSetBoundsAdnInt, \
+  ImgSegmentorCriterionTex*: ISCTexSetBoundsAdnInt, \
+  const ImgSegmentorCriterionTex*: ISCTexSetBoundsAdnInt, \
   ImgSegmentorCriterionRGB2HSV*: ISCRGB2HSVSetBoundsAdnInt, \
   const ImgSegmentorCriterionRGB2HSV*: ISCRGB2HSVSetBoundsAdnInt, \
   ImgSegmentorCriterionDust*: ISCDustSetBoundsAdnInt, \
@@ -695,6 +784,8 @@ void ISCDustSetSize(
   const ImgSegmentorCriterion*: _ISCSetBoundsAdnFloat, \
   ImgSegmentorCriterionRGB*: ISCRGBSetBoundsAdnFloat, \
   const ImgSegmentorCriterionRGB*: ISCRGBSetBoundsAdnFloat, \
+  ImgSegmentorCriterionTex*: ISCTexSetBoundsAdnFloat, \
+  const ImgSegmentorCriterionTex*: ISCTexSetBoundsAdnFloat, \
   ImgSegmentorCriterionRGB2HSV*: ISCRGB2HSVSetBoundsAdnFloat, \
   const ImgSegmentorCriterionRGB2HSV*: ISCRGB2HSVSetBoundsAdnFloat, \
   ImgSegmentorCriterionDust*: ISCDustSetBoundsAdnFloat, \
@@ -707,6 +798,8 @@ void ISCDustSetSize(
   const ImgSegmentorCriterion*: _ISCSetAdnInt, \
   ImgSegmentorCriterionRGB*: ISCRGBSetAdnInt, \
   const ImgSegmentorCriterionRGB*: ISCRGBSetAdnInt, \
+  ImgSegmentorCriterionTex*: ISCTexSetAdnInt, \
+  const ImgSegmentorCriterionTex*: ISCTexSetAdnInt, \
   ImgSegmentorCriterionRGB2HSV*: ISCRGB2HSVSetAdnInt, \
   const ImgSegmentorCriterionRGB2HSV*: ISCRGB2HSVSetAdnInt, \
   ImgSegmentorCriterionDust*: ISCDustSetAdnInt, \
@@ -719,6 +812,8 @@ void ISCDustSetSize(
   const ImgSegmentorCriterion*: _ISCSetAdnFloat, \
   ImgSegmentorCriterionRGB*: ISCRGBSetAdnFloat, \
   const ImgSegmentorCriterionRGB*: ISCRGBSetAdnFloat, \
+  ImgSegmentorCriterionTex*: ISCTexSetAdnFloat, \
+  const ImgSegmentorCriterionTex*: ISCTexSetAdnFloat, \
   ImgSegmentorCriterionRGB2HSV*: ISCRGB2HSVSetAdnFloat, \
   const ImgSegmentorCriterionRGB2HSV*: ISCRGB2HSVSetAdnFloat, \
   ImgSegmentorCriterionDust*: ISCDustSetAdnFloat, \
