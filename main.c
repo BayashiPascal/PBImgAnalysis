@@ -7,8 +7,8 @@
 
 void UnitTestImgKMeansClusters() {
   srandom(1);
-  for (int size = 0; size < 6; ++size) {
-    for (int K = 2; K <= 6; ++K) {
+  for (int size = 0; size < 2; ++size) {
+    for (int K = 2; K <= 3; ++K) {
       char* fileName = "./ImgKMeansClustersTest/imgkmeanscluster.tga";
       GenBrush* img = GBCreateFromFile(fileName);
       ImgKMeansClusters clusters = ImgKMeansClustersCreateStatic(
@@ -381,7 +381,7 @@ void UnitTestImgSegmentorTrain01() {
   ISSetNbElite(&segmentor, 5);
   ISSetSizeMaxPool(&segmentor, 128);
   ISSetSizeMinPool(&segmentor, 16);
-  ISSetNbEpoch(&segmentor, 50);
+  ISSetNbEpoch(&segmentor, 10);
   ISSetTargetBestValue(&segmentor, 0.99);
   ISSetFlagTextOMeter(&segmentor, true);
   ISTrain(&segmentor, &dataSet);
@@ -444,7 +444,7 @@ void UnitTestImgSegmentorTrain02() {
   ISSetNbElite(&segmentor, 5);
   ISSetSizeMaxPool(&segmentor, 128);
   ISSetSizeMinPool(&segmentor, 16);
-  ISSetNbEpoch(&segmentor, 50);
+  ISSetNbEpoch(&segmentor, 10);
   ISSetTargetBestValue(&segmentor, 0.99);
   ISSetFlagTextOMeter(&segmentor, true);
   ISTrain(&segmentor, &dataSet);
@@ -512,7 +512,7 @@ void UnitTestImgSegmentorTrain03() {
   ISSetNbElite(&segmentor, 5);
   ISSetSizeMaxPool(&segmentor, 128);
   ISSetSizeMinPool(&segmentor, 16);
-  ISSetNbEpoch(&segmentor, 50);
+  ISSetNbEpoch(&segmentor, 10);
   ISSetTargetBestValue(&segmentor, 0.99);
   ISSetFlagTextOMeter(&segmentor, true);
   ISTrain(&segmentor, &dataSet);
@@ -551,6 +551,64 @@ void UnitTestImgSegmentorTrain03() {
   printf("UnitTestImgSegmentorTrain03 OK\n");
 }
 
+void UnitTestImgSegmentorTrain04() {
+  srandom(2);
+  int nbClass = 2;
+  ImgSegmentor segmentor = ImgSegmentorCreateStatic(nbClass);
+  int rank = 1;
+  int size = 2;
+  if (ISAddCriterionTex(&segmentor, NULL, rank, size) == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeUnitTestFailed;
+    sprintf(PBImgAnalysisErr->_msg, "UnitTestImgSegmentorTrain04 failed");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+  char* cfgFilePath = PBFSJoinPath(
+    ".", "UnitTestImgSegmentorTrain", "dataset.json");
+  GDataSetGenBrushPair dataSet = 
+    GDataSetGenBrushPairCreateStatic(cfgFilePath);
+  ISSetSizePool(&segmentor, 4);
+  ISSetNbElite(&segmentor, 2);
+  ISSetSizeMaxPool(&segmentor, 4);
+  ISSetSizeMinPool(&segmentor, 4);
+  ISSetNbEpoch(&segmentor, 2);
+  ISSetTargetBestValue(&segmentor, 0.99);
+  ISSetFlagTextOMeter(&segmentor, true);
+  ISTrain(&segmentor, &dataSet);
+  char resFileName[] = "unitTestImgSegmentorTrain04.json";
+  FILE* fp = fopen(resFileName, "w");
+  if (!ISSave(&segmentor, fp, false)) {
+    fprintf(stderr, "Couldn't save %s\n", resFileName);
+  }
+  fclose(fp);
+  fp = fopen(resFileName, "r");
+  if (!ISLoad(&segmentor, fp)) {
+    fprintf(stderr, "Couldn't load %s\n", resFileName);
+  }
+  fclose(fp);
+  char* imgFilePath = PBFSJoinPath(
+    ".", "UnitTestImgSegmentorTrain", "img003.tga");
+  GenBrush* img = GBCreateFromFile(imgFilePath);
+  ISSetFlagBinaryResult(&segmentor, true);
+  GenBrush** pred = ISPredict(&segmentor, img);
+  for (int iClass = nbClass; iClass--;) {
+    char outPath[100];
+    sprintf(outPath, "pred003-%03d.tga", iClass);
+    char* predFilePath = PBFSJoinPath(
+      ".", "UnitTestImgSegmentorTrain", outPath);
+    GBSetFileName(pred[iClass], predFilePath);
+    GBRender(pred[iClass]);
+    GBFree(pred + iClass);
+    free(predFilePath);
+  }
+  free(pred);
+  GBFree(&img);
+  free(cfgFilePath);
+  free(imgFilePath);
+  GDataSetGenBrushPairFreeStatic(&dataSet);
+  ImgSegmentorFreeStatic(&segmentor);
+  printf("UnitTestImgSegmentorTrain04 OK\n");
+}
+
 void UnitTestImgSegmentor() {
   UnitTestImgSegmentorCreateFree();
   UnitTestImgSegmentorAddCriterionGetSet();
@@ -559,6 +617,7 @@ void UnitTestImgSegmentor() {
   UnitTestImgSegmentorTrain01();
   UnitTestImgSegmentorTrain02();
   UnitTestImgSegmentorTrain03();
+  UnitTestImgSegmentorTrain04();
   printf("UnitTestImgSegmentor OK\n");
 }
 

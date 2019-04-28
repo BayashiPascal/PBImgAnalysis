@@ -1700,6 +1700,10 @@ void _ISCSetAdnInt(const ImgSegmentorCriterion* const that,
       ISCDustSetAdnInt((const ImgSegmentorCriterionDust*)that,
         adn, shift);
       break;
+    case ISCType_Tex:
+      ISCTexSetAdnInt((const ImgSegmentorCriterionTex*)that,
+        adn, shift);
+      break;
     default:
       PBImgAnalysisErr->_type = PBErrTypeNotYetImplemented;
       sprintf(PBImgAnalysisErr->_msg, 
@@ -1899,7 +1903,7 @@ VecFloat* ISCRGBPredict(const ImgSegmentorCriterionRGB* const that,
   VecFloat3D in = VecFloatCreateStatic3D();
   VecFloat* out = VecFloatCreate(ISCGetNbClass(that));
   // Apply the NeuraNet on inputs
-  for (long iInput = area; iInput--;) {
+  for (long iInput = area; iInput-- && !PBIA_CtrlC;) {
     for (long i = 3; i--;)
       VecSet(&in, i, VecGet(input, iInput * 3L + i));
     NNEval(that->_nn, (VecFloat*)&in, out);
@@ -2156,7 +2160,7 @@ VecFloat* ISCRGB2HSVPredict(
   // Allocate memory for the result
   VecFloat* res = VecFloatCreate(area * 3L);
   // Loop over the image
-  for (long iPos = 0; iPos < area; ++iPos) {
+  for (long iPos = 0; iPos < area && !PBIA_CtrlC; ++iPos) {
     // Get the pixel
     GBPixel pix = GBColorWhite;
     for (int iRGB = 3; iRGB--;)
@@ -2589,12 +2593,12 @@ ImgSegmentorCriterionTex* ImgSegmentorCriterionTexCreate(
     sizeof(ImgSegmentorCriterionTex));
   // Create the parent ImgSegmentorCriterion
   that->_criterion = ImgSegmentorCriterionCreateStatic(nbClass, 
-    ISCType_RGB);
+    ISCType_Tex);
   // Set the properties
   that->_size = size;
   that->_rank = rank;
   // Create the NeuraNet
-  const int nbInput = 3 * (1 + (rank == 1 ? 0 : (rank - 1) * 9));
+  const int nbInput = 3 * (1 + (size == 1 ? 0 : (size - 1) * 9));
   const int nbHiddenPerLayer = nbInput * nbClass;
   VecLong* hidden = VecLongCreate(rank);
   for (int iLayer = rank; iLayer--;)
@@ -2628,10 +2632,10 @@ void ISCTexEncodeAsJSON(
   // Declare a buffer to convert value into string
   char val[100];
   // Rank
-  sprintf(val, "%d", that->_rank);
+  sprintf(val, "%d", ISCTexGetRank(that));
   JSONAddProp(json, "_rank", val);
   // Size 
-  sprintf(val, "%d", that->_size);
+  sprintf(val, "%d", ISCTexGetSize(that));
   JSONAddProp(json, "_size", val);
   // NeuraNet model
   JSONAddProp(json, "_neuranet", NNEncodeAsJSON(that->_nn));
@@ -2735,17 +2739,21 @@ VecFloat* ISCTexPredict(const ImgSegmentorCriterionTex* const that,
     PBErrCatch(PBImgAnalysisErr);
   }
 #endif
+//printf("dim ");VecPrint(dim,stdout);printf("\n");
   // Calculate the area of the input image
   long area = VecGet(dim, 0) * VecGet(dim, 1);
+//printf("area %ld\n",area);
   // Allocate memory for the result
   VecFloat* res = VecFloatCreate(area * (long)ISCGetNbClass(that));
   // Declare variables to memorize the input/output of the NeuraNet
   VecFloat* out = VecFloatCreate(ISCGetNbClass(that));
-  int nbIn = 3 * (1 + (ISCTexGetRank(that) == 1 ? 0 :
-    (ISCTexGetRank(that) - 1) * 9));
+  int nbIn = 3 * (1 + (ISCTexGetSize(that) == 1 ? 0 :
+    (ISCTexGetSize(that) - 1) * 9));
+//printf("nbIn %d\n",nbIn);
   VecFloat* in = VecFloatCreate(nbIn);
   // Calculate the size of the biggest fragment
   int sizeFragMax = powi(3, ISCTexGetSize(that) - 1);
+//printf("sizeFragMax %d\n", sizeFragMax);
   // Declare a variable to memorize the index of current pixel in the 
   // input
   long iInput = 0;
@@ -2760,19 +2768,25 @@ VecFloat* ISCTexPredict(const ImgSegmentorCriterionTex* const that,
       VecGet(&pos, 0) <= (VecGet(dim, 0) - sizeFragMax) && 
       VecGet(&pos, 1) >= sizeFragMax - 1 && 
       VecGet(&pos, 1) <= (VecGet(dim, 1) - sizeFragMax)) {
+//printf("iInput %ld\n",iInput);
+//printf("pos ");VecPrint(&pos,stdout);printf("\n");
       // Current pixel (fragment of size 1x1)
       for (long i = 3; i--;)
         VecSet(in, i, VecGet(input, iInput * 3L + i));
       // Loop on fragment sizes bigger than 1x1
-      for (int iSize = 1; iSize <= ISCTexGetSize(that); ++iSize) {
+      for (int iSize = 1; iSize < ISCTexGetSize(that); ++iSize) {
+//printf("iSize %d\n",iSize);
         // Get the size of the current fragment
         int sizeFrag = powi(3, iSize);
+//printf("sizeFrag %d\n",sizeFrag);
         VecSet(&dimFrag, 0, sizeFrag);
         VecSet(&dimFrag, 1, sizeFrag);
         // Get the area of the frag
         long areaFrag = sizeFrag * sizeFrag;
+//printf("areaFrag %ld\n",areaFrag);
         // Get the half size of the current fragment
         int halfSizeFrag = (sizeFrag - 1) / 2;
+//printf("halfSizeFrag %d\n",halfSizeFrag);
         // Create the matrix of fragments' start position relative to 
         // the current pixel
         int relPos[18] = {
@@ -2788,31 +2802,42 @@ VecFloat* ISCTexPredict(const ImgSegmentorCriterionTex* const that,
         };
         // Loop on the 9 fragments for the current size
         for (int iFrag = 9; iFrag--;) {
+//printf("iFrag %d\n", iFrag);
           // Declare a variable to memorize the average value
           float avg[3] = {0.0, 0.0, 0.0};
           // Get the starting and ending pos for this fragment
           VecShort2D startPosFrag = VecShortCreateStatic2D();
-          VecSet(&startPosFrag, 0, VecGet(&pos, 0) - relPos[iFrag]);
-          VecSet(&startPosFrag, 1, VecGet(&pos, 1) - relPos[iFrag]);
+          VecSet(&startPosFrag, 0, 
+            VecGet(&pos, 0) - relPos[iFrag * 2]);
+          VecSet(&startPosFrag, 1, 
+            VecGet(&pos, 1) - relPos[iFrag * 2 + 1]);
           VecShort2D endPosFrag = VecShortCreateStatic2D();
           VecSet(&endPosFrag, 0, VecGet(&startPosFrag, 0) + sizeFrag);
           VecSet(&endPosFrag, 1, VecGet(&startPosFrag, 1) + sizeFrag);
+//printf("startPosFrag ");VecPrint(&startPosFrag,stdout);printf("\n");
+//printf("endPosFrag ");VecPrint(&endPosFrag,stdout);printf("\n");
           // Loop on the fragment to calculate the average rgb value
           VecShort2D posFrag = startPosFrag;
           do {
-            long iPosFrag = GBPosIndex(&posFrag, &dimFrag);
+//printf("posFrag ");VecPrint(&posFrag,stdout);printf("\n");
+            long iPosFrag = GBPosIndex(&posFrag, dim) * 3;
+//printf("iPosFrag %ld\n",iPosFrag);
             for (long i = 3; i--;)
               avg[i] += VecGet(input, iPosFrag + i);
           } while (VecShiftStep(&posFrag, &startPosFrag, &endPosFrag));
           for (long i = 3; i--;)
             avg[i] /= (float)areaFrag;
+//printf("avg %f %f %f\n",avg[0],avg[1],avg[2]);
           // Set the average value in the input vector
+//printf("shift set in %d\n", 3 * (1 + (iSize - 1) * 9 + iFrag));
           for (long i = 3; i--;)
             VecSet(in, 3 * (1 + (iSize - 1) * 9 + iFrag) + i, avg[i]);
+//printf("in ");VecPrint(in,stdout);printf("\n");
         }
       }
       // Apply the NeuraNet on inputs
       NNEval(that->_nn, in, out);
+//printf("out ");VecPrint(out,stdout);printf("\n");
       // Store the result
       for (long i = ISCGetNbClass(that); i--;)
         VecSet(res, iInput * (long)ISCGetNbClass(that) + i,
@@ -2820,7 +2845,7 @@ VecFloat* ISCTexPredict(const ImgSegmentorCriterionTex* const that,
     }
     // Increment the index of the current pixel in input
     ++iInput;
-  } while (VecStep(&pos, dim));
+  } while (VecStep(&pos, dim) && !PBIA_CtrlC);
   // Free memory
   VecFree(&out);
   // Return the result
