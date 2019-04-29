@@ -199,6 +199,10 @@ typedef struct ImgSegmentor {
   // Strings for the TextOMeter
   char _line1[50]; 
   char _line2[50]; 
+  // Internal flag used during trainng
+  bool _flagTraining;
+  // Saved data to be reused when training
+  GSetVecFloat _reusedInput;
 } ImgSegmentor;
 
 typedef struct ImgSegmentorPerf {
@@ -220,6 +224,10 @@ typedef struct ImgSegmentorCriterion {
   ISCType _type;
   // Nb of class
   int _nbClass;
+  // Flag to memorize if we reuses the data during training
+  bool _flagReusedInput;
+  // Saved data to be reused when training, GSet of GSetVecFloat
+  GSet _reusedInput;
 } ImgSegmentorCriterion;
 
 typedef struct ImgSegmentorCriterionRGB {
@@ -426,12 +434,18 @@ void ISSetThresholdBinaryResult(ImgSegmentor* const that,
   const float threshold);
 
 // Make a prediction on the GenBrush 'img' with the ImgSegmentor 'that'
+// Try to reuse the data associated with the sample 'iSample'. If
+// 'iSample' equals -1 it means we don't want to reuse the data
 // Return an array of pointer to GenBrush, one per output class, in 
 // greyscale, where the color of each pixel indicates the detection of 
 // the corresponding class at the given pixel, white equals no 
 // detection, black equals detection, 50% grey equals "don't know"
-GenBrush** ISPredict(const ImgSegmentor* const that, 
-  const GenBrush* const img);
+GenBrush** ISPredictWithReuse(const ImgSegmentor* const that, 
+  const GenBrush* const img, const int iSample);
+  
+// Helper function to hide the argument 'iSample' in ISPredictWithReuse 
+// when simply predicting
+#define ISPredict(That, Img) ISPredictWithReuse(That, Img, -1)
 
 // Return the nb of criterion of the ImgSegmentor 'that'
 #if BUILDMODE != 0
@@ -482,16 +496,44 @@ void ImgSegmentorCriterionFreeStatic(ImgSegmentorCriterion* that);
 
 // Make the prediction on the 'input' values by calling the appropriate
 // function according to the type of criterion
+// Try to reuse the data associated with the sample 'iSample'. If
+// 'iSample' equals -1 it means we don't want to reuse the data
 // 'input' 's format is width*height*3, values in [0.0, 1.0]
 // Return values are width*height*nbClass, values in [-1.0, 1.0]
-VecFloat* ISCPredict(const ImgSegmentorCriterion* const that,
-  const VecFloat* input, const VecShort2D* const dim);
+VecFloat* ISCPredictWithReuse(const ImgSegmentorCriterion* const that,
+  const VecFloat* input, const VecShort2D* const dim, const int iSample);
+
+// Helper function to hide the argument 'iSample' in ISPredictWithReuse 
+// when simply predicting
+#define ISCPredict(That, Input, Dim) \
+  ISCPredictWithReuse(That, Input, Dim, -1)
 
 // Return the nb of class of the ImgSegmentorCriterion 'that'
 #if BUILDMODE != 0
 inline
 #endif
 int _ISCGetNbClass(const ImgSegmentorCriterion* const that);
+
+// Return true if the ImgSegmentorCriterion 'that' can reused its input 
+// during training, else false
+#if BUILDMODE != 0
+inline
+#endif
+bool _ISCIsReusedInput(const ImgSegmentorCriterion* const that);
+
+// Return the reused input of the ImgSegmentorCriterion 'that'
+#if BUILDMODE != 0
+inline
+#endif
+const GSet* _ISCReusedInput(const ImgSegmentorCriterion* const that);
+
+// Set the flag memorizing if the ImgSegmentor 'that' can reused  
+// to 'flag'
+#if BUILDMODE != 0
+inline
+#endif
+void _ISCSetIsReusedInput(ImgSegmentorCriterion* const that,
+  bool flag);
 
 // Return the number of int parameters for the criterion 'that'
 long _ISCGetNbParamInt(const ImgSegmentorCriterion* const that);
@@ -529,7 +571,7 @@ void ImgSegmentorCriterionRGBFree(ImgSegmentorCriterionRGB** that);
 // 'input' 's format is 3*width*height, values in [0.0, 1.0]
 // Return values are nbClass*width*height, values in [-1.0, 1.0]
 VecFloat* ISCRGBPredict(const ImgSegmentorCriterionRGB* const that,
-  const VecFloat* input, const VecShort2D* const dim);
+  const VecFloat* input, const VecShort2D* const dim, const int iSample);
 
 // Return the number of int parameters for the criterion 'that'
 long ISCRGBGetNbParamInt(const ImgSegmentorCriterionRGB* const that);
@@ -576,7 +618,7 @@ void ImgSegmentorCriterionRGB2HSVFree(
 // Return values are nbClass*width*height, values in [-1.0, 1.0]
 VecFloat* ISCRGB2HSVPredict(
   const ImgSegmentorCriterionRGB2HSV* const that,
-  const VecFloat* input, const VecShort2D* const dim);
+  const VecFloat* input, const VecShort2D* const dim, const int iSample);
 
 // Return the number of int parameters for the criterion 'that'
 long ISCRGB2HSVGetNbParamInt(
@@ -620,7 +662,7 @@ void ImgSegmentorCriterionDustFree(
 // Return values are nbClass*width*height, values in [-1.0, 1.0]
 VecFloat* ISCDustPredict(
   const ImgSegmentorCriterionDust* const that,
-  const VecFloat* input, const VecShort2D* const dim);
+  const VecFloat* input, const VecShort2D* const dim, const int iSample);
 
 // Return the number of int parameters for the criterion 'that'
 long ISCDustGetNbParamInt(
@@ -681,7 +723,7 @@ void ImgSegmentorCriterionTexFree(ImgSegmentorCriterionTex** that);
 // 'input' 's format is 3*width*height, values in [0.0, 1.0]
 // Return values are nbClass*width*height, values in [-1.0, 1.0]
 VecFloat* ISCTexPredict(const ImgSegmentorCriterionTex* const that,
-  const VecFloat* input, const VecShort2D* const dim);
+  const VecFloat* input, const VecShort2D* const dim, const int iSample);
 
 // Return the number of int parameters for the criterion 'that'
 long ISCTexGetNbParamInt(const ImgSegmentorCriterionTex* const that);
@@ -726,17 +768,51 @@ int ISCTexGetSize(const ImgSegmentorCriterionTex* const that);
 
 // ================= Polymorphism ==================
 
+#define ISCReusedInput(That) _Generic(That, \
+  ImgSegmentorCriterion*: _ISCReusedInput, \
+  const ImgSegmentorCriterion*: _ISCReusedInput, \
+  ImgSegmentorCriterionRGB*: _ISCReusedInput, \
+  const ImgSegmentorCriterionRGB*: _ISCReusedInput, \
+  ImgSegmentorCriterionRGB2HSV*: _ISCReusedInput, \
+  const ImgSegmentorCriterionRGB2HSV*: _ISCReusedInput, \
+  ImgSegmentorCriterionDust*: _ISCReusedInput, \
+  const ImgSegmentorCriterionDust*: _ISCReusedInput, \
+  ImgSegmentorCriterionTex*: _ISCReusedInput, \
+  const ImgSegmentorCriterionTex*: _ISCReusedInput, \
+  default: PBErrInvalidPolymorphism) ((const ImgSegmentorCriterion*)That)
+
+#define ISCIsReusedInput(That) _Generic(That, \
+  ImgSegmentorCriterion*: _ISCIsReusedInput, \
+  const ImgSegmentorCriterion*: _ISCIsReusedInput, \
+  ImgSegmentorCriterionRGB*: _ISCIsReusedInput, \
+  const ImgSegmentorCriterionRGB*: _ISCIsReusedInput, \
+  ImgSegmentorCriterionRGB2HSV*: _ISCIsReusedInput, \
+  const ImgSegmentorCriterionRGB2HSV*: _ISCIsReusedInput, \
+  ImgSegmentorCriterionDust*: _ISCIsReusedInput, \
+  const ImgSegmentorCriterionDust*: _ISCIsReusedInput, \
+  ImgSegmentorCriterionTex*: _ISCIsReusedInput, \
+  const ImgSegmentorCriterionTex*: _ISCIsReusedInput, \
+  default: PBErrInvalidPolymorphism) ((const ImgSegmentorCriterion*)That)
+
+#define ISCSetIsReusedInput(That, Flag) _Generic(That, \
+  ImgSegmentorCriterion*: _ISCSetIsReusedInput, \
+  ImgSegmentorCriterionRGB*: _ISCSetIsReusedInput, \
+  ImgSegmentorCriterionRGB2HSV*: _ISCSetIsReusedInput, \
+  ImgSegmentorCriterionDust*: _ISCSetIsReusedInput, \
+  ImgSegmentorCriterionTex*: _ISCSetIsReusedInput, \
+  default: PBErrInvalidPolymorphism) ((ImgSegmentorCriterion*)That, Flag)
+
 #define ISCGetNbClass(That) _Generic(That, \
   ImgSegmentorCriterion*: _ISCGetNbClass, \
   const ImgSegmentorCriterion*: _ISCGetNbClass, \
   ImgSegmentorCriterionRGB*: _ISCGetNbClass, \
   const ImgSegmentorCriterionRGB*: _ISCGetNbClass, \
-  ImgSegmentorCriterionTex*: _ISCGetNbClass, \
-  const ImgSegmentorCriterionTex*: _ISCGetNbClass, \
   ImgSegmentorCriterionRGB2HSV*: _ISCGetNbClass, \
   const ImgSegmentorCriterionRGB2HSV*: _ISCGetNbClass, \
   ImgSegmentorCriterionDust*: _ISCGetNbClass, \
   const ImgSegmentorCriterionDust*: _ISCGetNbClass, \
+  ImgSegmentorCriterionTex*: _ISCGetNbClass, \
+  const ImgSegmentorCriterionTex*: _ISCGetNbClass, \
   default: PBErrInvalidPolymorphism) ((const ImgSegmentorCriterion*)That)
 
 #define ISCGetNbParamInt(That) _Generic(That, \
@@ -744,12 +820,12 @@ int ISCTexGetSize(const ImgSegmentorCriterionTex* const that);
   const ImgSegmentorCriterion*: _ISCGetNbParamInt, \
   ImgSegmentorCriterionRGB*: ISCRGBGetNbParamInt, \
   const ImgSegmentorCriterionRGB*: ISCRGBGetNbParamInt, \
-  ImgSegmentorCriterionTex*: ISCTexGetNbParamInt, \
-  const ImgSegmentorCriterionTex*: ISCTexGetNbParamInt, \
   ImgSegmentorCriterionRGB2HSV*: ISCRGB2HSVGetNbParamInt, \
   const ImgSegmentorCriterionRGB2HSV*: ISCRGB2HSVGetNbParamInt, \
   ImgSegmentorCriterionDust*: ISCDustGetNbParamInt, \
   const ImgSegmentorCriterionDust*: ISCDustGetNbParamInt, \
+  ImgSegmentorCriterionTex*: ISCTexGetNbParamInt, \
+  const ImgSegmentorCriterionTex*: ISCTexGetNbParamInt, \
   default: PBErrInvalidPolymorphism) ((const ImgSegmentorCriterion*)That)
 
 #define ISCGetNbParamFloat(That) _Generic(That, \
@@ -757,12 +833,12 @@ int ISCTexGetSize(const ImgSegmentorCriterionTex* const that);
   const ImgSegmentorCriterion*: _ISCGetNbParamFloat, \
   ImgSegmentorCriterionRGB*: ISCRGBGetNbParamFloat, \
   const ImgSegmentorCriterionRGB*: ISCRGBGetNbParamFloat, \
-  ImgSegmentorCriterionTex*: ISCTexGetNbParamFloat, \
-  const ImgSegmentorCriterionTex*: ISCTexGetNbParamFloat, \
   ImgSegmentorCriterionRGB2HSV*: ISCRGB2HSVGetNbParamFloat, \
   const ImgSegmentorCriterionRGB2HSV*: ISCRGB2HSVGetNbParamFloat, \
   ImgSegmentorCriterionDust*: ISCDustGetNbParamFloat, \
   const ImgSegmentorCriterionDust*: ISCDustGetNbParamFloat, \
+  ImgSegmentorCriterionTex*: ISCTexGetNbParamFloat, \
+  const ImgSegmentorCriterionTex*: ISCTexGetNbParamFloat, \
   default: PBErrInvalidPolymorphism) ((const ImgSegmentorCriterion*)That)
 
 #define ISCSetBoundsAdnInt(That, GenAlg, Shift) _Generic(That, \
@@ -770,12 +846,12 @@ int ISCTexGetSize(const ImgSegmentorCriterionTex* const that);
   const ImgSegmentorCriterion*: _ISCSetBoundsAdnInt, \
   ImgSegmentorCriterionRGB*: ISCRGBSetBoundsAdnInt, \
   const ImgSegmentorCriterionRGB*: ISCRGBSetBoundsAdnInt, \
-  ImgSegmentorCriterionTex*: ISCTexSetBoundsAdnInt, \
-  const ImgSegmentorCriterionTex*: ISCTexSetBoundsAdnInt, \
   ImgSegmentorCriterionRGB2HSV*: ISCRGB2HSVSetBoundsAdnInt, \
   const ImgSegmentorCriterionRGB2HSV*: ISCRGB2HSVSetBoundsAdnInt, \
   ImgSegmentorCriterionDust*: ISCDustSetBoundsAdnInt, \
   const ImgSegmentorCriterionDust*: ISCDustSetBoundsAdnInt, \
+  ImgSegmentorCriterionTex*: ISCTexSetBoundsAdnInt, \
+  const ImgSegmentorCriterionTex*: ISCTexSetBoundsAdnInt, \
   default: PBErrInvalidPolymorphism) ( \
     (const ImgSegmentorCriterion*)That, GenAlg, Shift)
   
@@ -784,12 +860,12 @@ int ISCTexGetSize(const ImgSegmentorCriterionTex* const that);
   const ImgSegmentorCriterion*: _ISCSetBoundsAdnFloat, \
   ImgSegmentorCriterionRGB*: ISCRGBSetBoundsAdnFloat, \
   const ImgSegmentorCriterionRGB*: ISCRGBSetBoundsAdnFloat, \
-  ImgSegmentorCriterionTex*: ISCTexSetBoundsAdnFloat, \
-  const ImgSegmentorCriterionTex*: ISCTexSetBoundsAdnFloat, \
   ImgSegmentorCriterionRGB2HSV*: ISCRGB2HSVSetBoundsAdnFloat, \
   const ImgSegmentorCriterionRGB2HSV*: ISCRGB2HSVSetBoundsAdnFloat, \
   ImgSegmentorCriterionDust*: ISCDustSetBoundsAdnFloat, \
   const ImgSegmentorCriterionDust*: ISCDustSetBoundsAdnFloat, \
+  ImgSegmentorCriterionTex*: ISCTexSetBoundsAdnFloat, \
+  const ImgSegmentorCriterionTex*: ISCTexSetBoundsAdnFloat, \
   default: PBErrInvalidPolymorphism) ( \
     (const ImgSegmentorCriterion*)That, GenAlg, Shift)
   
@@ -798,12 +874,12 @@ int ISCTexGetSize(const ImgSegmentorCriterionTex* const that);
   const ImgSegmentorCriterion*: _ISCSetAdnInt, \
   ImgSegmentorCriterionRGB*: ISCRGBSetAdnInt, \
   const ImgSegmentorCriterionRGB*: ISCRGBSetAdnInt, \
-  ImgSegmentorCriterionTex*: ISCTexSetAdnInt, \
-  const ImgSegmentorCriterionTex*: ISCTexSetAdnInt, \
   ImgSegmentorCriterionRGB2HSV*: ISCRGB2HSVSetAdnInt, \
   const ImgSegmentorCriterionRGB2HSV*: ISCRGB2HSVSetAdnInt, \
   ImgSegmentorCriterionDust*: ISCDustSetAdnInt, \
   const ImgSegmentorCriterionDust*: ISCDustSetAdnInt, \
+  ImgSegmentorCriterionTex*: ISCTexSetAdnInt, \
+  const ImgSegmentorCriterionTex*: ISCTexSetAdnInt, \
   default: PBErrInvalidPolymorphism) ( \
     (const ImgSegmentorCriterion*)That, Adn, Shift)
   
@@ -812,12 +888,12 @@ int ISCTexGetSize(const ImgSegmentorCriterionTex* const that);
   const ImgSegmentorCriterion*: _ISCSetAdnFloat, \
   ImgSegmentorCriterionRGB*: ISCRGBSetAdnFloat, \
   const ImgSegmentorCriterionRGB*: ISCRGBSetAdnFloat, \
-  ImgSegmentorCriterionTex*: ISCTexSetAdnFloat, \
-  const ImgSegmentorCriterionTex*: ISCTexSetAdnFloat, \
   ImgSegmentorCriterionRGB2HSV*: ISCRGB2HSVSetAdnFloat, \
   const ImgSegmentorCriterionRGB2HSV*: ISCRGB2HSVSetAdnFloat, \
   ImgSegmentorCriterionDust*: ISCDustSetAdnFloat, \
   const ImgSegmentorCriterionDust*: ISCDustSetAdnFloat, \
+  ImgSegmentorCriterionTex*: ISCTexSetAdnFloat, \
+  const ImgSegmentorCriterionTex*: ISCTexSetAdnFloat, \
   default: PBErrInvalidPolymorphism) ( \
     (const ImgSegmentorCriterion*)That, Adn, Shift)
   

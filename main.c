@@ -101,7 +101,7 @@ void UnitTestImgSegmentorRGB() {
   VecShort2D dim = VecShortCreateStatic2D();
   VecSet(&dim, 0, 2);
   VecSet(&dim, 1, 2);
-  VecFloat* output = ISCRGBPredict(criterion, input, &dim);
+  VecFloat* output = ISCRGBPredict(criterion, input, &dim, -1);
   if (VecGetDim(output) != imgArea * nbClass) {
     PBImgAnalysisErr->_type = PBErrTypeUnitTestFailed;
     sprintf(PBImgAnalysisErr->_msg, "ISCRGBPredict failed");
@@ -368,11 +368,13 @@ void UnitTestImgSegmentorTrain01() {
   srandom(2);
   int nbClass = 2;
   ImgSegmentor segmentor = ImgSegmentorCreateStatic(nbClass);
-  if (ISAddCriterionRGB(&segmentor, NULL) == NULL) {
+  ImgSegmentorCriterionRGB* crit = ISAddCriterionRGB(&segmentor, NULL);
+  if (crit == NULL) {
     PBImgAnalysisErr->_type = PBErrTypeUnitTestFailed;
     sprintf(PBImgAnalysisErr->_msg, "UnitTestImgSegmentorTrain01 failed");
     PBErrCatch(PBImgAnalysisErr);
   }
+  ISCSetIsReusedInput(crit, true);
   char* cfgFilePath = PBFSJoinPath(
     ".", "UnitTestImgSegmentorTrain", "dataset.json");
   GDataSetGenBrushPair dataSet = 
@@ -431,11 +433,15 @@ void UnitTestImgSegmentorTrain02() {
     sprintf(PBImgAnalysisErr->_msg, "UnitTestImgSegmentorTrain02 failed");
     PBErrCatch(PBImgAnalysisErr);
   }
-  if (ISAddCriterionRGB(&segmentor, criterionHSV) == NULL) {
+  ISCSetIsReusedInput(criterionHSV, true);
+  ImgSegmentorCriterionRGB* criterionRGB = 
+    ISAddCriterionRGB(&segmentor, criterionHSV);
+  if (criterionRGB == NULL) {
     PBImgAnalysisErr->_type = PBErrTypeUnitTestFailed;
     sprintf(PBImgAnalysisErr->_msg, "UnitTestImgSegmentorTrain02 failed");
     PBErrCatch(PBImgAnalysisErr);
   }
+  ISCSetIsReusedInput(criterionRGB, true);
   char* cfgFilePath = PBFSJoinPath(
     ".", "UnitTestImgSegmentorTrain", "dataset.json");
   GDataSetGenBrushPair dataSet = 
@@ -487,11 +493,14 @@ void UnitTestImgSegmentorTrain03() {
   srandom(2);
   int nbClass = 2;
   ImgSegmentor segmentor = ImgSegmentorCreateStatic(nbClass);
-  if (ISAddCriterionRGB(&segmentor, NULL) == NULL) {
+  ImgSegmentorCriterionRGB* criterionRGB = 
+    ISAddCriterionRGB(&segmentor, NULL);
+  if (criterionRGB == NULL) {
     PBImgAnalysisErr->_type = PBErrTypeUnitTestFailed;
     sprintf(PBImgAnalysisErr->_msg, "UnitTestImgSegmentorTrain02 failed");
     PBErrCatch(PBImgAnalysisErr);
   }
+  ISCSetIsReusedInput(criterionRGB, true);
   ImgSegmentorCriterionRGB2HSV* criterionHSV = 
     ISAddCriterionRGB2HSV(&segmentor, NULL);
   if (criterionHSV == NULL) {
@@ -499,11 +508,14 @@ void UnitTestImgSegmentorTrain03() {
     sprintf(PBImgAnalysisErr->_msg, "UnitTestImgSegmentorTrain02 failed");
     PBErrCatch(PBImgAnalysisErr);
   }
-  if (ISAddCriterionRGB(&segmentor, criterionHSV) == NULL) {
+  ISCSetIsReusedInput(criterionHSV, true);
+  criterionRGB = ISAddCriterionRGB(&segmentor, criterionHSV);
+  if (criterionRGB == NULL) {
     PBImgAnalysisErr->_type = PBErrTypeUnitTestFailed;
     sprintf(PBImgAnalysisErr->_msg, "UnitTestImgSegmentorTrain02 failed");
     PBErrCatch(PBImgAnalysisErr);
   }
+  ISCSetIsReusedInput(criterionRGB, true);
   char* cfgFilePath = PBFSJoinPath(
     ".", "UnitTestImgSegmentorTrain", "dataset.json");
   GDataSetGenBrushPair dataSet = 
@@ -557,11 +569,14 @@ void UnitTestImgSegmentorTrain04() {
   ImgSegmentor segmentor = ImgSegmentorCreateStatic(nbClass);
   int rank = 1;
   int size = 2;
-  if (ISAddCriterionTex(&segmentor, NULL, rank, size) == NULL) {
+  ImgSegmentorCriterionTex* crit = 
+    ISAddCriterionTex(&segmentor, NULL, rank, size);
+  if (crit == NULL) {
     PBImgAnalysisErr->_type = PBErrTypeUnitTestFailed;
     sprintf(PBImgAnalysisErr->_msg, "UnitTestImgSegmentorTrain04 failed");
     PBErrCatch(PBImgAnalysisErr);
   }
+  ISCSetIsReusedInput(crit, true);
   char* cfgFilePath = PBFSJoinPath(
     ".", "UnitTestImgSegmentorTrain", "dataset.json");
   GDataSetGenBrushPair dataSet = 
@@ -572,7 +587,10 @@ void UnitTestImgSegmentorTrain04() {
   ISSetSizeMinPool(&segmentor, 4);
   ISSetNbEpoch(&segmentor, 2);
   ISSetTargetBestValue(&segmentor, 0.99);
-  ISSetFlagTextOMeter(&segmentor, true);
+  
+  //ISSetFlagTextOMeter(&segmentor, true);
+  ISSetFlagTextOMeter(&segmentor, false);
+  
   ISTrain(&segmentor, &dataSet);
   char resFileName[] = "unitTestImgSegmentorTrain04.json";
   FILE* fp = fopen(resFileName, "w");
@@ -630,7 +648,8 @@ void UnitTestAll() {
 }
 
 int main(void) {
-  UnitTestAll();
+  //UnitTestAll();
+  UnitTestImgSegmentorTrain04();
   return 0;
 }
 

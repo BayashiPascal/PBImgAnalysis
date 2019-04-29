@@ -30,4 +30,4 @@ main.o: \
 	$(COMPILER) $(BUILD_ARG) $(genbrush_BUILD_ARG) $($(repo)_BUILD_ARG) `echo "$($(repo)_INC_DIR)" | tr ' ' '\n' | sort -u` -c main.c
 	
 run:
-	rm *_checkpoint.json weights.json res.tga; main -nbEpoch 1000 -bestVal 0.99 -train -test -pred ../Data/004/img001.tga res.tga
+	rm *_checkpoint.json weights.json res.tga; main -nbEpoch 1000 -bestVal 0.99 -train -test -pred ../Data/003/img001.tga res.tga

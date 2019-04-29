@@ -367,21 +367,6 @@ void ISSetNbEpoch(ImgSegmentor* const that, unsigned int nb) {
   that->_nbEpoch = nb;
 }
 
-// Return the nb of class of the ImgSegmentorCriterion 'that'
-#if BUILDMODE != 0
-inline
-#endif
-int _ISCGetNbClass(const ImgSegmentorCriterion* const that) {
-#if BUILDMODE == 0
-  if (that == NULL) {
-    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
-    sprintf(PBImgAnalysisErr->_msg, "'that' is null");
-    PBErrCatch(PBImgAnalysisErr);
-  }
-#endif
-  return that->_nbClass;
-}
-
 // Return the size of the pool for training the ImgSegmentor 'that'
 #if BUILDMODE != 0
 inline
@@ -564,6 +549,71 @@ const NeuraNet* ISCRGBNeuraNet(
   }
 #endif
   return that->_nn;
+}
+
+// ---- ImgSegmentorCriterion
+
+// Return the nb of class of the ImgSegmentorCriterion 'that'
+#if BUILDMODE != 0
+inline
+#endif
+int _ISCGetNbClass(const ImgSegmentorCriterion* const that) {
+#if BUILDMODE == 0
+  if (that == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'that' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+#endif
+  return that->_nbClass;
+}
+
+// Return true if the ImgSegmentorCriterion 'that' can reused its input 
+// during training, else false
+#if BUILDMODE != 0
+inline
+#endif
+bool _ISCIsReusedInput(const ImgSegmentorCriterion* const that) {
+#if BUILDMODE == 0
+  if (that == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'that' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+#endif
+  return that->_flagReusedInput;
+}
+
+// Set the flag memorizing if the ImgSegmentor 'that' can reused  
+// to 'flag'
+#if BUILDMODE != 0
+inline
+#endif
+void _ISCSetIsReusedInput(ImgSegmentorCriterion* const that,
+  bool flag) {
+#if BUILDMODE == 0
+  if (that == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'that' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+#endif
+  that->_flagReusedInput = flag;
+}
+
+// Return the reused input of the ImgSegmentorCriterion 'that'
+#if BUILDMODE != 0
+inline
+#endif
+const GSet* _ISCReusedInput(const ImgSegmentorCriterion* const that) {
+#if BUILDMODE == 0
+  if (that == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'that' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+#endif
+  return &(that->_reusedInput);
 }
 
 // ---- ImgSegmentorCriterionDust

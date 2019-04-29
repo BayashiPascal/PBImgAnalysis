@@ -504,6 +504,8 @@ ImgSegmentor ImgSegmentorCreateStatic(int nbClass) {
   that._textOMeter = NULL;
   sprintf(that._line1, IS_TRAINTXTOMETER_LINE1);
   sprintf(that._line2, IS_EVALTXTOMETER_LINE1);
+  that._flagTraining = false;
+  that._reusedInput = GSetVecFloatCreateStatic();
   // Return the new ImgSegmentor
   return that;
 }
@@ -522,20 +524,7 @@ ImgSegmentor* ImgSegmentorCreate(int nbClass) {
   ImgSegmentor* that = PBErrMalloc(PBImgAnalysisErr, 
     sizeof(ImgSegmentor));
   // Init properties
-  that->_nbClass = nbClass;
-  that->_criteria = GenTreeCreateStatic();
-  that->_flagBinaryResult = false;
-  that->_thresholdBinaryResult = 0.5;
-  that->_nbEpoch = 1;
-  that->_sizePool = GENALG_NBENTITIES;
-  that->_sizeMinPool = that->_sizePool;
-  that->_sizeMaxPool = that->_sizePool;
-  that->_nbElite = GENALG_NBELITES;
-  that->_targetBestValue = 0.9999;
-  that->_flagTextOMeter = false;
-  that->_textOMeter = NULL;
-  sprintf(that->_line1, IS_TRAINTXTOMETER_LINE1);
-  sprintf(that->_line2, IS_EVALTXTOMETER_LINE1);
+  *that = ImgSegmentorCreateStatic(nbClass);
   // Return the new ImgSegmentor
   return that;
 }
@@ -578,6 +567,10 @@ void ImgSegmentorFreeStatic(ImgSegmentor* that) {
     GenTreeIterFreeStatic(&iter);
   }
   GenTreeFreeStatic((GenTree*)ISCriteria(that));
+  while (GSetNbElem(&(that->_reusedInput)) > 0) {
+    VecFloat* v = GSetPop(&(that->_reusedInput));
+    VecFree(&v);
+  }
 }
 
 // Free the memory used by the ImgSegmentor 'that'
@@ -594,8 +587,8 @@ void ImgSegmentorFree(ImgSegmentor** that) {
 // greyscale, where the color of each pixel indicates the detection of 
 // the corresponding class at the given pixel, white equals no 
 // detection, black equals detection, 50% grey equals "don't know"
-GenBrush** ISPredict(const ImgSegmentor* const that, 
-  const GenBrush* const img) {
+GenBrush** ISPredictWithReuse(const ImgSegmentor* const that, 
+  const GenBrush* const img, const int iSample) {
 #if BUILDMODE == 0
   if (that == NULL) {
     PBImgAnalysisErr->_type = PBErrTypeNullPointer;
@@ -614,16 +607,34 @@ GenBrush** ISPredict(const ImgSegmentor* const that,
   long area = VecGet(&dim, 0) * VecGet(&dim, 1);
   // Create a temporary vector to convert the image into the input
   // of a criterion
-  VecFloat* input = VecFloatCreate(area * 3);
+  VecFloat* input = NULL;
   // Declare a vector to loop on position in the image
   VecShort2D pos = VecShortCreateStatic2D();
-  // Convert the image's pixels into the input VecFloat
-  do {
-    GBPixel pix = GBGetFinalPixel(img, &pos);
-    long iPos = GBPosIndex(&pos, &dim);
-    for (int iRGB = 3; iRGB--;)
-      VecSet(input, iPos * 3 + iRGB, (float)(pix._rgba[iRGB]) / 255.0);
-  } while (VecStep(&pos, &dim));
+  
+  // If don't reuse data or the reused data has not yet been created
+  if (!(that->_flagTraining) || iSample < 0 ||
+    iSample >= GSetNbElem(&that->_reusedInput)) {
+    // Convert the image's pixels into the input VecFloat
+    input = VecFloatCreate(area * 3);
+    do {
+      GBPixel pix = GBGetFinalPixel(img, &pos);
+      long iPos = GBPosIndex(&pos, &dim);
+      for (int iRGB = 3; iRGB--;)
+        VecSet(input, iPos * 3 + iRGB, (float)(pix._rgba[iRGB]) / 255.0);
+    } while (VecStep(&pos, &dim));
+    // Add the converted input to the reusable data
+    if (that->_flagTraining && iSample >= 0) {
+      // Add a clone version because 'input' will be freed later,
+      // should be optimized to avoid the clone
+      GSetAppend((GSetVecFloat*)&(that->_reusedInput), VecClone(input));
+    }
+  // Else, we reuse data and this input has already been computed
+  } else {
+    // Reuse the data
+    // Use a clone because 'input' will be freed later, should be
+    // optimized to avoid the clone
+    input = VecClone(GSetGet(&(that->_reusedInput), iSample));
+  }
   // Declare a set to memorize the temporary inputs while moving
   // through the tree of criteria
   GSet inputs = GSetCreateStatic();
@@ -640,7 +651,12 @@ GenBrush** ISPredict(const ImgSegmentor* const that,
     // pushed input
     VecFloat* curInput = GSetTail(&inputs);
     // Do the prediction
-    VecFloat* pred = ISCPredict(criterion, curInput, &dim);
+    VecFloat* pred = NULL;
+    if (that->_flagTraining) {
+      pred = ISCPredictWithReuse(criterion, curInput, &dim, iSample);
+    } else {
+      pred = ISCPredict(criterion, curInput, &dim);
+    }
     // If this criterion is a leaf in the tree of crieria
     if (GenTreeIsLeaf(GenTreeIterGetGenTree(&iter))) {
       // Add the result of the prediction to the set of final prediction
@@ -798,6 +814,8 @@ void ISTrain(ImgSegmentor* const that,
   // If there is no criterion, nothing to do
   if (ISGetNbCriterion(that) == 0)
     return;
+  // Set the flag to memorize we are under training
+  that->_flagTraining = true;
   // Memorize the current flag for binarization of results
   bool curFlagBinary = ISGetFlagBinaryResult(that);
   // Turn on the binarization
@@ -951,11 +969,13 @@ void ISTrain(ImgSegmentor* const that,
   ISSetFlagBinaryResult(that, curFlagBinary);
   // Reset the signal handler for the signal Ctrl-C to its default
   signal(SIGINT, SIG_DFL);
+  // Set the flag to memorize we are not under training
+  that->_flagTraining = false;
 }
 
 // Evaluate the ImageSegmentor 'that' on the data set 'dataSet' using
 // the data of the 'iCat' category in 'dataSet'
-// srandom must have been called before calling ISTrain
+// srandom must have been called before calling ISEvaluate
 // Return a value in [0.0, 1.0], 0.0 being worst and 1.0 being best
 float ISEvaluate(ImgSegmentor* const that, 
   const GDataSetGenBrushPair* const dataset, const int iCat) {
@@ -977,13 +997,18 @@ float ISEvaluate(ImgSegmentor* const that,
     // Get the next sample
     GDSGenBrushPair* sample = GDSGetSample(dataset, iCat);
     // Do the prediction on the sample
-    GenBrush** pred = ISPredict(that, sample->_img);
+    // Reuse data to speed up training if we are under training
+    GenBrush** pred = NULL;
+    if (that->_flagTraining && iCat == 0) {
+      pred = ISPredictWithReuse(that, sample->_img, iSample);
+    } else {
+      pred = ISPredict(that, sample->_img);
+    }
     // Check the prediction against the masks
     float valMask = 0.0;
-    for (int iMask = ISGetNbClass(that); iMask--;) { 
+    for (int iClass = ISGetNbClass(that); iClass--;)
       valMask += IntersectionOverUnion(
-        sample->_mask[iMask], pred[iMask], &rgbaMask);
-    }
+        sample->_mask[iClass], pred[iClass], &rgbaMask);
     value += valMask / (float)GDSGetNbMask(dataset);
     // Free memory
     for (int iClass = ISGetNbClass(that); iClass--;)
@@ -1358,6 +1383,8 @@ ImgSegmentorCriterion ImgSegmentorCriterionCreateStatic(int nbClass,
   // Set the properties
   that._nbClass = nbClass;
   that._type = type;
+  that._flagReusedInput = false;
+  that._reusedInput = GSetCreateStatic();
   // Return the new ImgSegmentorCriterion
   return that;
 }
@@ -1366,15 +1393,25 @@ ImgSegmentorCriterion ImgSegmentorCriterionCreateStatic(int nbClass,
 void ImgSegmentorCriterionFreeStatic(ImgSegmentorCriterion* that) {
   if (that == NULL)
     return;
-  // Nothing to do
+  // Free memory
+  while (GSetNbElem(&(that->_reusedInput)) > 0) {
+    GSetVecFloat* set = GSetPop(&(that->_reusedInput));
+    while (GSetNbElem(set) > 0) {
+      VecFloat* v = GSetPop(set);
+      VecFree(&v);
+    }
+    GSetFree(&set);
+  }
 }
 
 // Make the prediction on the 'input' values by calling the appropriate
-// function according to the type of criteria
+// function according to the type of criterion
+// Try to reuse the data associated with the sample 'iSample'. If
+// 'iSample' equals -1 it means we don't want to reuse the data
 // 'input' 's format is width*height*3, values in [0.0, 1.0]
 // Return values are width*height*nbClass, values in [-1.0, 1.0]
-VecFloat* ISCPredict(const ImgSegmentorCriterion* const that,
-  const VecFloat* input, const VecShort2D* const dim) {
+VecFloat* ISCPredictWithReuse(const ImgSegmentorCriterion* const that,
+  const VecFloat* input, const VecShort2D* const dim, const int iSample) {
 #if BUILDMODE == 0
   if (that == NULL) {
     PBImgAnalysisErr->_type = PBErrTypeNullPointer;
@@ -1393,19 +1430,19 @@ VecFloat* ISCPredict(const ImgSegmentorCriterion* const that,
   switch(that->_type) {
     case ISCType_RGB:
       res = ISCRGBPredict((const ImgSegmentorCriterionRGB*)that, 
-        input, dim);
+        input, dim, iSample);
       break;
     case ISCType_RGB2HSV:
       res = ISCRGB2HSVPredict((const ImgSegmentorCriterionRGB2HSV*)that, 
-        input, dim);
+        input, dim, iSample);
       break;
     case ISCType_Dust:
       res = ISCDustPredict((const ImgSegmentorCriterionDust*)that, 
-        input, dim);
+        input, dim, iSample);
       break;
     case ISCType_Tex:
       res = ISCTexPredict((const ImgSegmentorCriterionTex*)that, 
-        input, dim);
+        input, dim, iSample);
       break;
     default:
       PBImgAnalysisErr->_type = PBErrTypeNotYetImplemented;
@@ -1437,6 +1474,9 @@ JSONNode* ISCEncodeAsJSON(
   // Number of segmentation class
   sprintf(val, "%d", that->_nbClass);
   JSONAddProp(json, "_nbClass", val);
+  // Flag to reuse the input
+  sprintf(val, "%d", that->_flagReusedInput);
+  JSONAddProp(json, "_flagReusedInput", val);
   // Call the appropriate function based on the type
   switch(that->_type) {
     case ISCType_RGB:
@@ -1488,6 +1528,15 @@ bool ISCDecodeAsJSON(
   ISCType type = atoi(JSONLabel(JSONValue(prop, 0)));
   // Declare a variable to memorize the returned code
   bool ret = true;
+  // Get the flag to reuse data
+  prop = JSONProperty(json, "_flagReusedInput");
+  if (prop == NULL) {
+    return false;
+  }
+  int flagReusedInput = atoi(JSONLabel(JSONValue(prop, 0)));
+  if (flagReusedInput != 0) {
+    (*that)->_flagReusedInput = true;
+  }
   // Call the appropriate function based on the type
   switch(type) {
     case ISCType_RGB:
@@ -1865,7 +1914,8 @@ bool ISCRGBDecodeAsJSON(
 // 'input' 's format is 3*width*height, values in [0.0, 1.0]
 // Return values are nbClass*width*height, values in [-1.0, 1.0]
 VecFloat* ISCRGBPredict(const ImgSegmentorCriterionRGB* const that,
-  const VecFloat* input, const VecShort2D* const dim) {
+  const VecFloat* input, const VecShort2D* const dim, 
+  const int iSample) {
 #if BUILDMODE == 0
   if (that == NULL) {
     PBImgAnalysisErr->_type = PBErrTypeNullPointer;
@@ -1890,6 +1940,7 @@ VecFloat* ISCRGBPredict(const ImgSegmentorCriterionRGB* const that,
     PBErrCatch(PBImgAnalysisErr);
   }
 #endif
+  (void)iSample;
 /*
   printf("ISCRGB2Predict <%.3f,%.3f,%.3f %.3f,%.3f,%.3f ...>\n",
     VecGet(input, 0), VecGet(input, 1), VecGet(input, 2), 
@@ -2124,7 +2175,8 @@ bool ISCRGB2HSVDecodeAsJSON(
 // Return values are nbClass*width*height, values in [-1.0, 1.0]
 VecFloat* ISCRGB2HSVPredict(
   const ImgSegmentorCriterionRGB2HSV* const that,
-  const VecFloat* input, const VecShort2D* const dim) {
+  const VecFloat* input, const VecShort2D* const dim, 
+  const int iSample) {
 #if BUILDMODE == 0
   if (that == NULL) {
     PBImgAnalysisErr->_type = PBErrTypeNullPointer;
@@ -2154,7 +2206,7 @@ VecFloat* ISCRGB2HSVPredict(
     VecGet(input, 0), VecGet(input, 1), VecGet(input, 2), 
     VecGet(input, 3), VecGet(input, 4), VecGet(input, 5));
 */
-  (void)that;
+  (void)that; (void)iSample;
   // Calculate the area of the input image
   long area = VecGet(dim, 0) * VecGet(dim, 1);
   // Allocate memory for the result
@@ -2392,7 +2444,8 @@ bool ISCDustDecodeAsJSON(
 // Return values are nbClass*width*height, values in [-1.0, 1.0]
 VecFloat* ISCDustPredict(
   const ImgSegmentorCriterionDust* const that,
-  const VecFloat* input, const VecShort2D* const dim) {
+  const VecFloat* input, const VecShort2D* const dim, 
+  const int iSample) {
 #if BUILDMODE == 0
   if (that == NULL) {
     PBImgAnalysisErr->_type = PBErrTypeNullPointer;
@@ -2422,7 +2475,7 @@ VecFloat* ISCDustPredict(
     VecGet(input, 0), VecGet(input, 1), VecGet(input, 2), 
     VecGet(input, 3), VecGet(input, 4), VecGet(input, 5));
 */
-  (void)that;(void)input;
+  (void)that;(void)input;(void)iSample;
   // Calculate the area of the input image
   long area = VecGet(dim, 0) * VecGet(dim, 1);
   // Allocate memory for the result
@@ -2709,12 +2762,95 @@ bool ISCTexDecodeAsJSON(
   return true;
 }
 
+// Helper function to create the input of the NeuraNet in ISCTexPredict
+// and manage reuse of data to speed up the training
+VecFloat* ISCTexGetNNInput(const ImgSegmentorCriterionTex* const that,
+  const VecFloat* input, const VecShort2D* const dim,
+  const int iSample, const int iInput, 
+  GSetVecFloat* const setReusedInput, const VecShort2D* const pos) {
+  int nbIn = 3 * (1 + (ISCTexGetSize(that) == 1 ? 0 :
+    (ISCTexGetSize(that) - 1) * 9));
+  VecFloat* in = NULL;
+  if (!(ISCIsReusedInput(that)) || iSample < 0 || 
+    setReusedInput == NULL || iInput >= GSetNbElem(setReusedInput)) {
+    in = VecFloatCreate(nbIn);
+    // Declare a variable to memorize the dimension of the fragment
+    VecShort2D dimFrag = VecShortCreateStatic2D();
+    // Current pixel (fragment of size 1x1)
+    for (long i = 3; i--;)
+      VecSet(in, i, VecGet(input, iInput * 3L + i));
+    // Loop on fragment sizes bigger than 1x1
+    for (int iSize = 1; iSize < ISCTexGetSize(that); ++iSize) {
+      // Get the size of the current fragment
+      int sizeFrag = powi(3, iSize);
+      VecSet(&dimFrag, 0, sizeFrag);
+      VecSet(&dimFrag, 1, sizeFrag);
+      // Get the area of the frag
+      long areaFrag = sizeFrag * sizeFrag;
+      // Get the half size of the current fragment
+      int halfSizeFrag = (sizeFrag - 1) / 2;
+      // Create the matrix of fragments' start position relative to 
+      // the current pixel
+      int relPos[18] = {
+        sizeFrag - 1, sizeFrag - 1,
+        sizeFrag - 1, halfSizeFrag,
+        sizeFrag - 1, 0,
+        halfSizeFrag, sizeFrag - 1,
+        halfSizeFrag, halfSizeFrag,
+        halfSizeFrag, 0,
+        0, sizeFrag - 1,
+        0, halfSizeFrag,
+        0, 0
+      };
+      // Loop on the 9 fragments for the current size
+      for (int iFrag = 9; iFrag--;) {
+        // Declare a variable to memorize the average value
+        float avg[3] = {0.0, 0.0, 0.0};
+        // Get the starting and ending pos for this fragment
+        VecShort2D startPosFrag = VecShortCreateStatic2D();
+        VecSet(&startPosFrag, 0, 
+          VecGet(pos, 0) - relPos[iFrag * 2]);
+        VecSet(&startPosFrag, 1, 
+          VecGet(pos, 1) - relPos[iFrag * 2 + 1]);
+        VecShort2D endPosFrag = VecShortCreateStatic2D();
+        VecSet(&endPosFrag, 0, VecGet(&startPosFrag, 0) + sizeFrag);
+        VecSet(&endPosFrag, 1, VecGet(&startPosFrag, 1) + sizeFrag);
+        // Loop on the fragment to calculate the average rgb value
+        VecShort2D posFrag = startPosFrag;
+        do {
+          long iPosFrag = GBPosIndex(&posFrag, dim) * 3;
+          for (long i = 3; i--;)
+            avg[i] += VecGet(input, iPosFrag + i);
+        } while (VecShiftStep(&posFrag, &startPosFrag, &endPosFrag));
+        for (long i = 3; i--;)
+          avg[i] /= (float)areaFrag;
+        // Set the average value in the input vector
+        for (long i = 3; i--;)
+          VecSet(in, 3 * (1 + (iSize - 1) * 9 + iFrag) + i, avg[i]);
+      }
+    }
+    // Append the input to the set of reused input for later use
+    if (setReusedInput != NULL) {
+      // Clone the vector because it will be freed later
+      // Should be optimized to avoid cloning
+      GSetAppend(setReusedInput, VecClone(in));
+    }
+  // Else, reuse the previously computed input
+  } else {
+    // Clone the vector because it will be freed later
+    // Should be optimized to avoid cloning
+    in = VecClone(GSetGet(setReusedInput, iInput));
+  }
+  return in;
+}
+
 // Make the prediction on the 'input' values with the 
 // ImgSegmentorCriterionTex that
 // 'input' 's format is 3*width*height, values in [0.0, 1.0]
 // Return values are nbClass*width*height, values in [-1.0, 1.0]
 VecFloat* ISCTexPredict(const ImgSegmentorCriterionTex* const that,
-  const VecFloat* input, const VecShort2D* const dim) {
+  const VecFloat* input, const VecShort2D* const dim,
+  const int iSample) {
 #if BUILDMODE == 0
   if (that == NULL) {
     PBImgAnalysisErr->_type = PBErrTypeNullPointer;
@@ -2739,28 +2875,32 @@ VecFloat* ISCTexPredict(const ImgSegmentorCriterionTex* const that,
     PBErrCatch(PBImgAnalysisErr);
   }
 #endif
-//printf("dim ");VecPrint(dim,stdout);printf("\n");
   // Calculate the area of the input image
   long area = VecGet(dim, 0) * VecGet(dim, 1);
-//printf("area %ld\n",area);
   // Allocate memory for the result
   VecFloat* res = VecFloatCreate(area * (long)ISCGetNbClass(that));
-  // Declare variables to memorize the input/output of the NeuraNet
+  // Declare variables to memorize the output of the NeuraNet
   VecFloat* out = VecFloatCreate(ISCGetNbClass(that));
-  int nbIn = 3 * (1 + (ISCTexGetSize(that) == 1 ? 0 :
-    (ISCTexGetSize(that) - 1) * 9));
-//printf("nbIn %d\n",nbIn);
-  VecFloat* in = VecFloatCreate(nbIn);
-  // Calculate the size of the biggest fragment
-  int sizeFragMax = powi(3, ISCTexGetSize(that) - 1);
-//printf("sizeFragMax %d\n", sizeFragMax);
   // Declare a variable to memorize the index of current pixel in the 
   // input
   long iInput = 0;
-  // Declare a variable to memorize the dimension of the fragment
-  VecShort2D dimFrag = VecShortCreateStatic2D();
+  // Calculate the size of the biggest fragment
+  int sizeFragMax = powi(3, ISCTexGetSize(that) - 1);
+  // Declare a pointer to the set of reused data for this sample
+  GSetVecFloat* setReusedInput = NULL;
+  // If we reuse data and the data for this sample doesn't exist yet
+  if (ISCIsReusedInput(that)) {
+    if (iSample >= GSetNbElem(ISCReusedInput(that))) {
+      // Create the GSetVecFloat for this sample
+      GSetAppend((GSet*)ISCReusedInput(that), GSetVecFloatCreate());
+    }
+    // Get the set of reused inputs for this sample
+    setReusedInput = GSetGet(ISCReusedInput(that), iSample);
+  }
   // Loop on the image 
   VecShort2D pos = VecShortCreateStatic2D();
+time_t ti = time(NULL);
+printf("%d %s",iSample,ctime(&ti));
   do {
     // Ignore the border of the image where there is not enough
     // space to create the fragments
@@ -2768,84 +2908,30 @@ VecFloat* ISCTexPredict(const ImgSegmentorCriterionTex* const that,
       VecGet(&pos, 0) <= (VecGet(dim, 0) - sizeFragMax) && 
       VecGet(&pos, 1) >= sizeFragMax - 1 && 
       VecGet(&pos, 1) <= (VecGet(dim, 1) - sizeFragMax)) {
-//printf("iInput %ld\n",iInput);
-//printf("pos ");VecPrint(&pos,stdout);printf("\n");
-      // Current pixel (fragment of size 1x1)
-      for (long i = 3; i--;)
-        VecSet(in, i, VecGet(input, iInput * 3L + i));
-      // Loop on fragment sizes bigger than 1x1
-      for (int iSize = 1; iSize < ISCTexGetSize(that); ++iSize) {
-//printf("iSize %d\n",iSize);
-        // Get the size of the current fragment
-        int sizeFrag = powi(3, iSize);
-//printf("sizeFrag %d\n",sizeFrag);
-        VecSet(&dimFrag, 0, sizeFrag);
-        VecSet(&dimFrag, 1, sizeFrag);
-        // Get the area of the frag
-        long areaFrag = sizeFrag * sizeFrag;
-//printf("areaFrag %ld\n",areaFrag);
-        // Get the half size of the current fragment
-        int halfSizeFrag = (sizeFrag - 1) / 2;
-//printf("halfSizeFrag %d\n",halfSizeFrag);
-        // Create the matrix of fragments' start position relative to 
-        // the current pixel
-        int relPos[18] = {
-          sizeFrag - 1, sizeFrag - 1,
-          sizeFrag - 1, halfSizeFrag,
-          sizeFrag - 1, 0,
-          halfSizeFrag, sizeFrag - 1,
-          halfSizeFrag, halfSizeFrag,
-          halfSizeFrag, 0,
-          0, sizeFrag - 1,
-          0, halfSizeFrag,
-          0, 0
-        };
-        // Loop on the 9 fragments for the current size
-        for (int iFrag = 9; iFrag--;) {
-//printf("iFrag %d\n", iFrag);
-          // Declare a variable to memorize the average value
-          float avg[3] = {0.0, 0.0, 0.0};
-          // Get the starting and ending pos for this fragment
-          VecShort2D startPosFrag = VecShortCreateStatic2D();
-          VecSet(&startPosFrag, 0, 
-            VecGet(&pos, 0) - relPos[iFrag * 2]);
-          VecSet(&startPosFrag, 1, 
-            VecGet(&pos, 1) - relPos[iFrag * 2 + 1]);
-          VecShort2D endPosFrag = VecShortCreateStatic2D();
-          VecSet(&endPosFrag, 0, VecGet(&startPosFrag, 0) + sizeFrag);
-          VecSet(&endPosFrag, 1, VecGet(&startPosFrag, 1) + sizeFrag);
-//printf("startPosFrag ");VecPrint(&startPosFrag,stdout);printf("\n");
-//printf("endPosFrag ");VecPrint(&endPosFrag,stdout);printf("\n");
-          // Loop on the fragment to calculate the average rgb value
-          VecShort2D posFrag = startPosFrag;
-          do {
-//printf("posFrag ");VecPrint(&posFrag,stdout);printf("\n");
-            long iPosFrag = GBPosIndex(&posFrag, dim) * 3;
-//printf("iPosFrag %ld\n",iPosFrag);
-            for (long i = 3; i--;)
-              avg[i] += VecGet(input, iPosFrag + i);
-          } while (VecShiftStep(&posFrag, &startPosFrag, &endPosFrag));
-          for (long i = 3; i--;)
-            avg[i] /= (float)areaFrag;
-//printf("avg %f %f %f\n",avg[0],avg[1],avg[2]);
-          // Set the average value in the input vector
-//printf("shift set in %d\n", 3 * (1 + (iSize - 1) * 9 + iFrag));
-          for (long i = 3; i--;)
-            VecSet(in, 3 * (1 + (iSize - 1) * 9 + iFrag) + i, avg[i]);
-//printf("in ");VecPrint(in,stdout);printf("\n");
-        }
-      }
+      // Get the input
+      VecFloat* in = ISCTexGetNNInput(
+        that, input, dim, iSample, iInput, setReusedInput, &pos);
       // Apply the NeuraNet on inputs
       NNEval(that->_nn, in, out);
-//printf("out ");VecPrint(out,stdout);printf("\n");
+      // Free memory
+      VecFree(&in);
       // Store the result
       for (long i = ISCGetNbClass(that); i--;)
         VecSet(res, iInput * (long)ISCGetNbClass(that) + i,
           VecGet(out, i));
+    // Else, we need to create null element for the skipped pixel to 
+    // to keep the index in the GSet matching the iInput
+    } else {
+      if (setReusedInput != NULL &&
+        iInput >= GSetNbElem(setReusedInput)) {
+        GSetAppend((GSet*)setReusedInput, NULL);
+      }
     }
     // Increment the index of the current pixel in input
     ++iInput;
   } while (VecStep(&pos, dim) && !PBIA_CtrlC);
+ti = time(NULL);
+printf("%d %s",iSample,ctime(&ti));fflush(stdout);
   // Free memory
   VecFree(&out);
   // Return the result

@@ -11,9 +11,11 @@ ImgSegmentor* CreateImgSegmentor() {
   // Create the ImgSegmentor
   ImgSegmentor* segmentor = ImgSegmentorCreate(nbClass);
   // Add a CriterionRGB
-  if (ISAddCriterionRGB(segmentor, NULL) == NULL) {
+  int rank = 2;
+  int size = 2;
+  if (ISAddCriterionTex(segmentor, NULL, rank, size) == NULL) {
     PBImgAnalysisErr->_type = PBErrTypeUnitTestFailed;
-    sprintf(PBImgAnalysisErr->_msg, "Couldn't add CriterionRGB");
+    sprintf(PBImgAnalysisErr->_msg, "Couldn't add CriterionTex");
     PBErrCatch(PBImgAnalysisErr);
   }
   // Return the ImgSegmentor
@@ -170,7 +172,7 @@ int main(int argc, char** argv) {
   srandom(time(NULL));
 
   // Path to the dataset
-  char* cfgFilePath = PBFSJoinPath("..", "Data", "004", "dataset.json");
+  char* cfgFilePath = PBFSJoinPath("..", "Data", "003", "dataset.json");
   GDataSetGenBrushPair dataSet = 
     GDataSetGenBrushPairCreateStatic(cfgFilePath);
 
