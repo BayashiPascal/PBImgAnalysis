@@ -587,10 +587,7 @@ void UnitTestImgSegmentorTrain04() {
   ISSetSizeMinPool(&segmentor, 4);
   ISSetNbEpoch(&segmentor, 2);
   ISSetTargetBestValue(&segmentor, 0.99);
-  
-  //ISSetFlagTextOMeter(&segmentor, true);
-  ISSetFlagTextOMeter(&segmentor, false);
-  
+  ISSetFlagTextOMeter(&segmentor, true);
   ISTrain(&segmentor, &dataSet);
   char resFileName[] = "unitTestImgSegmentorTrain04.json";
   FILE* fp = fopen(resFileName, "w");
@@ -648,8 +645,7 @@ void UnitTestAll() {
 }
 
 int main(void) {
-  //UnitTestAll();
-  UnitTestImgSegmentorTrain04();
+  UnitTestAll();
   return 0;
 }
 

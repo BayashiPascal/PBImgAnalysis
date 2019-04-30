@@ -829,6 +829,7 @@ void ISTrain(ImgSegmentor* const that,
   long nbTotalParamInt = 0;
   long nbTotalParamFloat = 0;
   // Get the number of int and float parameters for each criterion
+  // and flush the reused data
   int iCrit = 0;
   GenTreeIterDepth iter = GenTreeIterDepthCreateStatic(ISCriteria(that));
   do {
@@ -839,6 +840,7 @@ void ISTrain(ImgSegmentor* const that,
     nb = ISCGetNbParamFloat(crit);
     VecSet(nbParamFloat, iCrit, nb);
     nbTotalParamFloat += nb;
+    ImgSegmentorCriterionFlushReusedData(crit);
     ++iCrit;
   } while (GenTreeIterStep(&iter));
   char cpFilename[200] = {'\0'};
@@ -1394,6 +1396,18 @@ void ImgSegmentorCriterionFreeStatic(ImgSegmentorCriterion* that) {
   if (that == NULL)
     return;
   // Free memory
+  ImgSegmentorCriterionFlushReusedData(that);
+}
+
+// Flush the reused data of the ImgSegmentorCriterion 'that'
+void ImgSegmentorCriterionFlushReusedData(ImgSegmentorCriterion* that) {
+#if BUILDMODE == 0
+  if (that == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'that' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+#endif
   while (GSetNbElem(&(that->_reusedInput)) > 0) {
     GSetVecFloat* set = GSetPop(&(that->_reusedInput));
     while (GSetNbElem(set) > 0) {
@@ -1528,15 +1542,6 @@ bool ISCDecodeAsJSON(
   ISCType type = atoi(JSONLabel(JSONValue(prop, 0)));
   // Declare a variable to memorize the returned code
   bool ret = true;
-  // Get the flag to reuse data
-  prop = JSONProperty(json, "_flagReusedInput");
-  if (prop == NULL) {
-    return false;
-  }
-  int flagReusedInput = atoi(JSONLabel(JSONValue(prop, 0)));
-  if (flagReusedInput != 0) {
-    (*that)->_flagReusedInput = true;
-  }
   // Call the appropriate function based on the type
   switch(type) {
     case ISCType_RGB:
@@ -1555,6 +1560,17 @@ bool ISCDecodeAsJSON(
     default:
       ret = false;
       break;
+  }
+  if (ret == true) {
+    // Get the flag to reuse data
+    prop = JSONProperty(json, "_flagReusedInput");
+    if (prop == NULL) {
+      return false;
+    }
+    int flagReusedInput = atoi(JSONLabel(JSONValue(prop, 0)));
+    if (flagReusedInput != 0) {
+      (*that)->_flagReusedInput = true;
+    }
   }
   // Return the result code
   return ret;
@@ -2839,7 +2855,7 @@ VecFloat* ISCTexGetNNInput(const ImgSegmentorCriterionTex* const that,
   } else {
     // Clone the vector because it will be freed later
     // Should be optimized to avoid cloning
-    in = VecClone(GSetGet(setReusedInput, iInput));
+    in = VecClone(GSetGetJump(setReusedInput, iInput));
   }
   return in;
 }
@@ -2889,7 +2905,7 @@ VecFloat* ISCTexPredict(const ImgSegmentorCriterionTex* const that,
   // Declare a pointer to the set of reused data for this sample
   GSetVecFloat* setReusedInput = NULL;
   // If we reuse data and the data for this sample doesn't exist yet
-  if (ISCIsReusedInput(that)) {
+  if (ISCIsReusedInput(that) && iSample >= 0) {
     if (iSample >= GSetNbElem(ISCReusedInput(that))) {
       // Create the GSetVecFloat for this sample
       GSetAppend((GSet*)ISCReusedInput(that), GSetVecFloatCreate());
@@ -2899,8 +2915,6 @@ VecFloat* ISCTexPredict(const ImgSegmentorCriterionTex* const that,
   }
   // Loop on the image 
   VecShort2D pos = VecShortCreateStatic2D();
-time_t ti = time(NULL);
-printf("%d %s",iSample,ctime(&ti));
   do {
     // Ignore the border of the image where there is not enough
     // space to create the fragments
@@ -2930,8 +2944,6 @@ printf("%d %s",iSample,ctime(&ti));
     // Increment the index of the current pixel in input
     ++iInput;
   } while (VecStep(&pos, dim) && !PBIA_CtrlC);
-ti = time(NULL);
-printf("%d %s",iSample,ctime(&ti));fflush(stdout);
   // Free memory
   VecFree(&out);
   // Return the result

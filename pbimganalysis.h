@@ -494,6 +494,9 @@ ImgSegmentorCriterion ImgSegmentorCriterionCreateStatic(int nbClass,
 // Free the memory used by the static ImgSegmentorCriterion 'that'
 void ImgSegmentorCriterionFreeStatic(ImgSegmentorCriterion* that);
 
+// Flush the reused data of the ImgSegmentorCriterion 'that'
+void ImgSegmentorCriterionFlushReusedData(ImgSegmentorCriterion* that);
+
 // Make the prediction on the 'input' values by calling the appropriate
 // function according to the type of criterion
 // Try to reuse the data associated with the sample 'iSample'. If
