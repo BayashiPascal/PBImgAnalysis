@@ -157,6 +157,8 @@ float GBSimilarityCoeff(const GenBrush* const that,
 
 #define IS_TRAINTXTOMETER_LINE1 "Epoch xxxxx/xxxxx Entity xxx/xxx\n"
 #define IS_TRAINTXTOMETER_FORMAT1 "Epoch %05ld/%05ld Entity %03d/%03d\n"
+#define IS_TRAINTXTOMETER_LINE2 "ETC: ???d:??h:??m:??s xxx\n"
+#define IS_TRAINTXTOMETER_FORMAT2 "ETC: %s %s\n"
 #define IS_EVALTXTOMETER_LINE1 "Sample xxxxx/xxxxx\n"
 #define IS_EVALTXTOMETER_FORMAT1 "Sample %05ld/%05ld\n"
 
@@ -199,6 +201,7 @@ typedef struct ImgSegmentor {
   // Strings for the TextOMeter
   char _line1[50]; 
   char _line2[50]; 
+  char _line3[50]; 
   // Internal flag used during trainng
   bool _flagTraining;
   // Saved data to be reused when training

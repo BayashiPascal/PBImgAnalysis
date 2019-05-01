@@ -11,11 +11,14 @@ ImgSegmentor* CreateImgSegmentor() {
   // Create the ImgSegmentor
   ImgSegmentor* segmentor = ImgSegmentorCreate(nbClass);
   // Add a CriterionRGB
-  if (ISAddCriterionRGB(segmentor, NULL) == NULL) {
+  ImgSegmentorCriterionRGB* crit = 
+    ISAddCriterionRGB(segmentor, NULL);
+  if (crit == NULL) {
     PBImgAnalysisErr->_type = PBErrTypeUnitTestFailed;
     sprintf(PBImgAnalysisErr->_msg, "Couldn't add CriterionRGB");
     PBErrCatch(PBImgAnalysisErr);
   }
+  ISCSetIsReusedInput(crit, true);
   // Return the ImgSegmentor
   return segmentor;
 }

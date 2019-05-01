@@ -503,6 +503,7 @@ ImgSegmentor ImgSegmentorCreateStatic(int nbClass) {
   that._flagTextOMeter = false;
   that._textOMeter = NULL;
   sprintf(that._line1, IS_TRAINTXTOMETER_LINE1);
+  sprintf(that._line3, IS_TRAINTXTOMETER_LINE2);
   sprintf(that._line2, IS_EVALTXTOMETER_LINE1);
   that._flagTraining = false;
   that._reusedInput = GSetVecFloatCreateStatic();
@@ -870,6 +871,8 @@ void ISTrain(ImgSegmentor* const that,
     GASetTextOMeterFlag(ga, ISGetFlagTextOMeter(that));
     // Declare a variable to memorize the current best value
     float bestValue = 0.0;
+    // Create a time estimator
+    EstimTimeToComp etc = EstimTimeToCompCreateStatic();
     // Loop over epochs
     do {
       // Loop over the GenAlg entities
@@ -894,6 +897,18 @@ void ISTrain(ImgSegmentor* const that,
             sprintf(that->_line1, IS_TRAINTXTOMETER_FORMAT1, 
               GAGetCurEpoch(ga), (long int)ISGetNbEpoch(that) - 1, 
               iEnt, GAGetNbAdns(ga) - 1);
+            float compByEpoch = 
+              (float)GAGetCurEpoch(ga) / (float)ISGetNbEpoch(that) +
+              (float)iEnt / ((float)GAGetNbAdns(ga)  * 
+              (float)ISGetNbEpoch(that));
+            float compByValue = bestValue / ISGetTargetBestValue(that);
+            if (compByEpoch > compByValue) {
+              sprintf(that->_line3, IS_TRAINTXTOMETER_FORMAT2,
+                ETCGet(&etc, compByEpoch), "Epo");
+            } else {
+              sprintf(that->_line3, IS_TRAINTXTOMETER_FORMAT2,
+                ETCGet(&etc, compByValue), "Val");
+            }
           }
           // Evaluate the ImgSegmentor for this entity's adn on the 
           // dataset
@@ -1040,7 +1055,7 @@ void ISSetFlagTextOMeter(ImgSegmentor* const that, bool flag) {
     if (flag && that->_textOMeter == NULL) {
       char title[] = "ImgSegmentor";
       int width = strlen(IS_TRAINTXTOMETER_LINE1) + 1;
-      int height = 3;
+      int height = 4;
       that->_textOMeter = TextOMeterCreate(title, width, height);
     }
     if (!flag && that->_textOMeter != NULL) {
@@ -1069,6 +1084,7 @@ void ISUpdateTextOMeter(const ImgSegmentor* const that) {
   TextOMeterClear(that->_textOMeter);
   // .........................
   TextOMeterPrint(that->_textOMeter, that->_line1);
+  TextOMeterPrint(that->_textOMeter, that->_line3);
   TextOMeterPrint(that->_textOMeter, that->_line2);
   // Flush the content of the TextOMeter
   TextOMeterFlush(that->_textOMeter);

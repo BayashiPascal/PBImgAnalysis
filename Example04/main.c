@@ -13,11 +13,14 @@ ImgSegmentor* CreateImgSegmentor() {
   // Add a CriterionRGB
   int rank = 2;
   int size = 2;
-  if (ISAddCriterionTex(segmentor, NULL, rank, size) == NULL) {
+  ImgSegmentorCriterionTex* crit = 
+    ISAddCriterionTex(segmentor, NULL, rank, size);
+  if (crit == NULL) {
     PBImgAnalysisErr->_type = PBErrTypeUnitTestFailed;
     sprintf(PBImgAnalysisErr->_msg, "Couldn't add CriterionTex");
     PBErrCatch(PBImgAnalysisErr);
   }
+  ISCSetIsReusedInput(crit, true);
   // Return the ImgSegmentor
   return segmentor;
 }
