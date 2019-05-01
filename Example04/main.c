@@ -59,7 +59,7 @@ void Train(ImgSegmentor* const segmentor,
   ISSetFlagBinaryResult(segmentor, true);
   ISSetSizeMinPool(segmentor, 16);
   ISSetSizePool(segmentor, 16);
-  ISSetSizeMaxPool(segmentor, 128);
+  ISSetSizeMaxPool(segmentor, 64);
   ISSetNbElite(segmentor, 5);
   ISSetNbEpoch(segmentor, nbEpoch);
   ISSetTargetBestValue(segmentor, targetBestValue);

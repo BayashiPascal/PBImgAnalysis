@@ -892,8 +892,8 @@ void ISTrain(ImgSegmentor* const that,
           // Update the info for the TexOMeter
           if (ISGetFlagTextOMeter(that)) {
             sprintf(that->_line1, IS_TRAINTXTOMETER_FORMAT1, 
-              GAGetCurEpoch(ga) + 1L, (long int)ISGetNbEpoch(that), 
-              iEnt + 1, GAGetNbAdns(ga));
+              GAGetCurEpoch(ga), (long int)ISGetNbEpoch(that) - 1, 
+              iEnt, GAGetNbAdns(ga) - 1);
           }
           // Evaluate the ImgSegmentor for this entity's adn on the 
           // dataset
@@ -905,7 +905,7 @@ void ISTrain(ImgSegmentor* const that,
           if (value - bestValue > PBMATH_EPSILON) {
             bestValue = value;
             printf("Epoch %05ld/%05u ", 
-              GAGetCurEpoch(ga) + 1, ISGetNbEpoch(that));
+              GAGetCurEpoch(ga), ISGetNbEpoch(that) - 1);
             printf("TrainAcc[0,1] %f/%f ", bestValue, 
               ISGetTargetBestValue(that));
             // If the dataset has an evaluation category
@@ -993,7 +993,7 @@ float ISEvaluate(ImgSegmentor* const that,
     // Update the info for the TexOMeter and refresh it
     if (ISGetFlagTextOMeter(that)) {
       sprintf(that->_line2, IS_EVALTXTOMETER_FORMAT1, 
-        iSample, GDSGetSizeCat(dataset, iCat));
+        iSample, GDSGetSizeCat(dataset, iCat) - 1);
       ISUpdateTextOMeter(that);
     }
     // Get the next sample

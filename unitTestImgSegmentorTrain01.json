@@ -12,6 +12,7 @@
       "_criterion":{
         "_type":"0",
         "_nbClass":"2",
+        "_flagReusedInput":"1",
         "_neuranet":{
           "_nbInputVal":"3",
           "_nbOutputVal":"2",
