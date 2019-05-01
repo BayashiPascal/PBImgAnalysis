@@ -533,6 +533,84 @@ void ISSetSizeMinPool(ImgSegmentor* const that, const int nb) {
   that->_sizeMinPool = MIN(ISGetSizeMaxPool(that), nb);
 }
 
+// Set the email to which send notification during training of 
+// the ImgSegmentor 'that' to a copy of 'email'
+// If 'email' is null, no notification will be sent
+#if BUILDMODE != 0
+inline
+#endif
+void ISSetEmailNotification(ImgSegmentor* const that, 
+  const char* const email) {
+#if BUILDMODE == 0
+  if (that == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'that' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+#endif
+  if (that->_emailNotification != NULL)
+    free(that->_emailNotification);
+  if (email != NULL)
+    that->_emailNotification = strdup(email);
+  else
+    that->_emailNotification = NULL;
+}
+
+// Get the email to which send notification during training
+#if BUILDMODE != 0
+inline
+#endif
+const char* ISGetEmailNotification(ImgSegmentor* const that) {
+#if BUILDMODE == 0
+  if (that == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'that' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+#endif
+  return that->_emailNotification;
+}
+
+// Set the email subject for notification during training of 
+// the ImgSegmentor 'that' to a copy of 'subject'
+#if BUILDMODE != 0
+inline
+#endif
+void ISSetEmailSubject(ImgSegmentor* const that, 
+  const char* const subject) {
+#if BUILDMODE == 0
+  if (that == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'that' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+  if (subject == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'subject' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+#endif
+  if (that->_emailSubject != NULL)
+    free(that->_emailSubject);
+  if (subject != NULL)
+    that->_emailSubject = strdup(subject);
+}
+
+// Get the email subject for notification during training
+#if BUILDMODE != 0
+inline
+#endif
+const char* ISGetEmailSubject(ImgSegmentor* const that) {
+#if BUILDMODE == 0
+  if (that == NULL) {
+    PBImgAnalysisErr->_type = PBErrTypeNullPointer;
+    sprintf(PBImgAnalysisErr->_msg, "'that' is null");
+    PBErrCatch(PBImgAnalysisErr);
+  }
+#endif
+  return that->_emailSubject;
+}
+
 // ---- ImgSegmentorCriterionRGB
 
 // Return the NeuraNet of the ImgSegmentorCriterionRGB 'that'

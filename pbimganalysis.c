@@ -507,6 +507,8 @@ ImgSegmentor ImgSegmentorCreateStatic(int nbClass) {
   sprintf(that._line2, IS_EVALTXTOMETER_LINE1);
   that._flagTraining = false;
   that._reusedInput = GSetVecFloatCreateStatic();
+  that._emailNotification = NULL;
+  that._emailSubject = NULL;
   // Return the new ImgSegmentor
   return that;
 }
@@ -536,6 +538,10 @@ void ImgSegmentorFreeStatic(ImgSegmentor* that) {
     return;
   if (that->_textOMeter != NULL)
     TextOMeterFree(&(that->_textOMeter));
+  if (that->_emailNotification != NULL)
+    free(that->_emailNotification);
+  if (that->_emailSubject != NULL)
+    free(that->_emailSubject);
   if (!GenTreeIsLeaf(ISCriteria(that))) {
     GenTreeIterDepth iter = GenTreeIterDepthCreateStatic(ISCriteria(that));
     do {
@@ -873,6 +879,10 @@ void ISTrain(ImgSegmentor* const that,
     float bestValue = 0.0;
     // Create a time estimator
     EstimTimeToComp etc = EstimTimeToCompCreateStatic();
+    // Create a PBMailer for email notifications
+    PBMailer mailer;
+    if (ISGetEmailNotification(that) != NULL)
+      mailer = PBMailerCreateStatic(ISGetEmailNotification(that));
     // Loop over epochs
     do {
       // Loop over the GenAlg entities
@@ -918,23 +928,34 @@ void ISTrain(ImgSegmentor* const that,
           GASetAdnValue(ga, GAAdn(ga, iEnt), value);
           // If the value is the best value
           if (value - bestValue > PBMATH_EPSILON) {
+            char str[100];
+            int iStr = 0;
             bestValue = value;
-            printf("Epoch %05ld/%05u ", 
+            sprintf(str, "Epoch %05ld/%05u ", 
               GAGetCurEpoch(ga), ISGetNbEpoch(that) - 1);
-            printf("TrainAcc[0,1] %f/%f ", bestValue, 
+            iStr = strlen(str);
+            sprintf(str + iStr, "TrainAcc[0,1] %f/%f ", bestValue, 
               ISGetTargetBestValue(that));
+            iStr = strlen(str);
             // If the dataset has an evaluation category
             float evalValue = 0.0;
             if (GDSGetNbCat(dataset) > 1) {
               // Evaluate the new best entity on the validation category
               const int iCatValid = 1;
               evalValue = ISEvaluate(that, dataset, iCatValid);
-              printf("EvalAcc[0,1] %f ", evalValue);
+              sprintf(str + iStr, "EvalAcc[0,1] %f ", evalValue);
+              iStr = strlen(str);
             }
             time_t improvTime = time(NULL);
             char* strImprovTime = ctime(&improvTime);
-            printf("on %s", strImprovTime);
+            sprintf(str + iStr, "on %s", strImprovTime);
+            printf("%s", str);
             fflush(stdout);
+            // Send an email if necessary
+            if (ISGetEmailNotification(that) != NULL) {
+              PBMailerAddStr(&mailer, str);
+              PBMailerSend(&mailer, ISGetEmailSubject(that));
+            }
             // Save the ImgSegmentor
             if (GDSGetNbCat(dataset) > 1) {
               sprintf(cpFilename, "%05ld_%f_%f_" IS_CHECKPOINTFILENAME, GAGetCurEpoch(ga) + 1L, bestValue, evalValue);
@@ -967,6 +988,8 @@ void ISTrain(ImgSegmentor* const that,
     } while (GenTreeIterStep(&iter));
     // Free memory
     GenAlgFree(&ga);
+    if (ISGetEmailNotification(that) != NULL)
+      PBMailerFreeStatic(&mailer);
   }
   // Reload the checkpoint at the end of the training to
   // return the ImgSegmentor in its best version

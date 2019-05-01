@@ -10,8 +10,8 @@ ImgSegmentor* CreateImgSegmentor() {
   int nbClass = 1;
   // Create the ImgSegmentor
   ImgSegmentor* segmentor = ImgSegmentorCreate(nbClass);
-  // Add a CriterionRGB
-  int rank = 2;
+  // Add a CriterionTex
+  int rank = 1;
   int size = 2;
   ImgSegmentorCriterionTex* crit = 
     ISAddCriterionTex(segmentor, NULL, rank, size);
@@ -67,6 +67,8 @@ void Train(ImgSegmentor* const segmentor,
   ISSetNbEpoch(segmentor, nbEpoch);
   ISSetTargetBestValue(segmentor, targetBestValue);
   ISSetFlagTextOMeter(segmentor, true);
+  ISSetEmailNotification(segmentor, "");
+  ISSetEmailSubject(segmentor, "PBImgAnalysis/Example04");
 
   // Train the ImgSegmentor
   time_t startTime = time(NULL);

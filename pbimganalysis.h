@@ -206,6 +206,11 @@ typedef struct ImgSegmentor {
   bool _flagTraining;
   // Saved data to be reused when training
   GSetVecFloat _reusedInput;
+  // Email adress to which send motification during training
+  // if null no notifications are sent
+  char* _emailNotification;
+  // Subject of emails notification if any
+  char* _emailSubject;
 } ImgSegmentor;
 
 typedef struct ImgSegmentorPerf {
@@ -286,6 +291,35 @@ long ISGetNbCriterion(const ImgSegmentor* const that);
 // Set the flag memorizing if the TextOMeter is displayed for
 // the ImgSegmentor 'that' to 'flag'
 void ISSetFlagTextOMeter(ImgSegmentor* const that, bool flag);
+
+// Set the email to which send notification during training of 
+// the ImgSegmentor 'that' to a copy of 'email'
+// If 'email' is null, no notification will be sent
+#if BUILDMODE != 0
+inline
+#endif
+void ISSetEmailNotification(ImgSegmentor* const that, 
+  const char* const email);
+
+// Get the email to which send notification during training
+#if BUILDMODE != 0
+inline
+#endif
+const char* ISGetEmailNotification(ImgSegmentor* const that);
+
+// Set the email subject for notification during training of 
+// the ImgSegmentor 'that' to a copy of 'subject'
+#if BUILDMODE != 0
+inline
+#endif
+void ISSetEmailSubject(ImgSegmentor* const that, 
+  const char* const subject);
+  
+// Get the email subject for notification during training
+#if BUILDMODE != 0
+inline
+#endif
+const char* ISGetEmailSubject(ImgSegmentor* const that);
 
 // Return the flag for the TextOMeter of the ImgSegmentor 'that'
 #if BUILDMODE != 0
