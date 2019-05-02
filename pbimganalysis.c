@@ -883,6 +883,8 @@ void ISTrain(ImgSegmentor* const that,
     PBMailer mailer;
     if (ISGetEmailNotification(that) != NULL)
       mailer = PBMailerCreateStatic(ISGetEmailNotification(that));
+    // Create a GSet to compute the threshold of ISEvaluateFast
+    GSet setVal = GSetCreateStatic();
     // Loop over epochs
     do {
       // Loop over the GenAlg entities
@@ -920,10 +922,17 @@ void ISTrain(ImgSegmentor* const that,
                 ETCGet(&etc, compByValue), "Val");
             }
           }
+          // Get the threshold value for ISEvaluateFast
+          // This is the sort value of the nbElite-th element
+          float threshold = 0.0;
+          if (GSetNbElem(&setVal) >= GAGetNbElites(ga))
+            threshold = -1.0 * GSetElemGetSortVal(
+              GSetElement(&setVal, GAGetNbElites(ga) - 1));
           // Evaluate the ImgSegmentor for this entity's adn on the 
           // dataset
           const int iCatTraining = 0;
-          float value = ISEvaluate(that, dataset, iCatTraining);
+          float value = ISEvaluateFast(that, dataset, iCatTraining,
+            threshold);
           // Update the value of this entity's adn
           GASetAdnValue(ga, GAAdn(ga, iEnt), value);
           // If the value is the best value
@@ -960,7 +969,8 @@ void ISTrain(ImgSegmentor* const that,
             if (GDSGetNbCat(dataset) > 1) {
               sprintf(cpFilename, "%05ld_%f_%f_" IS_CHECKPOINTFILENAME, GAGetCurEpoch(ga) + 1L, bestValue, evalValue);
             } else {
-              sprintf(cpFilename, "%05ld_%f_" IS_CHECKPOINTFILENAME, GAGetCurEpoch(ga) + 1L, bestValue);
+              sprintf(cpFilename, "%05ld_%f_" IS_CHECKPOINTFILENAME, 
+                GAGetCurEpoch(ga) + 1L, bestValue);
             }
             FILE* fpCheckpoint = fopen(cpFilename, "w");
             if (!ISSave(that, fpCheckpoint, false)) {
@@ -970,9 +980,14 @@ void ISTrain(ImgSegmentor* const that,
             fclose(fpCheckpoint);
           }
         }
+        // Add the value of this entity to the set of values for the 
+        // threshold of ISEvaluateFast, sorted from best to worst
+        GSetAddSort(&setVal, NULL, -1.0 * GAAdnGetVal(GAAdn(ga, iEnt)));
       }
       // Step the GenAlg
       GAStep(ga);
+      // Reset the set of values for the threshold of ISEvaluateFast
+      GSetFlush(&setVal);
     } while (GAGetCurEpoch(ga) < ISGetNbEpoch(that) &&
       bestValue < ISGetTargetBestValue(that) && !PBIA_CtrlC);
     // Loop on the criterion to set the criteria to the best one
@@ -1015,16 +1030,21 @@ void ISTrain(ImgSegmentor* const that,
 
 // Evaluate the ImageSegmentor 'that' on the data set 'dataSet' using
 // the data of the 'iCat' category in 'dataSet'
-// srandom must have been called before calling ISEvaluate
+// Give up the evaluation as soon as the result can't be greater than
+// 'threshold'
+// srandom must have been called before calling ISTrain
 // Return a value in [0.0, 1.0], 0.0 being worst and 1.0 being best
-float ISEvaluate(ImgSegmentor* const that, 
-  const GDataSetGenBrushPair* const dataset, const int iCat) {
+float ISEvaluateFast(ImgSegmentor* const that, 
+  const GDataSetGenBrushPair* const dataset, const int iCat,
+  float threshold) {
   // Declare a variable to memorize the result value
   float value = 0.0;
   // Declare a variable to memorize the color of the mask
   const GBPixel rgbaMask = GBColorBlack; 
   // Reset the iterator of the GDataSet
   GDSReset(dataset, iCat);
+  // Declare a variable to compute the skip condition
+  float minVal = 0.0;
   // Loop on the samples
   long iSample = 0;
   do {
@@ -1056,7 +1076,19 @@ float ISEvaluate(ImgSegmentor* const that,
     free(pred);
     GDSGenBrushPairFree(&sample);
     ++iSample;
-  } while (GDSStepSample(dataset, iCat) && !PBIA_CtrlC);
+    // Get the value under which we can skip the remaining samples
+    // because even if we get perfect results for all these remaining
+    // samples the final value won't make it up to the threshold
+    minVal = iSample + 
+      (float)GDSGetSizeCat(dataset, iCat) * (threshold - 1.0);
+
+/*if (value < minVal) {
+  printf("ISEvaluateFast skip %f<%f (%ld+%ld*(%f-1.0))\n",
+    value,minVal,iSample,GDSGetSizeCat(dataset, iCat),threshold);
+}*/
+
+  } while (GDSStepSample(dataset, iCat) && !PBIA_CtrlC && 
+    value >= minVal);
   // Get the average value over all samples
   value /= (float)GDSGetSizeCat(dataset, iCat);
   // Return the result of the evaluation

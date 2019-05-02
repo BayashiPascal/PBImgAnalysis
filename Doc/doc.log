@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.16 (TeX Live 2015/Debian) (preloaded format=pdflatex 2018.10.18)  1 MAY 2019 22:33
+This is pdfTeX, Version 3.14159265-2.6-1.40.16 (TeX Live 2015/Debian) (preloaded format=pdflatex 2018.10.18)  2 MAY 2019 18:35
 entering extended mode
  \write18 enabled.
  %&-line parsing enabled.
@@ -532,17 +532,11 @@ Overfull \hbox (111.5072pt too wide) in paragraph at lines 28--28
 TFILENAME, GAGetCurEpoch(ga) + 1L, bestValue, evalValue);[] 
  []
 
-
-Overfull \hbox (52.00635pt too wide) in paragraph at lines 28--28
-[]              \OT1/cmtt/m/n/8 sprintf(cpFilename, "%05ld_%f_" IS_CHECKPOINTFI
-LENAME, GAGetCurEpoch(ga) + 1L, bestValue);[] 
- []
-
 [33] [34] [35] [36] [37] [38] [39] [40] [41] [42] [43] [44] [45] [46] [47]
 [48] [49] [50] [51] [52] [53] [54] [55] [56] [57] [58] [59] [60] [61] [62]
-[63] [64] [65] [66] [67] [68]
+[63] [64] [65] [66] [67] [68] [69]
 File: /home/bayashi/GitHub/PBImgAnalysis/pbimganalysis-inline.c  (verbatim)
- [69] [70] [71] [72] [73] [74] [75] [76] [77]
+ [70] [71] [72] [73] [74] [75] [76] [77]
 [78] [79] [80] [81]
 File: /home/bayashi/GitHub/PBImgAnalysis/Makefile  (verbatim)
 
@@ -553,7 +547,7 @@ s@ROOT_DIR=.*@ROOT_DIR='"`pwd | gawk -F/ 'NF{NF-=1};1' | sed -e 's@ @/@g'`"'@'
 PBMake-master/Makefile.inc; mv PBMake-master ../PBMake; fi[] 
  []
 
-
+[82]
 Overfull \hbox (196.50842pt too wide) in paragraph at lines 44--44
 []\OT1/cmtt/m/n/8 $(COMPILER) `echo "$($(repo)_EXE_DEP) $($(repo)_EXENAME).o" |
  tr ' ' '\n' | sort -u` $(LINK_ARG) $($(repo)_LINK_ARG) -o $($(repo)_EXENAME)[]
@@ -567,9 +561,9 @@ Overfull \hbox (188.0083pt too wide) in paragraph at lines 44--44
  []
 
 File: /home/bayashi/GitHub/PBImgAnalysis/main.c  (verbatim)
-[82] [83] [84] [85] [86] [87] [88] [89] [90] [91] [92]
+[83] [84] [85] [86] [87] [88] [89] [90] [91] [92]
 File: /home/bayashi/GitHub/PBImgAnalysis/unitTestRef.txt  (verbatim)
-
+ [93]
 Overfull \hbox (736.26617pt too wide) in paragraph at lines 60--60
 []\OT1/cmtt/m/n/8 <70.561,84.186,107.671,255.546,66.415,80.028,103.270,255.546,
 63.722,77.315,100.200,255.546,60.385,74.097,95.695,255.546,58.321,72.003,93.205
@@ -609,7 +603,7 @@ Overfull \hbox (838.26764pt too wide) in paragraph at lines 60--60
 5.445,120.514,133.174,147.657,255.445,117.039,129.754,143.982,255.445>[] 
  []
 
-[93]
+
 Underfull \hbox (badness 10000) in paragraph at lines 66--67
 
  []
@@ -620,246 +614,246 @@ File: ./imgkmeanscluster.png Graphic file (type png)
 <use ./imgkmeanscluster.png>
 Package pdftex.def Info: ./imgkmeanscluster.png used on input line 69.
 (pdftex.def)             Requested size: 170.71652pt x 114.03549pt.
-
+ [94]
 Underfull \hbox (badness 10000) in paragraph at lines 73--75
 
  []
 
-<./imgkmeanscluster02-00.png, id=306, 1003.75pt x 670.505pt>
+<./imgkmeanscluster02-00.png, id=309, 1003.75pt x 670.505pt>
 File: ./imgkmeanscluster02-00.png Graphic file (type png)
 
 <use ./imgkmeanscluster02-00.png>
 Package pdftex.def Info: ./imgkmeanscluster02-00.png used on input line 77.
 (pdftex.def)             Requested size: 170.71652pt x 114.03549pt.
 
-<./imgkmeanscluster02-01.png, id=308, 1003.75pt x 670.505pt>
+<./imgkmeanscluster02-01.png, id=311, 1003.75pt x 670.505pt>
 File: ./imgkmeanscluster02-01.png Graphic file (type png)
 
 <use ./imgkmeanscluster02-01.png>
 Package pdftex.def Info: ./imgkmeanscluster02-01.png used on input line 78.
 (pdftex.def)             Requested size: 170.71652pt x 114.03549pt.
 
-<./imgkmeanscluster02-02.png, id=309, 1003.75pt x 670.505pt>
+<./imgkmeanscluster02-02.png, id=312, 1003.75pt x 670.505pt>
 File: ./imgkmeanscluster02-02.png Graphic file (type png)
 
 <use ./imgkmeanscluster02-02.png>
 Package pdftex.def Info: ./imgkmeanscluster02-02.png used on input line 83.
 (pdftex.def)             Requested size: 170.71652pt x 114.03549pt.
 
-<./imgkmeanscluster02-03.png, id=310, 1003.75pt x 670.505pt>
+<./imgkmeanscluster02-03.png, id=313, 1003.75pt x 670.505pt>
 File: ./imgkmeanscluster02-03.png Graphic file (type png)
 
 <use ./imgkmeanscluster02-03.png>
 Package pdftex.def Info: ./imgkmeanscluster02-03.png used on input line 84.
 (pdftex.def)             Requested size: 170.71652pt x 114.03549pt.
- [94 <./imgkmeanscluster.png> <./imgkmeanscluster02-00.png> <./imgkmeanscluster
-02-01.png>]
-<./imgkmeanscluster02-04.png, id=316, 1003.75pt x 670.505pt>
+
+<./imgkmeanscluster02-04.png, id=314, 1003.75pt x 670.505pt>
 File: ./imgkmeanscluster02-04.png Graphic file (type png)
 
 <use ./imgkmeanscluster02-04.png>
 Package pdftex.def Info: ./imgkmeanscluster02-04.png used on input line 89.
 (pdftex.def)             Requested size: 170.71652pt x 114.03549pt.
 
-<./imgkmeanscluster02-05.png, id=317, 1003.75pt x 670.505pt>
+<./imgkmeanscluster02-05.png, id=315, 1003.75pt x 670.505pt>
 File: ./imgkmeanscluster02-05.png Graphic file (type png)
 
 <use ./imgkmeanscluster02-05.png>
 Package pdftex.def Info: ./imgkmeanscluster02-05.png used on input line 90.
 (pdftex.def)             Requested size: 170.71652pt x 114.03549pt.
-
+ [95 <./imgkmeanscluster.png> <./imgkmeanscluster02-00.png> <./imgkmeanscluster
+02-01.png> <./imgkmeanscluster02-02.png> <./imgkmeanscluster02-03.png>]
 Underfull \hbox (badness 10000) in paragraph at lines 93--94
 
  []
 
-<./imgkmeanscluster03-00.png, id=318, 1003.75pt x 670.505pt>
+<./imgkmeanscluster03-00.png, id=323, 1003.75pt x 670.505pt>
 File: ./imgkmeanscluster03-00.png Graphic file (type png)
 
 <use ./imgkmeanscluster03-00.png>
 Package pdftex.def Info: ./imgkmeanscluster03-00.png used on input line 96.
 (pdftex.def)             Requested size: 170.71652pt x 114.03549pt.
 
-<./imgkmeanscluster03-01.png, id=319, 1003.75pt x 670.505pt>
+<./imgkmeanscluster03-01.png, id=324, 1003.75pt x 670.505pt>
 File: ./imgkmeanscluster03-01.png Graphic file (type png)
 
 <use ./imgkmeanscluster03-01.png>
 Package pdftex.def Info: ./imgkmeanscluster03-01.png used on input line 97.
 (pdftex.def)             Requested size: 170.71652pt x 114.03549pt.
 
-<./imgkmeanscluster03-02.png, id=320, 1003.75pt x 670.505pt>
+<./imgkmeanscluster03-02.png, id=325, 1003.75pt x 670.505pt>
 File: ./imgkmeanscluster03-02.png Graphic file (type png)
 
 <use ./imgkmeanscluster03-02.png>
 Package pdftex.def Info: ./imgkmeanscluster03-02.png used on input line 102.
 (pdftex.def)             Requested size: 170.71652pt x 114.03549pt.
 
-<./imgkmeanscluster03-03.png, id=321, 1003.75pt x 670.505pt>
+<./imgkmeanscluster03-03.png, id=326, 1003.75pt x 670.505pt>
 File: ./imgkmeanscluster03-03.png Graphic file (type png)
 
 <use ./imgkmeanscluster03-03.png>
 Package pdftex.def Info: ./imgkmeanscluster03-03.png used on input line 103.
 (pdftex.def)             Requested size: 170.71652pt x 114.03549pt.
- [95 <./imgkmeanscluster02-02.png> <./imgkmeanscluster02-03.png> <./imgkmeanscl
-uster02-04.png> <./imgkmeanscluster02-05.png> <./imgkmeanscluster03-00.png> <./
-imgkmeanscluster03-01.png>]
-<./imgkmeanscluster03-04.png, id=331, 1003.75pt x 670.505pt>
+
+<./imgkmeanscluster03-04.png, id=327, 1003.75pt x 670.505pt>
 File: ./imgkmeanscluster03-04.png Graphic file (type png)
 
 <use ./imgkmeanscluster03-04.png>
 Package pdftex.def Info: ./imgkmeanscluster03-04.png used on input line 108.
 (pdftex.def)             Requested size: 170.71652pt x 114.03549pt.
 
-<./imgkmeanscluster03-05.png, id=332, 1003.75pt x 670.505pt>
+<./imgkmeanscluster03-05.png, id=328, 1003.75pt x 670.505pt>
 File: ./imgkmeanscluster03-05.png Graphic file (type png)
 
 <use ./imgkmeanscluster03-05.png>
 Package pdftex.def Info: ./imgkmeanscluster03-05.png used on input line 109.
 (pdftex.def)             Requested size: 170.71652pt x 114.03549pt.
-
+ [96 <./imgkmeanscluster02-04.png> <./imgkmeanscluster02-05.png> <./imgkmeanscl
+uster03-00.png> <./imgkmeanscluster03-01.png> <./imgkmeanscluster03-02.png> <./
+imgkmeanscluster03-03.png>]
 Underfull \hbox (badness 10000) in paragraph at lines 112--113
 
  []
 
-<./imgkmeanscluster04-00.png, id=333, 1003.75pt x 670.505pt>
+<./imgkmeanscluster04-00.png, id=338, 1003.75pt x 670.505pt>
 File: ./imgkmeanscluster04-00.png Graphic file (type png)
 
 <use ./imgkmeanscluster04-00.png>
 Package pdftex.def Info: ./imgkmeanscluster04-00.png used on input line 115.
 (pdftex.def)             Requested size: 170.71652pt x 114.03549pt.
 
-<./imgkmeanscluster04-01.png, id=334, 1003.75pt x 670.505pt>
+<./imgkmeanscluster04-01.png, id=339, 1003.75pt x 670.505pt>
 File: ./imgkmeanscluster04-01.png Graphic file (type png)
 
 <use ./imgkmeanscluster04-01.png>
 Package pdftex.def Info: ./imgkmeanscluster04-01.png used on input line 116.
 (pdftex.def)             Requested size: 170.71652pt x 114.03549pt.
 
-<./imgkmeanscluster04-02.png, id=335, 1003.75pt x 670.505pt>
+<./imgkmeanscluster04-02.png, id=340, 1003.75pt x 670.505pt>
 File: ./imgkmeanscluster04-02.png Graphic file (type png)
 
 <use ./imgkmeanscluster04-02.png>
 Package pdftex.def Info: ./imgkmeanscluster04-02.png used on input line 121.
 (pdftex.def)             Requested size: 170.71652pt x 114.03549pt.
 
-<./imgkmeanscluster04-03.png, id=336, 1003.75pt x 670.505pt>
+<./imgkmeanscluster04-03.png, id=341, 1003.75pt x 670.505pt>
 File: ./imgkmeanscluster04-03.png Graphic file (type png)
 
 <use ./imgkmeanscluster04-03.png>
 Package pdftex.def Info: ./imgkmeanscluster04-03.png used on input line 122.
 (pdftex.def)             Requested size: 170.71652pt x 114.03549pt.
- [96 <./imgkmeanscluster03-02.png> <./imgkmeanscluster03-03.png> <./imgkmeanscl
-uster03-04.png> <./imgkmeanscluster03-05.png> <./imgkmeanscluster04-00.png> <./
-imgkmeanscluster04-01.png>]
-<./imgkmeanscluster04-04.png, id=346, 1003.75pt x 670.505pt>
+
+<./imgkmeanscluster04-04.png, id=342, 1003.75pt x 670.505pt>
 File: ./imgkmeanscluster04-04.png Graphic file (type png)
 
 <use ./imgkmeanscluster04-04.png>
 Package pdftex.def Info: ./imgkmeanscluster04-04.png used on input line 127.
 (pdftex.def)             Requested size: 170.71652pt x 114.03549pt.
 
-<./imgkmeanscluster04-05.png, id=347, 1003.75pt x 670.505pt>
+<./imgkmeanscluster04-05.png, id=343, 1003.75pt x 670.505pt>
 File: ./imgkmeanscluster04-05.png Graphic file (type png)
 
 <use ./imgkmeanscluster04-05.png>
 Package pdftex.def Info: ./imgkmeanscluster04-05.png used on input line 128.
 (pdftex.def)             Requested size: 170.71652pt x 114.03549pt.
-
+ [97 <./imgkmeanscluster03-04.png> <./imgkmeanscluster03-05.png> <./imgkmeanscl
+uster04-00.png> <./imgkmeanscluster04-01.png> <./imgkmeanscluster04-02.png> <./
+imgkmeanscluster04-03.png>]
 Underfull \hbox (badness 10000) in paragraph at lines 131--132
 
  []
 
-<./imgkmeanscluster05-00.png, id=348, 1003.75pt x 670.505pt>
+<./imgkmeanscluster05-00.png, id=354, 1003.75pt x 670.505pt>
 File: ./imgkmeanscluster05-00.png Graphic file (type png)
 
 <use ./imgkmeanscluster05-00.png>
 Package pdftex.def Info: ./imgkmeanscluster05-00.png used on input line 134.
 (pdftex.def)             Requested size: 170.71652pt x 114.03549pt.
 
-<./imgkmeanscluster05-01.png, id=349, 1003.75pt x 670.505pt>
+<./imgkmeanscluster05-01.png, id=355, 1003.75pt x 670.505pt>
 File: ./imgkmeanscluster05-01.png Graphic file (type png)
 
 <use ./imgkmeanscluster05-01.png>
 Package pdftex.def Info: ./imgkmeanscluster05-01.png used on input line 135.
 (pdftex.def)             Requested size: 170.71652pt x 114.03549pt.
 
-<./imgkmeanscluster05-02.png, id=350, 1003.75pt x 670.505pt>
+<./imgkmeanscluster05-02.png, id=356, 1003.75pt x 670.505pt>
 File: ./imgkmeanscluster05-02.png Graphic file (type png)
 
 <use ./imgkmeanscluster05-02.png>
 Package pdftex.def Info: ./imgkmeanscluster05-02.png used on input line 140.
 (pdftex.def)             Requested size: 170.71652pt x 114.03549pt.
 
-<./imgkmeanscluster05-03.png, id=351, 1003.75pt x 670.505pt>
+<./imgkmeanscluster05-03.png, id=357, 1003.75pt x 670.505pt>
 File: ./imgkmeanscluster05-03.png Graphic file (type png)
 
 <use ./imgkmeanscluster05-03.png>
 Package pdftex.def Info: ./imgkmeanscluster05-03.png used on input line 141.
 (pdftex.def)             Requested size: 170.71652pt x 114.03549pt.
- [97 <./imgkmeanscluster04-02.png> <./imgkmeanscluster04-03.png> <./imgkmeanscl
-uster04-04.png> <./imgkmeanscluster04-05.png> <./imgkmeanscluster05-00.png> <./
-imgkmeanscluster05-01.png>]
-<./imgkmeanscluster05-04.png, id=362, 1003.75pt x 670.505pt>
+
+<./imgkmeanscluster05-04.png, id=358, 1003.75pt x 670.505pt>
 File: ./imgkmeanscluster05-04.png Graphic file (type png)
 
 <use ./imgkmeanscluster05-04.png>
 Package pdftex.def Info: ./imgkmeanscluster05-04.png used on input line 146.
 (pdftex.def)             Requested size: 170.71652pt x 114.03549pt.
 
-<./imgkmeanscluster05-05.png, id=363, 1003.75pt x 670.505pt>
+<./imgkmeanscluster05-05.png, id=359, 1003.75pt x 670.505pt>
 File: ./imgkmeanscluster05-05.png Graphic file (type png)
 
 <use ./imgkmeanscluster05-05.png>
 Package pdftex.def Info: ./imgkmeanscluster05-05.png used on input line 147.
 (pdftex.def)             Requested size: 170.71652pt x 114.03549pt.
-
+ [98 <./imgkmeanscluster04-04.png> <./imgkmeanscluster04-05.png> <./imgkmeanscl
+uster05-00.png> <./imgkmeanscluster05-01.png> <./imgkmeanscluster05-02.png> <./
+imgkmeanscluster05-03.png>]
 Underfull \hbox (badness 10000) in paragraph at lines 150--151
 
  []
 
-<./imgkmeanscluster06-00.png, id=364, 1003.75pt x 670.505pt>
+<./imgkmeanscluster06-00.png, id=369, 1003.75pt x 670.505pt>
 File: ./imgkmeanscluster06-00.png Graphic file (type png)
 
 <use ./imgkmeanscluster06-00.png>
 Package pdftex.def Info: ./imgkmeanscluster06-00.png used on input line 153.
 (pdftex.def)             Requested size: 170.71652pt x 114.03549pt.
 
-<./imgkmeanscluster06-01.png, id=365, 1003.75pt x 670.505pt>
+<./imgkmeanscluster06-01.png, id=370, 1003.75pt x 670.505pt>
 File: ./imgkmeanscluster06-01.png Graphic file (type png)
 
 <use ./imgkmeanscluster06-01.png>
 Package pdftex.def Info: ./imgkmeanscluster06-01.png used on input line 154.
 (pdftex.def)             Requested size: 170.71652pt x 114.03549pt.
 
-<./imgkmeanscluster06-02.png, id=366, 1003.75pt x 670.505pt>
+<./imgkmeanscluster06-02.png, id=371, 1003.75pt x 670.505pt>
 File: ./imgkmeanscluster06-02.png Graphic file (type png)
 
 <use ./imgkmeanscluster06-02.png>
 Package pdftex.def Info: ./imgkmeanscluster06-02.png used on input line 159.
 (pdftex.def)             Requested size: 170.71652pt x 114.03549pt.
 
-<./imgkmeanscluster06-03.png, id=367, 1003.75pt x 670.505pt>
+<./imgkmeanscluster06-03.png, id=372, 1003.75pt x 670.505pt>
 File: ./imgkmeanscluster06-03.png Graphic file (type png)
 
 <use ./imgkmeanscluster06-03.png>
 Package pdftex.def Info: ./imgkmeanscluster06-03.png used on input line 160.
 (pdftex.def)             Requested size: 170.71652pt x 114.03549pt.
- [98 <./imgkmeanscluster05-02.png> <./imgkmeanscluster05-03.png> <./imgkmeanscl
-uster05-04.png> <./imgkmeanscluster05-05.png> <./imgkmeanscluster06-00.png> <./
-imgkmeanscluster06-01.png>]
-<./imgkmeanscluster06-04.png, id=377, 1003.75pt x 670.505pt>
+
+<./imgkmeanscluster06-04.png, id=373, 1003.75pt x 670.505pt>
 File: ./imgkmeanscluster06-04.png Graphic file (type png)
 
 <use ./imgkmeanscluster06-04.png>
 Package pdftex.def Info: ./imgkmeanscluster06-04.png used on input line 165.
 (pdftex.def)             Requested size: 170.71652pt x 114.03549pt.
 
-<./imgkmeanscluster06-05.png, id=378, 1003.75pt x 670.505pt>
+<./imgkmeanscluster06-05.png, id=374, 1003.75pt x 670.505pt>
 File: ./imgkmeanscluster06-05.png Graphic file (type png)
 
 <use ./imgkmeanscluster06-05.png>
 Package pdftex.def Info: ./imgkmeanscluster06-05.png used on input line 166.
 (pdftex.def)             Requested size: 170.71652pt x 114.03549pt.
-
+ [99 <./imgkmeanscluster05-04.png> <./imgkmeanscluster05-05.png> <./imgkmeanscl
+uster06-00.png> <./imgkmeanscluster06-01.png> <./imgkmeanscluster06-02.png> <./
+imgkmeanscluster06-03.png>]
 Underfull \hbox (badness 10000) in paragraph at lines 170--173
 
  []
@@ -903,52 +897,50 @@ Underfull \hbox (badness 10000) in paragraph at lines 181--184
 
  []
 
-[99 <./imgkmeanscluster06-02.png> <./imgkmeanscluster06-03.png> <./imgkmeansclu
-ster06-04.png> <./imgkmeanscluster06-05.png>]
 File: /home/bayashi/GitHub/PBImgAnalysis/unitTestImgSegmentorTrain01.json  (ver
 batim)
-
-Overfull \hbox (12840.44pt too wide) in paragraph at lines 184--184
+[100 <./imgkmeanscluster06-04.png> <./imgkmeanscluster06-05.png>]
+Overfull \hbox (12819.1897pt too wide) in paragraph at lines 184--184
 []            \OT1/cmtt/m/n/8 "_val":["0.214782","0.441421","0.431686","0.17382
-8","0.936959","-0.401652","-0.680593","0.333254","0.982938","0.391432","-0.0946
-22","0.944746","0.256880","-0.876989","-0.603534","0.228479","-0.948270","-0.09
-2985","0.346856","0.018024","-0.475590","-0.316914","-0.961145","-0.100025","0.
-995833","0.360944","-0.210451","0.780827","0.264670","-0.723858","-0.708380","0
-.888444","0.500358","-0.780996","-0.089749","0.279164","0.976973","0.964042","0
-.206524","-0.961808","0.195165","0.887967","0.548280","0.461246","-0.812966","-
-0.749513","0.881623","-0.823258","-0.617396","0.652195","-0.020831","0.624435",
-"-0.312747","0.874407","-0.889574","0.700335","-0.903726","-0.334150","-0.73537
-5","0.147259","0.230802","0.197535","-0.021807","0.549838","-0.757969","0.92644
-5","-0.779207","0.938781","-0.231123","0.318557","0.569002","-0.216476","0.7009
-32","-0.941171","0.579623","-0.248497","-0.782733","-0.142238","0.197573","0.82
-6909","-0.035058","-0.659775","0.226319","0.243017","0.278108","0.597018","0.43
-5709","-0.083406","0.066268","0.416592","-0.298488","0.897301","-0.773221","0.3
-36544","0.477198","-0.172953","0.700177","-0.402234","0.448869","-0.014192","0.
-815917","0.669618","-0.118160","-0.874252","-0.048018","-0.175469","0.553931","
--0.609642","0.892820","-0.907189","0.244160","0.978024","0.567143","-0.087822",
-"-0.866016","-0.638486","-0.120907","-0.631381","0.064745","0.168967","0.586007
-","-0.452275","-0.579897","0.527335","0.636367","-0.276886","-0.747660","-0.285
-631","-0.171139","-0.094911","0.103513","-0.333714","0.479101","-0.163694","0.5
-48688","0.291759","0.151103","0.461119","0.789768","0.914796","0.494902","0.327
-169","0.908272","0.465139","-0.966916","0.182590","-0.853568","0.800676","-0.89
-3566","0.545554","-0.251136","-0.941327","-0.088642","0.647640","0.147391","0.6
-62674","0.226752","0.347251","0.088466","0.644583","0.538685","-0.511334","0.11
-7598","-0.304258","0.481595","-0.912431","0.501991","0.236307","0.615968","0.77
-7349","0.519292","-0.198982","0.940928","0.244225","-0.016248","-0.975541","-0.
-664891","-0.757697","-0.574489","-0.952239","0.605661","0.051874","-0.706810","
-0.989359","-0.579112","0.800140","0.532602","0.064177","-0.702089","-0.099269",
-"-0.894461","-0.778154","-0.421219","-0.302920","0.193752","0.450508","0.225996
-","0.721437","0.748326","-0.606056","0.836421","-0.756244","0.482311","0.916469
-","0.131621","-0.258551","0.806897","-0.712652","0.870199","0.561044","-0.33795
-8","0.578477","-0.058461","-0.450639","-0.543243","-0.831736","-0.461553","-0.2
-48662","0.836532","-0.792183","0.244089","0.408459","0.028094","0.452622","-0.8
-62577","0.793117","0.146593","0.361855","0.885016","0.504570","0.096066","0.919
-952","-0.079059","-0.235518","-0.495071","-0.976616","-0.895193","0.108911","0.
-625306","-0.708278","0.391348","-0.887320","0.000484","-0.226725","0.122572","0
-.824887","-0.668268","0.162661","-0.261790","-0.571927","0.179723","-0.558961",
-"0.937374","0.630303","-0.693971","-0.890770","0.770558","-0.208700","-0.734211
-","0.965063","-0.149244","-0.852849","0.407087","-0.923333","0.921818","-0.4928
-88","-0.748638","0.084467","0.717562","-0.529465"][] 
+8","-0.184633","-0.401652","0.593259","0.849842","0.915301","0.391432","-0.5156
+67","0.944746","0.470763","-0.761236","0.613937","-0.923985","-0.024977","0.984
+912","-0.481516","0.018024","-0.113190","0.795024","-0.769701","-0.293532","-0.
+850272","0.360944","-0.889431","0.780827","0.486166","-0.001105","-0.708380","-
+0.564955","-0.170998","0.284450","-0.656061","-0.452058","0.976973","0.101695",
+"0.764326","-0.961808","0.195165","0.223577","-0.190543","0.741526","0.531622",
+"0.629025","0.881623","-0.823258","-0.507813","0.126530","0.863779","-0.074304"
+,"-0.312747","0.424674","-0.404101","0.764261","-0.903726","0.111674","0.774840
+","-0.573801","0.230802","0.891370","-0.908894","0.549838","-0.757969","0.92644
+5","0.548581","0.731821","0.670078","0.318557","-0.317551","0.750698","0.700932
+","0.180432","0.723360","0.632776","-0.469077","-0.142238","-0.964934","-0.2418
+31","0.091832","-0.560894","0.584443","-0.220445","0.278108","0.484225","0.2785
+45","-0.976683","0.066268","0.416592","-0.298488","0.897301","0.145039","-0.356
+547","0.477198","-0.172953","0.777575","-0.757132","0.448869","-0.218312","-0.1
+51206","0.502017","0.660837","-0.874252","-0.048018","0.981338","0.597711","0.6
+13162","-0.187165","0.595960","0.333318","-0.701391","-0.911130","-0.899783","0
+.501011","-0.673081","0.715090","-0.893039","0.064745","0.535012","-0.262579","
+-0.452275","0.909326","-0.540198","-0.134122","-0.276886","-0.747660","-0.00411
+3","0.136459","0.547356","0.616659","-0.333714","0.479101","0.332668","0.548688
+","0.036348","0.814915","-0.998249","-0.118353","-0.485774","0.494902","0.23310
+1","0.908272","0.465139","-0.614872","0.918292","-0.853568","-0.819922","0.1965
+67","0.545554","-0.251136","0.926350","-0.088642","0.696990","0.357889","0.8699
+92","0.226752","-0.664779","0.320867","0.284469","0.538685","-0.716008","0.4372
+98","0.307360","0.481595","-0.781698","-0.243496","0.236307","-0.505339","-0.33
+1513","0.716628","-0.644092","-0.152027","-0.120694","-0.016248","0.244774","0.
+351829","-0.757697","-0.445608","-0.349321","0.296058","0.798290","-0.706810","
+0.580692","0.139539","-0.593845","0.532602","0.102113","0.558297","-0.099269","
+-0.723690","0.638138","0.970850","0.868431","0.059655","0.556367","0.965055","0
+.709762","0.748326","-0.250479","0.836421","0.245354","0.482311","-0.294038","-
+0.842418","-0.379640","0.650658","0.451507","0.220819","-0.243898","-0.337958",
+"-0.432095","-0.058461","-0.450639","0.089927","0.056140","-0.152142","0.702477
+","0.254943","-0.792183","0.124386","0.408459","0.521724","-0.836992","-0.86257
+7","0.793117","0.146593","0.361855","0.510993","-0.644707","0.772036","-0.98821
+1","-0.079059","0.265350","-0.007734","-0.293926","-0.239362","0.108911","0.411
+441","0.505453","0.049776","0.142273","0.325582","-0.226725","-0.294640","0.824
+887","-0.668268","-0.831750","-0.261790","-0.375769","0.420954","-0.038622","0.
+393084","-0.530858","0.143837","-0.312158","0.838900","0.067821","0.712819","0.
+965063","-0.147012","-0.762635","0.415024","-0.923333","0.921818","-0.902290","
+-0.915609","0.255185","0.717562","-0.529465"][] 
  []
 
 
@@ -972,7 +964,7 @@ Overfull \hbox (5011.82758pt too wide) in paragraph at lines 184--184
 "20","21","89","20","22"][] 
  []
 
-<imgSegmentorTest01.png, id=386, 752.8125pt x 250.9375pt>
+<imgSegmentorTest01.png, id=389, 752.8125pt x 250.9375pt>
 File: imgSegmentorTest01.png Graphic file (type png)
 
 <use imgSegmentorTest01.png>
@@ -985,7 +977,7 @@ Underfull \hbox (badness 10000) in paragraph at lines 195--198
 
 File: /home/bayashi/GitHub/PBImgAnalysis/unitTestImgSegmentorTrain02.json  (ver
 batim)
-[100 <./imgSegmentorTest01.png>]
+[101 <./imgSegmentorTest01.png>]
 Overfull \hbox (12895.6908pt too wide) in paragraph at lines 198--198
 []              \OT1/cmtt/m/n/8 "_val":["0.214782","0.437317","-0.055550","0.97
 0535","-0.184633","0.166599","0.593259","-0.732575","0.915301","-0.303028","0.6
@@ -1050,7 +1042,7 @@ Overfull \hbox (5020.3277pt too wide) in paragraph at lines 198--198
 ","20","21","89","20","22"][] 
  []
 
-<imgSegmentorTest02.png, id=391, 752.8125pt x 250.9375pt>
+<imgSegmentorTest02.png, id=394, 752.8125pt x 250.9375pt>
 File: imgSegmentorTest02.png Graphic file (type png)
 
 <use imgSegmentorTest02.png>
@@ -1063,7 +1055,7 @@ Underfull \hbox (badness 10000) in paragraph at lines 209--212
 
 File: /home/bayashi/GitHub/PBImgAnalysis/unitTestImgSegmentorTrain03.json  (ver
 batim)
-[101 <./imgSegmentorTest02.png>]
+
 Overfull \hbox (12942.44147pt too wide) in paragraph at lines 212--212
 []            \OT1/cmtt/m/n/8 "_val":["0.168806","-0.209170","0.331838","0.3696
 60","0.907150","0.832833","-0.939814","-0.910782","0.427971","-0.813372","0.606
@@ -1107,7 +1099,7 @@ Overfull \hbox (12942.44147pt too wide) in paragraph at lines 212--212
 79840","0.842781","-0.304497","0.111620","0.883427","0.838852","0.568154"][] 
  []
 
-
+[102 <./imgSegmentorTest02.png>]
 Overfull \hbox (5011.82758pt too wide) in paragraph at lines 212--212
 []            \OT1/cmtt/m/n/8 "_val":["0","0","3","1","0","4","2","0","5","3","
 0","6","4","0","7","5","0","8","6","0","9","7","0","10","8","0","11","9","0","1
@@ -1193,7 +1185,7 @@ Overfull \hbox (5020.3277pt too wide) in paragraph at lines 212--212
 ","20","21","89","20","22"][] 
  []
 
-[102] <imgSegmentorTest03.png, id=399, 752.8125pt x 250.9375pt>
+<imgSegmentorTest03.png, id=399, 752.8125pt x 250.9375pt>
 File: imgSegmentorTest03.png Graphic file (type png)
 
 <use imgSegmentorTest03.png>
@@ -1206,7 +1198,7 @@ Underfull \hbox (badness 10000) in paragraph at lines 223--226
 
 File: /home/bayashi/GitHub/PBImgAnalysis/unitTestImgSegmentorTrain04.json  (ver
 batim)
-
+[103 <./imgSegmentorTest03.png>]
 Overfull \hbox (19389.5487pt too wide) in paragraph at lines 226--226
 []            \OT1/cmtt/m/n/8 "_val":["0.443420","-0.387607","-0.908896","-0.76
 2526","-0.717274","0.463168","-0.721335","-0.670570","-0.761148","-0.920471","0
@@ -2447,31 +2439,31 @@ Overfull \hbox (77.38904pt too wide) in paragraph at lines 226--226
 [] 
  []
 
-<imgSegmentorTest04.png, id=400, 752.8125pt x 250.9375pt>
+<imgSegmentorTest04.png, id=405, 752.8125pt x 250.9375pt>
 File: imgSegmentorTest04.png Graphic file (type png)
 
 <use imgSegmentorTest04.png>
 Package pdftex.def Info: imgSegmentorTest04.png used on input line 231.
 (pdftex.def)             Requested size: 170.71652pt x 56.90648pt.
- [103 <./imgSegmentorTest03.png>]) [104 <./imgSegmentorTest04.png>] (./doc.aux)
- ) 
+) [104 <./imgSegmentorTest04.png>] (./doc.aux) ) 
 Here is how much of TeX's memory you used:
  13476 strings out of 494314
  261436 string characters out of 6163111
- 603261 words of memory out of 5000000
+ 603124 words of memory out of 5000000
  16523 multiletter control sequences out of 15000+600000
  12740 words of font info for 50 fonts, out of 8000000 for 9000
  372 hyphenation exceptions out of 8191
  55i,6n,54p,66454b,310s stack positions out of 5000i,500n,10000p,200000b,80000s
-</usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx12.pfb></us
-r/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmr12.pfb></usr/share
-/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmr17.pfb></usr/share/texliv
-e/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/share/texlive/texm
-f-dist/fonts/type1/public/amsfonts/cm/cmtt12.pfb></usr/share/texlive/texmf-dist
-/fonts/type1/public/amsfonts/cm/cmtt8.pfb>
+</usr/share/texlive/texmf-dist/
+fonts/type1/public/amsfonts/cm/cmbx12.pfb></usr/share/texlive/texmf-dist/fonts/
+type1/public/amsfonts/cm/cmr12.pfb></usr/share/texlive/texmf-dist/fonts/type1/p
+ublic/amsfonts/cm/cmr17.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/a
+msfonts/cm/cmsy10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfont
+s/cm/cmtt12.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/c
+mtt8.pfb>
 
 pdfTeX warning: pdflatex: no GlyphToUnicode entry has been inserted yet!
-Output written on doc.pdf (104 pages, 2568698 bytes).
+Output written on doc.pdf (104 pages, 2570099 bytes).
 PDF statistics:
  433 PDF objects out of 1000 (max. 8388607)
  0 named destinations out of 1000 (max. 500000)

@@ -499,10 +499,17 @@ void ISTrain(ImgSegmentor* const that,
 
 // Evaluate the ImageSegmentor 'that' on the data set 'dataSet' using
 // the data of the 'iCat' category in 'dataSet'
+// Give up the evaluation as soon as the result can't be greater than
+// 'threshold'
 // srandom must have been called before calling ISTrain
 // Return a value in [0.0, 1.0], 0.0 being worst and 1.0 being best
-float ISEvaluate(ImgSegmentor* const that, 
-  const GDataSetGenBrushPair* const dataset, const int iCat);
+float ISEvaluateFast(ImgSegmentor* const that, 
+  const GDataSetGenBrushPair* const dataset, const int iCat,
+  float threshold);
+
+// Helper function to call IsEvaluate without threshold
+#define ISEvaluate(That, Dataset, Icat) \
+  ISEvaluateFast(That, Dataset, Icat, 0.0)
 
 // Load the ImgSegmentor from the stream
 // If the ImgSegmentor is already allocated, it is freed before loading

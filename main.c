@@ -645,8 +645,7 @@ void UnitTestAll() {
 }
 
 int main(void) {
-  //UnitTestAll();
-  UnitTestImgSegmentorTrain03();
+  UnitTestAll();
   return 0;
 }
 
