@@ -59,6 +59,13 @@ void UnitTestIntersectionOverUnion() {
     sprintf(PBImgAnalysisErr->_msg, "IntersectionOverUnion failed");
     PBErrCatch(PBImgAnalysisErr);
   }
+  rgba = GBColorRed;
+  iou = IntersectionOverUnion(imgA, imgB, &rgba);
+  if (!ISEQUALF(iou, 1.0)) {
+    PBImgAnalysisErr->_type = PBErrTypeUnitTestFailed;
+    sprintf(PBImgAnalysisErr->_msg, "IntersectionOverUnion failed");
+    PBErrCatch(PBImgAnalysisErr);
+  }
   GBFree(&imgA);
   GBFree(&imgB);
   printf("UnitTestIntersectionOverUnion OK\n");

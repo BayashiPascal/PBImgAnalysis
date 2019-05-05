@@ -3190,7 +3190,11 @@ float IntersectionOverUnion(const GenBrush* const that,
     }
   } while (VecStep(&pos, GBDim(that)));
   // Calculate the intersection over union
-  float iou = (float)nbInter / (float)nbUnion;
+  // By definition if nbUnion equals 0 then iou equals 1.0
+  // (case where there was no pixel of the color 'rgba' in both images)
+  float iou = 1.0;
+  if (nbUnion > 0)
+    iou = (float)nbInter / (float)nbUnion;
   // Return the result
   return iou;
 }
