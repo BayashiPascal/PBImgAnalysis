@@ -378,7 +378,7 @@ void UnitTestImgSegmentorTrain01() {
   char* cfgFilePath = PBFSJoinPath(
     ".", "UnitTestImgSegmentorTrain", "dataset.json");
   GDataSetGenBrushPair dataSet = 
-    GDataSetGenBrushPairCreateStatic(cfgFilePath);
+    GDataSetGenBrushPairCreateStaticFromFile(cfgFilePath);
   ISSetSizePool(&segmentor, 16);
   ISSetNbElite(&segmentor, 5);
   ISSetSizeMaxPool(&segmentor, 128);
@@ -445,7 +445,7 @@ void UnitTestImgSegmentorTrain02() {
   char* cfgFilePath = PBFSJoinPath(
     ".", "UnitTestImgSegmentorTrain", "dataset.json");
   GDataSetGenBrushPair dataSet = 
-    GDataSetGenBrushPairCreateStatic(cfgFilePath);
+    GDataSetGenBrushPairCreateStaticFromFile(cfgFilePath);
   ISSetSizePool(&segmentor, 16);
   ISSetNbElite(&segmentor, 5);
   ISSetSizeMaxPool(&segmentor, 128);
@@ -519,7 +519,7 @@ void UnitTestImgSegmentorTrain03() {
   char* cfgFilePath = PBFSJoinPath(
     ".", "UnitTestImgSegmentorTrain", "dataset.json");
   GDataSetGenBrushPair dataSet = 
-    GDataSetGenBrushPairCreateStatic(cfgFilePath);
+    GDataSetGenBrushPairCreateStaticFromFile(cfgFilePath);
   ISSetSizePool(&segmentor, 16);
   ISSetNbElite(&segmentor, 5);
   ISSetSizeMaxPool(&segmentor, 128);
@@ -580,7 +580,7 @@ void UnitTestImgSegmentorTrain04() {
   char* cfgFilePath = PBFSJoinPath(
     ".", "UnitTestImgSegmentorTrain", "dataset.json");
   GDataSetGenBrushPair dataSet = 
-    GDataSetGenBrushPairCreateStatic(cfgFilePath);
+    GDataSetGenBrushPairCreateStaticFromFile(cfgFilePath);
   ISSetSizePool(&segmentor, 4);
   ISSetNbElite(&segmentor, 2);
   ISSetSizeMaxPool(&segmentor, 4);

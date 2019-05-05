@@ -177,7 +177,7 @@ int main(int argc, char** argv) {
   // Path to the dataset
   char* cfgFilePath = PBFSJoinPath("..", "Data", "002", "dataset.json");
   GDataSetGenBrushPair dataSet = 
-    GDataSetGenBrushPairCreateStatic(cfgFilePath);
+    GDataSetGenBrushPairCreateStaticFromFile(cfgFilePath);
 
   // Split the samples
   short nbSampleTraining = 70;

@@ -856,6 +856,9 @@ void ISTrain(ImgSegmentor* const that,
     // Create the GenAlg to search parameters' value
     GenAlg* ga = GenAlgCreate(ISGetSizePool(that), ISGetNbElite(that), 
       nbTotalParamFloat, nbTotalParamInt);
+    
+    GASetDiversityThreshold(ga, 0.001);  
+    
     // Set the min and max size of the pool
     GASetNbMaxAdn(ga, ISGetSizeMaxPool(that));
     GASetNbMinAdn(ga, ISGetSizeMinPool(that));
@@ -2739,7 +2742,7 @@ ImgSegmentorCriterionTex* ImgSegmentorCriterionTexCreate(
   that->_rank = rank;
   // Create the NeuraNet
   const int nbInput = 3 * (1 + (size == 1 ? 0 : (size - 1) * 9));
-  const int nbHiddenPerLayer = nbInput * nbClass;
+  const int nbHiddenPerLayer = nbInput * 3 * nbClass;
   VecLong* hidden = VecLongCreate(rank);
   for (int iLayer = rank; iLayer--;)
     VecSet(hidden, iLayer, nbHiddenPerLayer);

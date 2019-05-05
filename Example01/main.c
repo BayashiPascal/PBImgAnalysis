@@ -65,7 +65,7 @@ void Train(ImgSegmentor* const segmentor,
   ISSetNbEpoch(segmentor, nbEpoch);
   ISSetTargetBestValue(segmentor, targetBestValue);
   ISSetFlagTextOMeter(segmentor, true);
-  ISSetEmailNotification(segmentor, "");
+  ISSetEmailNotification(segmentor, NULL);
   ISSetEmailSubject(segmentor, "PBImgAnalysis/Example01");
 
   // Train the ImgSegmentor
@@ -177,7 +177,7 @@ int main(int argc, char** argv) {
   // Path to the dataset
   char* cfgFilePath = PBFSJoinPath("..", "Data", "001", "dataset.json");
   GDataSetGenBrushPair dataSet = 
-    GDataSetGenBrushPairCreateStatic(cfgFilePath);
+    GDataSetGenBrushPairCreateStaticFromFile(cfgFilePath);
 
   // Split the samples
   short nbSampleTraining = 70;

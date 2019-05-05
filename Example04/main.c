@@ -11,8 +11,8 @@ ImgSegmentor* CreateImgSegmentor() {
   // Create the ImgSegmentor
   ImgSegmentor* segmentor = ImgSegmentorCreate(nbClass);
   // Add a CriterionTex
-  int rank = 1;
-  int size = 2;
+  int rank = 2;
+  int size = 1;
   ImgSegmentorCriterionTex* crit = 
     ISAddCriterionTex(segmentor, NULL, rank, size);
   if (crit == NULL) {
@@ -177,9 +177,9 @@ int main(int argc, char** argv) {
   srandom(time(NULL));
 
   // Path to the dataset
-  char* cfgFilePath = PBFSJoinPath("..", "Data", "003", "dataset.json");
+  char* cfgFilePath = PBFSJoinPath("..", "Data", "005", "dataset.json");
   GDataSetGenBrushPair dataSet = 
-    GDataSetGenBrushPairCreateStatic(cfgFilePath);
+    GDataSetGenBrushPairCreateStaticFromFile(cfgFilePath);
 
   // Split the samples
   short nbSampleTraining = 70;
