@@ -397,7 +397,7 @@ bool IKMCDecodeAsJSON(ImgKMeansClusters* that,
   if (prop == NULL) {
     return false;
   }
-  that->_size = atoi(JSONLabel(JSONValue(prop, 0)));
+  that->_size = atoi(JSONLblVal(prop));
   if (that->_size < 0) {
     return false;
   }
@@ -1318,7 +1318,7 @@ bool ISDecodeAsJSON(ImgSegmentor* that,
   if (prop == NULL) {
     return false;
   }
-  int nbClass = atoi(JSONLabel(JSONValue(prop, 0)));
+  int nbClass = atoi(JSONLblVal(prop));
   // If data are invalid
   if (nbClass <= 0)
     return false;
@@ -1329,7 +1329,7 @@ bool ISDecodeAsJSON(ImgSegmentor* that,
   if (prop == NULL) {
     return false;
   }
-  int flagBinaryResult = atoi(JSONLabel(JSONValue(prop, 0)));
+  int flagBinaryResult = atoi(JSONLblVal(prop));
   if (flagBinaryResult == 0)
     that->_flagBinaryResult = false;
   else if (flagBinaryResult == 1)
@@ -1341,13 +1341,13 @@ bool ISDecodeAsJSON(ImgSegmentor* that,
   if (prop == NULL) {
     return false;
   }
-  that->_thresholdBinaryResult = atof(JSONLabel(JSONValue(prop, 0)));
+  that->_thresholdBinaryResult = atof(JSONLblVal(prop));
   // Nb of epoch
   prop = JSONProperty(json, "_nbEpoch");
   if (prop == NULL) {
     return false;
   }
-  int nbEpoch = atoi(JSONLabel(JSONValue(prop, 0)));
+  int nbEpoch = atoi(JSONLblVal(prop));
   if (nbEpoch < 1)
     return false;
   that->_nbEpoch = (unsigned int)nbEpoch;
@@ -1356,7 +1356,7 @@ bool ISDecodeAsJSON(ImgSegmentor* that,
   if (prop == NULL) {
     return false;
   }
-  int sizePool = atoi(JSONLabel(JSONValue(prop, 0)));
+  int sizePool = atoi(JSONLblVal(prop));
   if (sizePool < 3)
     return false;
   that->_sizePool = sizePool;
@@ -1365,7 +1365,7 @@ bool ISDecodeAsJSON(ImgSegmentor* that,
   if (prop == NULL) {
     return false;
   }
-  int nbElite = atoi(JSONLabel(JSONValue(prop, 0)));
+  int nbElite = atoi(JSONLblVal(prop));
   if (nbElite < 2 || nbElite > sizePool - 1)
     return false;
   that->_nbElite = nbElite;
@@ -1374,7 +1374,7 @@ bool ISDecodeAsJSON(ImgSegmentor* that,
   if (prop == NULL) {
     return false;
   }
-  float targetBestValue = atof(JSONLabel(JSONValue(prop, 0)));
+  float targetBestValue = atof(JSONLblVal(prop));
   if (targetBestValue < 0.0 || targetBestValue > 1.0)
     return false;
   that->_targetBestValue = targetBestValue;
@@ -1419,7 +1419,7 @@ bool ISDecodeNodeAsJSON(GenTree* const that,
   if (prop == NULL) {
     return false;
   }
-  int nbSubtree = atoi(JSONLabel(JSONValue(prop, 0)));
+  int nbSubtree = atoi(JSONLblVal(prop));
   if (nbSubtree < 0)
     return false;
   // Loop on subtree
@@ -1613,7 +1613,7 @@ bool ISCDecodeAsJSON(
   if (prop == NULL) {
     return false;
   }
-  ISCType type = atoi(JSONLabel(JSONValue(prop, 0)));
+  ISCType type = atoi(JSONLblVal(prop));
   // Declare a variable to memorize the returned code
   bool ret = true;
   // Call the appropriate function based on the type
@@ -1641,7 +1641,7 @@ bool ISCDecodeAsJSON(
     if (prop == NULL) {
       return false;
     }
-    int flagReusedInput = atoi(JSONLabel(JSONValue(prop, 0)));
+    int flagReusedInput = atoi(JSONLblVal(prop));
     if (flagReusedInput != 0) {
       (*that)->_flagReusedInput = true;
     }
@@ -1977,7 +1977,7 @@ bool ISCRGBDecodeAsJSON(
   if (prop == NULL) {
     return false;
   }
-  int nbClass = atoi(JSONLabel(JSONValue(prop, 0)));
+  int nbClass = atoi(JSONLblVal(prop));
   // If the number of class is invalid
   if (nbClass < 1)
     // Return the error code
@@ -2244,7 +2244,7 @@ bool ISCRGB2HSVDecodeAsJSON(
   if (prop == NULL) {
     return false;
   }
-  int nbClass = atoi(JSONLabel(JSONValue(prop, 0)));
+  int nbClass = atoi(JSONLblVal(prop));
   // If the number of class is invalid
   if (nbClass < 1)
     // Return the error code
@@ -2505,7 +2505,7 @@ bool ISCDustDecodeAsJSON(
   if (prop == NULL) {
     return false;
   }
-  int nbClass = atoi(JSONLabel(JSONValue(prop, 0)));
+  int nbClass = atoi(JSONLblVal(prop));
   // If the number of class is invalid
   if (nbClass < 1)
     // Return the error code
@@ -2810,7 +2810,7 @@ bool ISCTexDecodeAsJSON(
   if (prop == NULL) {
     return false;
   }
-  int nbClass = atoi(JSONLabel(JSONValue(prop, 0)));
+  int nbClass = atoi(JSONLblVal(prop));
   // If the number of class is invalid
   if (nbClass < 1)
     // Return the error code
@@ -2820,7 +2820,7 @@ bool ISCTexDecodeAsJSON(
   if (prop == NULL) {
     return false;
   }
-  int size = atoi(JSONLabel(JSONValue(prop, 0)));
+  int size = atoi(JSONLblVal(prop));
   // If the size is invalid
   if (size < 1)
     // Return the error code
@@ -2830,7 +2830,7 @@ bool ISCTexDecodeAsJSON(
   if (prop == NULL) {
     return false;
   }
-  int rank = atoi(JSONLabel(JSONValue(prop, 0)));
+  int rank = atoi(JSONLblVal(prop));
   // If the rank is invalid
   if (rank < 1)
     // Return the error code
