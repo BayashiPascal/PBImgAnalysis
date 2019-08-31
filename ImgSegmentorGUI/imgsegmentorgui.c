@@ -26,8 +26,12 @@ bool ImgSegmentorGUIParseArg(
      int argc,
   char** argv);
 
-// Callback function for the 'clicked' event on the Process button
-gboolean ButtonProcessClicked(
+// Callback function for the 'clicked' event on the Load button
+gboolean ButtonLoadClicked(
+  gpointer user_data);
+
+// Callback function for the 'clicked' event on the Save button
+gboolean ButtonSaveClicked(
   gpointer user_data);
 
 // Callback function for the 'clicked' event on the Quit button
@@ -69,7 +73,10 @@ ImgSegmentorGUI ImgSegmentorGUICreate(
     PBErrCatch(PBImgAnalysisErr);
   }
 #endif
-  
+
+  // Init the segmentor definition file path
+  app.segmentorFilePath = NULL;
+
   // Init the UI definition file path
   app.gladeFilePath = NULL;
 
@@ -89,12 +96,36 @@ ImgSegmentorGUI ImgSegmentorGUICreate(
     PBErrCatch(PBImgAnalysisErr);
   }
 
+  // If the segmentor definition file path hasn't been set by argument
+  if (app.segmentorFilePath == NULL) {
+
+    // Set it to the default path
+    app.segmentorFilePath = strdup(ISGUI_DEFAULT_SEGMENTOR);
+  }
+
   // If the UI definition file path hasn't been set by argument
   if (app.gladeFilePath == NULL) {
 
     // Set it to the default path
     app.gladeFilePath = strdup(ISGUI_DEFAULT_GLADE);
   }
+
+  // Load the segmentor
+  FILE* fp = fopen(app.segmentorFilePath, "r");
+  if (!fp || !ISLoad(&(app.segmentor), fp)) {
+
+    // Terminate the application if we couldn't load the segmentor
+    PBImgAnalysisErr->_type = PBErrTypeInvalidArg;
+    fprintf(stderr, "err: %s\n", PBImgAnalysisErr->_msg);
+    sprintf(
+      PBImgAnalysisErr->_msg, 
+      "Couldn't load the segmentor %s", 
+      app.segmentorFilePath);
+    if (fp)
+      fclose(fp);
+    PBErrCatch(PBImgAnalysisErr);
+  }
+  fclose(fp);
 
   // Create the GBwidgets
   app.gbWidgetSrc = GBCreateWidget(&(app.dimGBWidget));
@@ -147,10 +178,21 @@ bool ImgSegmentorGUIParseArg(
       
       // Print the help and quit
       printf("[-help] display the help\n");
+      printf("[-segmentor <path>] load the segmentor from <path>\n");
       printf("[-glade <path>] set the gui definition file to <path>\n");
       printf("[-size <size>] set the size of the image to <size> px\n");
       exit(1);
       
+    } else if (strcmp(argv[iArg], "-segmentor") == 0) {
+
+      // If it's not the last argument
+      if (iArg < argc - 1) {
+
+        // Set the path to the following argument
+        ++iArg;
+        app.segmentorFilePath = strdup(argv[iArg]);
+      }
+
     } else if (strcmp(argv[iArg], "-glade") == 0) {
 
       // If it's not the last argument
@@ -237,9 +279,11 @@ int ImgSegmentorGUIMain(
 void ImgSegmentorGUIFree() {
   
   // Free memory
+  ImgSegmentorFreeStatic(&(app.segmentor));
   GBFree(&(app.gbWidgetSrc));
   GBFree(&(app.gbWidgetRes));
   free(app.gladeFilePath);
+  free(app.segmentorFilePath);
 
 }
 
@@ -282,17 +326,30 @@ void GtkAppActivate(
     TRUE, 
     0);
 
-  // Get the Process button
-  GtkWidget* btnProcess = GTK_WIDGET(
+  // Get the Load button
+  GtkWidget* btnLoad = GTK_WIDGET(
     gtk_builder_get_object(
       gtkBuilder, 
-      "btnProcess"));
+      "btnLoad"));
 
-  // Set the callback on the 'clicked' event of the Process button
+  // Set the callback on the 'clicked' event of the Load button
   g_signal_connect(
-    btnProcess, 
+    btnLoad, 
     "clicked", 
-    G_CALLBACK(ButtonProcessClicked), 
+    G_CALLBACK(ButtonLoadClicked), 
+    NULL);
+
+  // Get the Save button
+  GtkWidget* btnSave = GTK_WIDGET(
+    gtk_builder_get_object(
+      gtkBuilder, 
+      "btnSave"));
+
+  // Set the callback on the 'clicked' event of the Save button
+  g_signal_connect(
+    btnSave, 
+    "clicked", 
+    G_CALLBACK(ButtonSaveClicked), 
     NULL);
 
   // Get the Quit button
@@ -367,30 +424,155 @@ gboolean ApplicationWindowDeleteEvent(
   return FALSE;
 }
 
-// Callback function for the 'clicked' event on the Process button
-gboolean ButtonProcessClicked(
+// Callback function for the 'clicked' event on the Load button
+gboolean ButtonLoadClicked(
   gpointer user_data) {
 
   // Unused arguments
   (void)user_data;
 
+  // Request the path to the file
+  GtkFileChooserAction action = GTK_FILE_CHOOSER_ACTION_OPEN;
+  GtkWidget* dialog = gtk_file_chooser_dialog_new(
+    "Open File",
+    GTK_WINDOW(app.mainWindow),
+    action,
+    "Cancel",
+    GTK_RESPONSE_CANCEL,
+    "Open",
+    GTK_RESPONSE_ACCEPT,
+    NULL);
 
+  // Set the default path
+  //gtk_file_chooser_set_current_folder(dialog, path);
 
-  // Paint the GenBrush surfaces
-  PaintSurface(
-    app.gbWidgetSrc->_surf, 
-    &(app.dimGBWidget), 
-    0);
-  PaintSurface(
-    app.gbWidgetRes->_surf, 
-    &(app.dimGBWidget), 
-    255);
+  // Filter on TGA images only
+  GtkFileFilter* filter = gtk_file_filter_new();
+  gtk_file_filter_add_pattern(
+    filter,
+    "*.tga");
+  gtk_file_chooser_set_filter(
+    GTK_FILE_CHOOSER(dialog),
+    filter);
+  gint res = gtk_dialog_run(GTK_DIALOG (dialog));
 
+  // If the user has provided a path
+  if (res == GTK_RESPONSE_ACCEPT) {
+    
+    // Get the path to the input image
+    char* filename = gtk_file_chooser_get_filename(
+      GTK_FILE_CHOOSER(dialog));
 
+    // Remove the current layers
+    while (GBSurfaceNbLayer(GBSurf(app.gbWidgetSrc)) > 0) {
+      GBSurfaceRemoveLayer(
+        GBSurf(app.gbWidgetSrc),
+        GBSurfaceLayer(
+          GBSurf(app.gbWidgetSrc), 
+          0));
+    }
+
+    // Load the image into a new layer
+    GBLayer* layer = GBSurfaceAddLayerFromFile(
+      GBSurf(app.gbWidgetSrc), 
+      filename);
+
+    if (layer != NULL) {
+      
+      // Update the surface
+      GBSurfaceUpdate(GBSurf(app.gbWidgetSrc));
+
+      // Paint the source image in the GUI
+      GBRender(app.gbWidgetSrc);
+
+      // Apply the segmentor
+      GenBrush** pred = ISPredict(&(app.segmentor), app.gbWidgetSrc);
+      
+      // Remove the current layers
+      while (GBSurfaceNbLayer(GBSurf(app.gbWidgetRes)) > 0) {
+        GBSurfaceRemoveLayer(
+          GBSurf(app.gbWidgetRes),
+          GBSurfaceLayer(
+            GBSurf(app.gbWidgetRes), 
+            0));
+      }
+
+      // Extract the layer from the result of prediction
+      // and insert it into the result image in the GUI
+      GBLayer* resLayer = GSetPop(GBSurfaceLayers(GBSurf(pred[0])));
+      GSetAppend(
+        GBSurfaceLayers(GBSurf(app.gbWidgetRes)),
+        resLayer);
+      GBLayerSetModified(resLayer, true);
+
+      // Paint the result in the GUI
+      GBSurfaceUpdate(GBSurf(app.gbWidgetRes));
+
+      // Update the surface
+      GBRender(app.gbWidgetRes);
+
+      // Free memory
+      GBFree(pred);
+      free(pred);
+
+    } else {
+      printf("Couldn't open the image %s\n", filename);
+    }
+
+    // Free memory
+    g_free(filename);
+  }
   
-  // Refresh the displayed surface
-  GBRender(app.gbWidgetSrc);
-  GBRender(app.gbWidgetRes);
+  // Free memory
+  gtk_widget_destroy(dialog);
+
+  // Return true to stop the callback chain
+  return TRUE;
+}
+
+// Callback function for the 'clicked' event on the Save button
+gboolean ButtonSaveClicked(
+  gpointer user_data) {
+
+  // Unused arguments
+  (void)user_data;
+
+  // Request the path to the file
+  GtkFileChooserAction action = GTK_FILE_CHOOSER_ACTION_SAVE;
+  GtkWidget* dialog = gtk_file_chooser_dialog_new(
+    "Save File",
+    GTK_WINDOW(app.mainWindow),
+    action,
+    "Cancel",
+    GTK_RESPONSE_CANCEL,
+    "Save",
+    GTK_RESPONSE_ACCEPT,
+    NULL);
+  GtkFileFilter* filter = gtk_file_filter_new();
+  gtk_file_filter_add_pattern(
+    filter,
+    "*.tga");
+  gtk_file_chooser_set_filter(
+    GTK_FILE_CHOOSER(dialog),
+    filter);
+  gint res = gtk_dialog_run(GTK_DIALOG (dialog));
+
+  // If the user has provided a path
+  if (res == GTK_RESPONSE_ACCEPT) {
+    char* filename = gtk_file_chooser_get_filename(
+      GTK_FILE_CHOOSER(dialog));
+
+    // Save the result image at the given path
+    if (GBScreenshot((GBSurfaceWidget*)GBSurf(app.gbWidgetRes), filename) == false) {
+      printf("Couldn't save the image %s\n", filename);
+    }
+
+    // Free memory
+    g_free (filename);
+  }
+  
+  // Free memory
+  gtk_widget_destroy (dialog);
 
   // Return true to stop the callback chain
   return TRUE;

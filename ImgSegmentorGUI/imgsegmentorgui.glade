@@ -5,6 +5,8 @@
   <object class="GtkApplicationWindow" id="appMainWindow">
     <property name="can_focus">False</property>
     <property name="title" translatable="yes">ImgSegmentorGUI</property>
+    <property name="window_position">center</property>
+    <property name="gravity">center</property>
     <child>
       <object class="GtkBox" id="boxMain">
         <property name="visible">True</property>
@@ -42,8 +44,8 @@
                 <property name="can_focus">False</property>
                 <property name="orientation">vertical</property>
                 <child>
-                  <object class="GtkButton" id="btnProcess">
-                    <property name="label" translatable="yes">Process</property>
+                  <object class="GtkButton" id="btnLoad">
+                    <property name="label" translatable="yes">Load</property>
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <property name="receives_default">True</property>
@@ -52,6 +54,19 @@
                     <property name="expand">False</property>
                     <property name="fill">True</property>
                     <property name="position">0</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton" id="btnSave">
+                    <property name="label" translatable="yes">Save</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">True</property>
+                    <property name="position">1</property>
                   </packing>
                 </child>
                 <child>
@@ -64,7 +79,7 @@
                   <packing>
                     <property name="expand">False</property>
                     <property name="fill">True</property>
-                    <property name="position">1</property>
+                    <property name="position">2</property>
                   </packing>
                 </child>
               </object>

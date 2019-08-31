@@ -744,6 +744,8 @@ GenBrush** ISPredictWithReuse(const ImgSegmentor* const that,
   for (int iClass = ISGetNbClass(that); iClass--;) {
     // Create the result GenBrush
     res[iClass] = GBCreateImage(&dim);
+    // Add a layer to the result GenBrush
+    GBLayer* layer = GBAddLayer(res[iClass], &dim);
     // Loop on position in the image
     VecSetNull(&pos);
     do {
@@ -762,9 +764,16 @@ GenBrush** ISPredictWithReuse(const ImgSegmentor* const that,
       // Convert the prediction to a pixel
       pix._rgba[GBPixelRed] = pix._rgba[GBPixelGreen] = 
         pix._rgba[GBPixelBlue] = pChar;
-      // Set the pixel in the result image
-      GBSetFinalPixel(res[iClass], &pos, &pix);
+      // Set the pixel in the layer
+      GBLayerAddPixel(
+        layer, 
+        &pos, 
+        &pix, 
+        0.0);
     } while (VecStep(&pos, &dim));
+    // Render the final pixels in the result image
+    GBSurfaceUpdate(GBSurf(res[iClass]));
+    GBUpdate(res[iClass]);
   }
   // Free memory
   while (GSetNbElem(&leafPred) > 0) {

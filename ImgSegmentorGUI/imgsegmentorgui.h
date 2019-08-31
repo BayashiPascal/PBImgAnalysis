@@ -13,12 +13,15 @@
 
 // ================= Define ==================
 
-#define ISGUI_DEFAULT_GLADE "imgsegmentorgui.glade"
-#define ISGUI_DEFAULTDIM 300
+#define ISGUI_DEFAULT_GLADE      "imgsegmentorgui.glade"
+#define ISGUI_DEFAULT_SEGMENTOR  "imgsegmentor.json"
+#define ISGUI_DEFAULTDIM         300
 
 // ================= Data structure ===================
 
 typedef struct ImgSegmentorGUI {
+  // Path to the segmentor definition file
+  char* segmentorFilePath;
   // Path to the gui definition file
   char* gladeFilePath;
   // GTK application and its G version
@@ -29,9 +32,10 @@ typedef struct ImgSegmentorGUI {
   // GenBrush for the source and result images
   GenBrush* gbWidgetSrc;
   GenBrush* gbWidgetRes;
-
-
+  // Main window of the application
   GtkWidget* mainWindow;
+  // Image segmentor
+  ImgSegmentor segmentor;
 } ImgSegmentorGUI;
 
 // ================= Global variable ==================
