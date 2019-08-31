@@ -65,7 +65,7 @@ void Train(ImgSegmentor* const segmentor,
   ISSetNbEpoch(segmentor, nbEpoch);
   ISSetTargetBestValue(segmentor, targetBestValue);
   ISSetFlagTextOMeter(segmentor, true);
-  ISSetEmailNotification(segmentor, "");
+  ISSetEmailNotification(segmentor, NULL);
   ISSetEmailSubject(segmentor, "PBImgAnalysis/Example02");
 
   // Train the ImgSegmentor
