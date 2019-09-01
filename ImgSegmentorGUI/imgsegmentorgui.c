@@ -15,6 +15,13 @@ ImgSegmentorGUI app;
 
 // ================ Functions declaration ====================
 
+// Callback function for the 'key-press-event' event on the GTK
+// application window
+gboolean ApplicationWindowKeyPressEvent(
+  GtkWidget *widget, 
+  GdkEventKey *event, 
+  gpointer user_data);
+
 // Callback function for the 'activate' event on the GTK application
 void GtkAppActivate(
   GtkApplication* gtkApp, 
@@ -109,6 +116,9 @@ ImgSegmentorGUI ImgSegmentorGUICreate(
   
   // Init the dragging flag
   app.isDraggingSrc = false;
+
+  // Init the current mode
+  app.curPredMode = 0;
 
   // Init the dimensions of the GBWidget
   app.dimGBWidget = VecShortCreateStatic2D();
@@ -423,6 +433,16 @@ void GtkAppActivate(
     G_CALLBACK(ApplicationWindowDeleteEvent), 
     NULL);
   
+  // Set the callback on the key-press-event of the main window
+  gtk_widget_add_events(
+    app.mainWindow, 
+    GDK_KEY_PRESS_MASK);
+  g_signal_connect(
+    app.mainWindow, 
+    "key-press-event",
+    G_CALLBACK(ApplicationWindowKeyPressEvent), 
+    NULL);
+  
   // Allow the events for the source widget
   gtk_widget_add_events(widgetSrc, GDK_BUTTON_PRESS_MASK);
   gtk_widget_add_events(widgetSrc, GDK_BUTTON_RELEASE_MASK);
@@ -497,9 +517,93 @@ void GtkAppActivate(
   gtk_main();
 }
 
+// Callback function for the 'key-press-event' event on the GTK
+// application window
+gboolean ApplicationWindowKeyPressEvent(
+  GtkWidget *widget, 
+  GdkEventKey *event, 
+  gpointer user_data) {
+
+  // Unused arguments
+  (void)widget;
+  (void)event;
+  (void)user_data;
+
+  int reqMode = -1;
+  
+  // If the pressed key is one of the 1-9 digits, memorize the 
+  // requested mode to display
+  if (event->keyval == GDK_KEY_1) {
+    reqMode = 0;
+  } else if (event->keyval == GDK_KEY_2) {
+    reqMode = 1;
+  } else if (event->keyval == GDK_KEY_3) {
+    reqMode = 2;
+  } else if (event->keyval == GDK_KEY_4) {
+    reqMode = 3;
+  } else if (event->keyval == GDK_KEY_5) {
+    reqMode = 4;
+  } else if (event->keyval == GDK_KEY_6) {
+    reqMode = 5;
+  } else if (event->keyval == GDK_KEY_7) {
+    reqMode = 6;
+  } else if (event->keyval == GDK_KEY_8) {
+    reqMode = 7;
+  } else if (event->keyval == GDK_KEY_9) {
+    reqMode = 8;
+  }
+
+  // If the user has requested a mode to display different from
+  // the curent one and the application has an image currently
+  // displayed
+  if (reqMode != -1 &&
+    (unsigned int)reqMode != app.curPredMode &&
+    GSetNbElem(GBSurfaceLayers(GBSurf(app.gbWidgetSrc))) > 0 &&
+    GSetNbElem(GBSurfaceLayers(GBSurf(app.gbWidgetRes))) > 0) {
+    
+    // If this mode exists in the current segmentor
+    if (reqMode < ISGetNbClass(&(app.segmentor))) {
+      
+      // Send a message to the console
+      char buffer[100];
+      sprintf(buffer, "Set displayed class to %u\n", reqMode);
+      AppAddMsg(buffer);
+      
+      // Move the current layers in the result back to the result of
+      // prediction
+      GBLayer* prevLayer = 
+        GSetPop(GBSurfaceLayers(GBSurf(app.gbWidgetRes)));
+      GSetAppend(
+        GBSurfaceLayers(GBSurf(app.pred[app.curPredMode])),
+        prevLayer);
+
+      // Extract the layer from the result of prediction
+      // and insert it into the result image in the GUI
+      GBLayer* resLayer = 
+        GSetHead(GBSurfaceLayers(GBSurf(app.pred[reqMode])));
+      GSetAppend(
+        GBSurfaceLayers(GBSurf(app.gbWidgetRes)),
+        resLayer);
+      GBLayerSetModified(resLayer, true);
+
+      // Paint the result in the GUI
+      GBSurfaceUpdate(GBSurf(app.gbWidgetRes));
+
+      // Update the surface
+      GBRender(app.gbWidgetRes);
+        
+      // Update the current mode
+      app.curPredMode = reqMode;
+      
+    }
+  }
+  
+  // Return false to continue the callback chain
+  return FALSE;
+}
+
 // Callback function for the 'delete-event' event on the GTK application
 // window
-// 'user_data' is the ImgSegmentorGUI application
 gboolean ApplicationWindowDeleteEvent(
   GtkWidget* widget,
   GdkEventConfigure* event, 
@@ -634,7 +738,7 @@ void AppProcess(const char* const filename) {
         
     }
 
-    // Apply the segmentor and measure time to process
+    // Apply the segmentor and measure time to predict
     clock_t clockBefore = clock();
     app.pred = ISPredict(&(app.segmentor), gb);
     clock_t clockAfter = clock();
@@ -655,7 +759,8 @@ void AppProcess(const char* const filename) {
 
     // Extract the layer from the result of prediction
     // and insert it into the result image in the GUI
-    GBLayer* resLayer = GSetPop(GBSurfaceLayers(GBSurf(app.pred[0])));
+    GBLayer* resLayer = 
+      GSetPop(GBSurfaceLayers(GBSurf(app.pred[app.curPredMode])));
     GSetAppend(
       GBSurfaceLayers(GBSurf(app.gbWidgetRes)),
       resLayer);
@@ -692,7 +797,7 @@ gboolean ButtonSaveClicked(
   (void)user_data;
 
   // If there is a result of prediction
-  if (app.pred != NULL && app.pred[0] != NULL) {
+  if (app.pred != NULL && app.pred[app.curPredMode] != NULL) {
 
     // Request the path to the file
     GtkFileChooserAction action = GTK_FILE_CHOOSER_ACTION_SAVE;
@@ -720,8 +825,8 @@ gboolean ButtonSaveClicked(
         GTK_FILE_CHOOSER(dialog));
 
       // Save the result image at the given path
-      GBSetFileName(app.pred[0], filename);
-      if (GBRender(app.pred[0]) == false) {
+      GBSetFileName(app.pred[app.curPredMode], filename);
+      if (GBRender(app.pred[app.curPredMode]) == false) {
         AppAddMsg("Couldn't save the image:\n");
         AppAddMsg(filename);
         AppAddMsg("\n");
@@ -796,8 +901,8 @@ gboolean AppWidgetSrcMotionNotify(
   // If the dragging flag is raised and the application has 
   // image currently displayed
   if (app.isDraggingSrc == true &&
-    GSetNbElem(GBSurfaceLayers(GBSurf(app.gbWidgetSrc))) &&
-    GSetNbElem(GBSurfaceLayers(GBSurf(app.gbWidgetRes)))) {
+    GSetNbElem(GBSurfaceLayers(GBSurf(app.gbWidgetSrc))) > 0 &&
+    GSetNbElem(GBSurfaceLayers(GBSurf(app.gbWidgetRes))) > 0) {
 
     //printf("motion-notify-event\n");
     // Get the shift of the pointer since last call

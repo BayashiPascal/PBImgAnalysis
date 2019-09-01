@@ -45,9 +45,11 @@ typedef struct ImgSegmentorGUI {
   GtkScrolledWindow* scrolledConsole;
   // Flag to manage the dragging of the source image
   bool isDraggingSrc;
-  // Variable to memorize the las position of the pointer
+  // Last position of the pointer
   gdouble lastX;
   gdouble lastY;
+  // Currently displayed mode in the result of prediction
+  unsigned int curPredMode; 
 } ImgSegmentorGUI;
 
 // ================= Global variable ==================
