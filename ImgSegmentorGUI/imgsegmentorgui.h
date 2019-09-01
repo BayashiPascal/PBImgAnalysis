@@ -36,6 +36,18 @@ typedef struct ImgSegmentorGUI {
   GtkWidget* mainWindow;
   // Image segmentor
   ImgSegmentor segmentor;
+  // Results of predictions by the segmentor
+  GenBrush** pred;
+  // Path to the currently processed image
+  char* imgFilePath;
+  // Info console of the application
+  GtkTextView* console;
+  GtkScrolledWindow* scrolledConsole;
+  // Flag to manage the dragging of the source image
+  bool isDraggingSrc;
+  // Variable to memorize the las position of the pointer
+  gdouble lastX;
+  gdouble lastY;
 } ImgSegmentorGUI;
 
 // ================= Global variable ==================

@@ -2,6 +2,11 @@
 <!-- Generated with glade 3.18.3 -->
 <interface>
   <requires lib="gtk+" version="3.12"/>
+  <object class="GtkAdjustment" id="adjustment1">
+    <property name="upper">100</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">10</property>
+  </object>
   <object class="GtkApplicationWindow" id="appMainWindow">
     <property name="can_focus">False</property>
     <property name="title" translatable="yes">ImgSegmentorGUI</property>
@@ -24,6 +29,7 @@
               <packing>
                 <property name="expand">False</property>
                 <property name="fill">True</property>
+                <property name="padding">5</property>
                 <property name="position">0</property>
               </packing>
             </child>
@@ -53,6 +59,7 @@
                   <packing>
                     <property name="expand">False</property>
                     <property name="fill">True</property>
+                    <property name="padding">2</property>
                     <property name="position">0</property>
                   </packing>
                 </child>
@@ -66,6 +73,7 @@
                   <packing>
                     <property name="expand">False</property>
                     <property name="fill">True</property>
+                    <property name="padding">2</property>
                     <property name="position">1</property>
                   </packing>
                 </child>
@@ -79,6 +87,7 @@
                   <packing>
                     <property name="expand">False</property>
                     <property name="fill">True</property>
+                    <property name="padding">2</property>
                     <property name="position">2</property>
                   </packing>
                 </child>
@@ -90,17 +99,27 @@
               </packing>
             </child>
             <child>
-              <object class="GtkLabel" id="lblInfo">
+              <object class="GtkScrolledWindow" id="scrlWinInfo">
                 <property name="visible">True</property>
-                <property name="can_focus">False</property>
-                <property name="halign">start</property>
-                <property name="valign">start</property>
-                <property name="label" translatable="yes">Welcome to ImgSegmentorGUI</property>
-                <property name="selectable">True</property>
+                <property name="can_focus">True</property>
+                <property name="shadow_type">in</property>
+                <child>
+                  <object class="GtkViewport" id="viewport1">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <child>
+                      <object class="GtkTextView" id="txtInfo">
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                      </object>
+                    </child>
+                  </object>
+                </child>
               </object>
               <packing>
                 <property name="expand">True</property>
                 <property name="fill">True</property>
+                <property name="padding">2</property>
                 <property name="position">1</property>
               </packing>
             </child>

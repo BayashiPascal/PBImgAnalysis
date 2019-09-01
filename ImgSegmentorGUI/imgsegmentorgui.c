@@ -26,6 +26,27 @@ bool ImgSegmentorGUIParseArg(
      int argc,
   char** argv);
 
+// Callback function for the 'motion-notify-event' event 
+// on the source widget
+gboolean AppWidgetSrcMotionNotify(
+  GtkWidget* widget,
+  GdkEvent*  event,
+  gpointer   user_data);
+
+// Callback function for the 'button-press-event' event 
+// on the source widget
+gboolean AppWidgetSrcBtnPress(
+  GtkWidget* widget,
+  GdkEvent*  event,
+  gpointer   user_data);
+
+// Callback function for the 'button-release-event' event 
+// on the source widget
+gboolean AppWidgetSrcBtnRelease(
+  GtkWidget* widget,
+  GdkEvent*  event,
+  gpointer   user_data);
+
 // Callback function for the 'clicked' event on the Load button
 gboolean ButtonLoadClicked(
   gpointer user_data);
@@ -46,14 +67,14 @@ gboolean ApplicationWindowDeleteEvent(
   GdkEventConfigure* event, 
   gpointer user_data);
 
+// Load and process the image located at 'filename'
+void AppProcess(const char* const filename);
 
+// Add the message 'msg' to the info console of the GUI
+void AppAddMsg(const char* const msg);
 
-
-// Paint the GenBrush surface
-void PaintSurface(
-  GBSurface* const surf, 
-       VecShort2D* dim, 
-               int green);
+// Callback to keep the console scrolled down
+void ScrollToEnd(GtkWidget *widget, GdkRectangle *allocation);
 
 // ================ Functions implementation ====================
 
@@ -79,6 +100,15 @@ ImgSegmentorGUI ImgSegmentorGUICreate(
 
   // Init the UI definition file path
   app.gladeFilePath = NULL;
+
+  // Init the result of prediction
+  app.pred = NULL;
+
+  // Init the path to the current image
+  app.imgFilePath = NULL;
+  
+  // Init the dragging flag
+  app.isDraggingSrc = false;
 
   // Init the dimensions of the GBWidget
   app.dimGBWidget = VecShortCreateStatic2D();
@@ -181,6 +211,7 @@ bool ImgSegmentorGUIParseArg(
       printf("[-segmentor <path>] load the segmentor from <path>\n");
       printf("[-glade <path>] set the gui definition file to <path>\n");
       printf("[-size <size>] set the size of the image to <size> px\n");
+      printf("[-img <path>] load and process the image at <path> px\n");
       exit(1);
       
     } else if (strcmp(argv[iArg], "-segmentor") == 0) {
@@ -191,6 +222,16 @@ bool ImgSegmentorGUIParseArg(
         // Set the path to the following argument
         ++iArg;
         app.segmentorFilePath = strdup(argv[iArg]);
+      }
+
+    } else if (strcmp(argv[iArg], "-img") == 0) {
+
+      // If it's not the last argument
+      if (iArg < argc - 1) {
+
+        // Set the path to the following argument
+        ++iArg;
+        app.imgFilePath = strdup(argv[iArg]);
       }
 
     } else if (strcmp(argv[iArg], "-glade") == 0) {
@@ -279,11 +320,15 @@ int ImgSegmentorGUIMain(
 void ImgSegmentorGUIFree() {
   
   // Free memory
+  for (int iClass = ISGetNbClass(&(app.segmentor)); iClass--;)
+    GBFree(app.pred + iClass);
+  free(app.pred);
   ImgSegmentorFreeStatic(&(app.segmentor));
   GBFree(&(app.gbWidgetSrc));
   GBFree(&(app.gbWidgetRes));
   free(app.gladeFilePath);
   free(app.segmentorFilePath);
+  free(app.imgFilePath);
 
 }
 
@@ -377,6 +422,53 @@ void GtkAppActivate(
     "delete-event",
     G_CALLBACK(ApplicationWindowDeleteEvent), 
     NULL);
+  
+  // Allow the events for the source widget
+  gtk_widget_add_events(widgetSrc, GDK_BUTTON_PRESS_MASK);
+  gtk_widget_add_events(widgetSrc, GDK_BUTTON_RELEASE_MASK);
+  gtk_widget_add_events(widgetSrc, GDK_POINTER_MOTION_MASK);
+
+  // Connect the source widget to the mouse events
+  g_signal_connect(
+    widgetSrc, 
+    "button-press-event", 
+    G_CALLBACK(AppWidgetSrcBtnPress), 
+    NULL);
+  g_signal_connect(
+    widgetSrc, 
+    "button-release-event", 
+    G_CALLBACK(AppWidgetSrcBtnRelease), 
+    NULL);
+  g_signal_connect(
+    widgetSrc, 
+    "motion-notify-event", 
+    G_CALLBACK(AppWidgetSrcMotionNotify), 
+    NULL);
+
+
+  // Get the info console
+  app.console = GTK_TEXT_VIEW(gtk_builder_get_object(
+      gtkBuilder, 
+      "txtInfo"));
+  app.scrolledConsole = GTK_SCROLLED_WINDOW(
+    gtk_builder_get_object(
+      gtkBuilder, 
+      "scrlWinInfo"));
+
+  // Set a callback on size-allocate to keep the console scrolled down
+  g_signal_connect(
+    app.scrolledConsole, 
+    "size-allocate", 
+    G_CALLBACK(ScrollToEnd), 
+    NULL);
+
+  // Add a welcome message to the console
+  AppAddMsg("Welcome to ImgSegmentorGUI\n");
+
+  // Display the used segmentor in the console
+  AppAddMsg("Loaded segmentor from:\n");
+  AppAddMsg(app.segmentorFilePath);
+  AppAddMsg("\n");
 
   // Connect the other signals defined in the UI definition file
   gtk_builder_connect_signals(
@@ -390,6 +482,13 @@ void GtkAppActivate(
 
   // Free memory used by the GTK builder
   g_object_unref(G_OBJECT(gtkBuilder));
+
+  // If an image has been given in argument on the command line
+  if (app.imgFilePath != NULL) {
+
+    // Process the image
+    AppProcess(app.imgFilePath);
+  }
 
   // Display the main window and all its components
   gtk_widget_show_all(app.mainWindow);
@@ -444,7 +543,13 @@ gboolean ButtonLoadClicked(
     NULL);
 
   // Set the default path
-  //gtk_file_chooser_set_current_folder(dialog, path);
+  if (app.imgFilePath != NULL) {
+    char* parentFolder = PBFSGetRootPath(app.imgFilePath);
+    gtk_file_chooser_set_current_folder(
+      GTK_FILE_CHOOSER(dialog), 
+      parentFolder);
+    free(parentFolder);
+  }
 
   // Filter on TGA images only
   GtkFileFilter* filter = gtk_file_filter_new();
@@ -463,61 +568,13 @@ gboolean ButtonLoadClicked(
     char* filename = gtk_file_chooser_get_filename(
       GTK_FILE_CHOOSER(dialog));
 
-    // Remove the current layers
-    while (GBSurfaceNbLayer(GBSurf(app.gbWidgetSrc)) > 0) {
-      GBSurfaceRemoveLayer(
-        GBSurf(app.gbWidgetSrc),
-        GBSurfaceLayer(
-          GBSurf(app.gbWidgetSrc), 
-          0));
-    }
-
-    // Load the image into a new layer
-    GBLayer* layer = GBSurfaceAddLayerFromFile(
-      GBSurf(app.gbWidgetSrc), 
-      filename);
-
-    if (layer != NULL) {
-      
-      // Update the surface
-      GBSurfaceUpdate(GBSurf(app.gbWidgetSrc));
-
-      // Paint the source image in the GUI
-      GBRender(app.gbWidgetSrc);
-
-      // Apply the segmentor
-      GenBrush** pred = ISPredict(&(app.segmentor), app.gbWidgetSrc);
-      
-      // Remove the current layers
-      while (GBSurfaceNbLayer(GBSurf(app.gbWidgetRes)) > 0) {
-        GBSurfaceRemoveLayer(
-          GBSurf(app.gbWidgetRes),
-          GBSurfaceLayer(
-            GBSurf(app.gbWidgetRes), 
-            0));
-      }
-
-      // Extract the layer from the result of prediction
-      // and insert it into the result image in the GUI
-      GBLayer* resLayer = GSetPop(GBSurfaceLayers(GBSurf(pred[0])));
-      GSetAppend(
-        GBSurfaceLayers(GBSurf(app.gbWidgetRes)),
-        resLayer);
-      GBLayerSetModified(resLayer, true);
-
-      // Paint the result in the GUI
-      GBSurfaceUpdate(GBSurf(app.gbWidgetRes));
-
-      // Update the surface
-      GBRender(app.gbWidgetRes);
-
-      // Free memory
-      GBFree(pred);
-      free(pred);
-
-    } else {
-      printf("Couldn't open the image %s\n", filename);
-    }
+    // Memorize the image path
+    if (app.imgFilePath != NULL)
+      free(app.imgFilePath);
+    app.imgFilePath = strdup(filename);
+    
+    // Process the image
+    AppProcess(filename);
 
     // Free memory
     g_free(filename);
@@ -530,6 +587,103 @@ gboolean ButtonLoadClicked(
   return TRUE;
 }
 
+// Load and process the image located at 'filename'
+void AppProcess(const char* const filename) {
+
+  // Add info to the console
+  AppAddMsg("Process the image:\n");
+  AppAddMsg(filename);
+  AppAddMsg("\n");
+  
+  // Remove the current layers in the source
+  while (GBSurfaceNbLayer(GBSurf(app.gbWidgetSrc)) > 0) {
+    GBSurfaceRemoveLayer(
+      GBSurf(app.gbWidgetSrc),
+      GBSurfaceLayer(
+        GBSurf(app.gbWidgetSrc), 
+        0));
+  }
+
+  // Load the image into a new GenBrush
+  GenBrush* gb = GBCreateFromFile(filename);
+
+  if (gb != NULL) {
+    
+    // Link the layer into the source image in the GUI
+    GBLayer* srcLayer = GSetGet(
+      GBSurfaceLayers(GBSurf(gb)), 
+      0);
+    GSetAppend(
+      GBSurfaceLayers(GBSurf(app.gbWidgetSrc)),
+      srcLayer);
+    GBLayerSetModified(srcLayer, true);
+
+    // Update the surface
+    GBSurfaceUpdate(GBSurf(app.gbWidgetSrc));
+
+    // Paint the source image in the GUI
+    GBRender(app.gbWidgetSrc);
+
+    // If there is previous result
+    if (app.pred != NULL) {
+
+        // Free memory
+        for (int iClass = ISGetNbClass(&(app.segmentor)); iClass--;)
+          GBFree(app.pred + iClass);
+        free(app.pred);
+        
+    }
+
+    // Apply the segmentor and measure time to process
+    clock_t clockBefore = clock();
+    app.pred = ISPredict(&(app.segmentor), gb);
+    clock_t clockAfter = clock();
+    float delayMs = ((double)(clockAfter - clockBefore)) / 
+        CLOCKS_PER_SEC * 1000.0;
+    char buffer[100];
+    sprintf(buffer, "Predicted in %fms\n", delayMs);
+    AppAddMsg(buffer);
+    
+    // Remove the current layers in the result
+    while (GBSurfaceNbLayer(GBSurf(app.gbWidgetRes)) > 0) {
+      GBSurfaceRemoveLayer(
+        GBSurf(app.gbWidgetRes),
+        GBSurfaceLayer(
+          GBSurf(app.gbWidgetRes), 
+          0));
+    }
+
+    // Extract the layer from the result of prediction
+    // and insert it into the result image in the GUI
+    GBLayer* resLayer = GSetPop(GBSurfaceLayers(GBSurf(app.pred[0])));
+    GSetAppend(
+      GBSurfaceLayers(GBSurf(app.gbWidgetRes)),
+      resLayer);
+    GBLayerSetModified(resLayer, true);
+
+    // Paint the result in the GUI
+    GBSurfaceUpdate(GBSurf(app.gbWidgetRes));
+
+    // Update the surface
+    GBRender(app.gbWidgetRes);
+
+    // Remove the source layer from the loaded GenBrush to avoid it
+    // being freed as it is shared with the GenBrush in the GUI
+    srcLayer = GSetPop(GBSurfaceLayers(GBSurf(gb)));
+
+    // Free memory
+    GBFree(&gb);
+
+  } else {
+
+    AppAddMsg("Couldn't open the image:\n");
+    AppAddMsg(filename);
+    AppAddMsg("\n");
+
+  }
+}
+
+
 // Callback function for the 'clicked' event on the Save button
 gboolean ButtonSaveClicked(
   gpointer user_data) {
@@ -537,42 +691,49 @@ gboolean ButtonSaveClicked(
   // Unused arguments
   (void)user_data;
 
-  // Request the path to the file
-  GtkFileChooserAction action = GTK_FILE_CHOOSER_ACTION_SAVE;
-  GtkWidget* dialog = gtk_file_chooser_dialog_new(
-    "Save File",
-    GTK_WINDOW(app.mainWindow),
-    action,
-    "Cancel",
-    GTK_RESPONSE_CANCEL,
-    "Save",
-    GTK_RESPONSE_ACCEPT,
-    NULL);
-  GtkFileFilter* filter = gtk_file_filter_new();
-  gtk_file_filter_add_pattern(
-    filter,
-    "*.tga");
-  gtk_file_chooser_set_filter(
-    GTK_FILE_CHOOSER(dialog),
-    filter);
-  gint res = gtk_dialog_run(GTK_DIALOG (dialog));
+  // If there is a result of prediction
+  if (app.pred != NULL && app.pred[0] != NULL) {
 
-  // If the user has provided a path
-  if (res == GTK_RESPONSE_ACCEPT) {
-    char* filename = gtk_file_chooser_get_filename(
-      GTK_FILE_CHOOSER(dialog));
+    // Request the path to the file
+    GtkFileChooserAction action = GTK_FILE_CHOOSER_ACTION_SAVE;
+    GtkWidget* dialog = gtk_file_chooser_dialog_new(
+      "Save File",
+      GTK_WINDOW(app.mainWindow),
+      action,
+      "Cancel",
+      GTK_RESPONSE_CANCEL,
+      "Save",
+      GTK_RESPONSE_ACCEPT,
+      NULL);
+    GtkFileFilter* filter = gtk_file_filter_new();
+    gtk_file_filter_add_pattern(
+      filter,
+      "*.tga");
+    gtk_file_chooser_set_filter(
+      GTK_FILE_CHOOSER(dialog),
+      filter);
+    gint res = gtk_dialog_run(GTK_DIALOG (dialog));
 
-    // Save the result image at the given path
-    if (GBScreenshot((GBSurfaceWidget*)GBSurf(app.gbWidgetRes), filename) == false) {
-      printf("Couldn't save the image %s\n", filename);
+    // If the user has provided a path
+    if (res == GTK_RESPONSE_ACCEPT) {
+      char* filename = gtk_file_chooser_get_filename(
+        GTK_FILE_CHOOSER(dialog));
+
+      // Save the result image at the given path
+      GBSetFileName(app.pred[0], filename);
+      if (GBRender(app.pred[0]) == false) {
+        AppAddMsg("Couldn't save the image:\n");
+        AppAddMsg(filename);
+        AppAddMsg("\n");
+      }
+      
+      // Free memory
+      g_free (filename);
     }
-
+    
     // Free memory
-    g_free (filename);
+    gtk_widget_destroy (dialog);
   }
-  
-  // Free memory
-  gtk_widget_destroy (dialog);
 
   // Return true to stop the callback chain
   return TRUE;
@@ -592,28 +753,131 @@ gboolean ButtonQuitClicked(
   return TRUE;
 }
 
+// Add the message 'msg' to the info console of the GUI
+void AppAddMsg(const char* const msg) {
 
+  // If the message is not null and not empty, and the console is ready
+  if (app.console != NULL && 
+    msg != NULL && 
+    msg[0] != '\0') {
 
+    // Append the message to the buffer
+    GtkTextBuffer* buffer = gtk_text_view_get_buffer(app.console);
+    GtkTextIter iter;
+    gtk_text_buffer_get_end_iter(buffer, &iter);
+    gtk_text_buffer_insert(buffer, &iter, msg, -1);
+    
+  }
+}
 
+// Callback to keep the console scrolled down
+void ScrollToEnd(GtkWidget *widget, GdkRectangle *allocation)
+{
+  if (widget != NULL) { }
+  if (allocation != NULL) { }
 
+  GtkAdjustment* adj = 
+    gtk_scrolled_window_get_vadjustment(app.scrolledConsole);
+  gtk_adjustment_set_value(
+    adj, 
+    gtk_adjustment_get_upper(adj));
+}
 
-// Paint the GenBrush surface
-void PaintSurface(
-  GBSurface* const surf, 
-       VecShort2D* dim, 
-               int green) {
+// Callback function for the 'motion-notify-event' event 
+// on the source widget
+gboolean AppWidgetSrcMotionNotify(
+  GtkWidget* widget,
+  GdkEvent*  event,
+  gpointer   user_data) {
 
-  // Loop on the pixels of the surface
-  VecShort2D pos = VecShortCreateStatic2D();
-  do {
+  // Unused arguments
+  (void)widget; (void)event; (void)user_data;
+  
+  // If the dragging flag is raised and the application has 
+  // image currently displayed
+  if (app.isDraggingSrc == true &&
+    GSetNbElem(GBSurfaceLayers(GBSurf(app.gbWidgetSrc))) &&
+    GSetNbElem(GBSurfaceLayers(GBSurf(app.gbWidgetRes)))) {
 
-    // Set the pixel value according to the argument
-    GBPixel pixel;
-    pixel._rgba[GBPixelAlpha] = 255;
-    pixel._rgba[GBPixelRed] = MIN(255, VecGet(&pos, 0));
-    pixel._rgba[GBPixelGreen] = MIN(255, green);
-    pixel._rgba[GBPixelBlue] = MIN(255, VecGet(&pos, 1));
-    GBSurfaceSetFinalPixel(surf, &pos, &pixel);
-  } while (VecStep(&pos, dim));
+    //printf("motion-notify-event\n");
+    // Get the shift of the pointer since last call
+    gdouble shiftX = ((GdkEventButton*)event)->x - app.lastX;
+    gdouble shiftY = ((GdkEventButton*)event)->y - app.lastY;
+
+    // If the pointer has shifted more than one pixel
+    if (fabs(shiftX) >= 1.0 || fabs(shiftY) >= 1.0) {
+      
+      // Shift the layers in source and result
+      GBLayer* layerSrc = GBSurfaceLayer(
+        GBSurf(app.gbWidgetSrc), 
+        0);
+      GBLayer* layerRes = GBSurfaceLayer(
+        GBSurf(app.gbWidgetRes), 
+        0);
+      VecShort2D shift = VecShortCreateStatic2D();
+      VecSet(&shift, 0, shiftX);
+      VecSet(&shift, 1, -1.0 * shiftY);
+      VecShort2D pos = VecGetOp(
+        GBLayerPos(layerSrc), 
+        1.0 , 
+        &shift, 
+        1.0);
+      GBLayerSetPos(layerSrc, &pos);
+      GBLayerSetPos(layerRes, &pos);
+
+      // Update the surfaces
+      GBSurfaceUpdate(GBSurf(app.gbWidgetSrc));
+      GBSurfaceUpdate(GBSurf(app.gbWidgetRes));
+
+      // Paint the source and result images in the GUI
+      GBRender(app.gbWidgetSrc);
+      GBRender(app.gbWidgetRes);
+      
+      // Update the new pointer location
+      app.lastX = ((GdkEventButton*)event)->x;
+      app.lastY = ((GdkEventButton*)event)->y;
+    }
+  }
+
+  // Return true to stop the callback chain
+  return TRUE;
+}
+
+// Callback function for the 'button-press-event' event 
+// on the source widget
+gboolean AppWidgetSrcBtnPress(
+  GtkWidget* widget,
+  GdkEvent*  event,
+  gpointer   user_data) {
+    
+  // Unused arguments
+  (void)widget; (void)event; (void)user_data;
+
+  // Raise the dragging flag
+  //printf("press %f %f\n", ((GdkEventButton*)event)->x, ((GdkEventButton*)event)->y);
+  app.lastX = ((GdkEventButton*)event)->x;
+  app.lastY = ((GdkEventButton*)event)->y;
+  app.isDraggingSrc = true;
+
+  // Return true to stop the callback chain
+  return TRUE;
+}
+
+// Callback function for the 'button-release-event' event 
+// on the source widget
+gboolean AppWidgetSrcBtnRelease(
+  GtkWidget* widget,
+  GdkEvent*  event,
+  gpointer   user_data) {
+    
+  // Unused arguments
+  (void)widget; (void)event; (void)user_data;
+
+  // Release the dragging flag
+  //printf("release\n");
+  app.isDraggingSrc = false;
+
+  // Return true to stop the callback chain
+  return TRUE;
 }
 
