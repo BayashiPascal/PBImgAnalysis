@@ -15,6 +15,9 @@ ImgSegmentorGUI app;
 
 // ================ Functions declaration ====================
 
+// Function to zoom the images
+void AppZoom(float zoom);
+
 // Callback function for the 'key-press-event' event on the GTK
 // application window
 gboolean ApplicationWindowKeyPressEvent(
@@ -119,6 +122,11 @@ ImgSegmentorGUI ImgSegmentorGUICreate(
 
   // Init the current mode
   app.curPredMode = 0;
+  
+  // Init the zoom
+  app.scale = VecFloatCreateStatic2D();
+  VecSet(&(app.scale), 0, 1.0);
+  VecSet(&(app.scale), 1, 1.0);
 
   // Init the dimensions of the GBWidget
   app.dimGBWidget = VecShortCreateStatic2D();
@@ -551,6 +559,10 @@ gboolean ApplicationWindowKeyPressEvent(
     reqMode = 7;
   } else if (event->keyval == GDK_KEY_9) {
     reqMode = 8;
+  } else if (event->keyval == GDK_KEY_a) {
+    AppZoom(1.1);
+  } else if (event->keyval == GDK_KEY_q) {
+    AppZoom(0.9);
   }
 
   // If the user has requested a mode to display different from
@@ -586,6 +598,9 @@ gboolean ApplicationWindowKeyPressEvent(
         resLayer);
       GBLayerSetModified(resLayer, true);
 
+      // Set the zoom
+      GBLayerSetScale(resLayer, &(app.scale));
+
       // Paint the result in the GUI
       GBSurfaceUpdate(GBSurf(app.gbWidgetRes));
 
@@ -600,6 +615,34 @@ gboolean ApplicationWindowKeyPressEvent(
   
   // Return false to continue the callback chain
   return FALSE;
+}
+
+// Function to zoom the images
+void AppZoom(float zoom) {
+
+  // Set the zoom in the application
+  VecScale(&(app.scale), zoom);
+
+  // Get the layers
+  GBLayer* srcLayer = GBSurfaceLayer(
+    GBSurf(app.gbWidgetSrc), 
+    0);
+  GBLayer* resLayer = GBSurfaceLayer(
+    GBSurf(app.gbWidgetRes), 
+    0);
+
+  // Set the zoom
+  GBLayerSetScale(srcLayer, &(app.scale));
+  GBLayerSetScale(resLayer, &(app.scale));
+
+  // Paint the result in the GUI
+  GBSurfaceUpdate(GBSurf(app.gbWidgetSrc));
+  GBSurfaceUpdate(GBSurf(app.gbWidgetRes));
+
+  // Update the surface
+  GBRender(app.gbWidgetSrc);
+  GBRender(app.gbWidgetRes);
+
 }
 
 // Callback function for the 'delete-event' event on the GTK application
@@ -722,6 +765,9 @@ void AppProcess(const char* const filename) {
       srcLayer);
     GBLayerSetModified(srcLayer, true);
 
+    // Set the zoom
+    GBLayerSetScale(srcLayer, &(app.scale));
+
     // Update the surface
     GBSurfaceUpdate(GBSurf(app.gbWidgetSrc));
 
@@ -765,6 +811,9 @@ void AppProcess(const char* const filename) {
       GBSurfaceLayers(GBSurf(app.gbWidgetRes)),
       resLayer);
     GBLayerSetModified(resLayer, true);
+
+    // Set the zoom
+    GBLayerSetScale(resLayer, &(app.scale));
 
     // Paint the result in the GUI
     GBSurfaceUpdate(GBSurf(app.gbWidgetRes));
@@ -908,6 +957,10 @@ gboolean AppWidgetSrcMotionNotify(
     // Get the shift of the pointer since last call
     gdouble shiftX = ((GdkEventButton*)event)->x - app.lastX;
     gdouble shiftY = ((GdkEventButton*)event)->y - app.lastY;
+
+    // Correct for the zoom
+    shiftX /= VecGet(&(app.scale), 0);
+    shiftY /= VecGet(&(app.scale), 1);
 
     // If the pointer has shifted more than one pixel
     if (fabs(shiftX) >= 1.0 || fabs(shiftY) >= 1.0) {

@@ -50,6 +50,8 @@ typedef struct ImgSegmentorGUI {
   gdouble lastY;
   // Currently displayed mode in the result of prediction
   unsigned int curPredMode; 
+  // Zoom
+  VecFloat2D scale;
 } ImgSegmentorGUI;
 
 // ================= Global variable ==================
