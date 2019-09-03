@@ -973,8 +973,8 @@ gboolean AppWidgetSrcMotionNotify(
         GBSurf(app.gbWidgetRes), 
         0);
       VecShort2D shift = VecShortCreateStatic2D();
-      VecSet(&shift, 0, shiftX);
-      VecSet(&shift, 1, -1.0 * shiftY);
+      VecSet(&shift, 0, (int)round(shiftX));
+      VecSet(&shift, 1, -1 * (int)round(shiftY));
       VecShort2D pos = VecGetOp(
         GBLayerPos(layerSrc), 
         1.0 , 
