@@ -1,10 +1,10 @@
-// ============ PBIMGANALYSIS_INLINE.C ================
+// ============ PBIMGANALYSIS_static inline.C ================
 
 // ================ Functions implementation ====================
 
 // Get the GenBrush of the ImgKMeansClusters 'that'
 #if BUILDMODE != 0
-inline
+static inline
 #endif 
 const GenBrush* IKMCImg(const ImgKMeansClusters* const that) {
 #if BUILDMODE == 0
@@ -19,7 +19,7 @@ const GenBrush* IKMCImg(const ImgKMeansClusters* const that) {
 
 // Set the GenBrush of the ImgKMeansClusters 'that' to 'img'
 #if BUILDMODE != 0
-inline
+static inline
 #endif 
 void IKMCSetImg(ImgKMeansClusters* const that, 
   const GenBrush* const img) {
@@ -41,7 +41,7 @@ void IKMCSetImg(ImgKMeansClusters* const that,
 
 // Get the KMeansClusters of the ImgKMeansClusters 'that'
 #if BUILDMODE != 0
-inline
+static inline
 #endif 
 const KMeansClusters* IKMCKMeansClusters(
   const ImgKMeansClusters* const that) {
@@ -58,7 +58,7 @@ const KMeansClusters* IKMCKMeansClusters(
 // Set the size of the cells of the ImgKMeansClusters 'that' to 
 // 2*'size'+1
 #if BUILDMODE != 0
-inline
+static inline
 #endif 
 void IKMCSetSizeCell(ImgKMeansClusters* const that, const int size) {
 #if BUILDMODE == 0
@@ -78,7 +78,7 @@ void IKMCSetSizeCell(ImgKMeansClusters* const that, const int size) {
 
 // Get the size of the cells of the ImgKMeansClusters 'that'
 #if BUILDMODE != 0
-inline
+static inline
 #endif 
 int IKMCGetSizeCell(const ImgKMeansClusters* const that) {
 #if BUILDMODE == 0
@@ -93,7 +93,7 @@ int IKMCGetSizeCell(const ImgKMeansClusters* const that) {
 
 // Get the number of cluster of the ImgKMeansClusters 'that'
 #if BUILDMODE != 0
-inline
+static inline
 #endif 
 int IKMCGetK(const ImgKMeansClusters* const that) {
 #if BUILDMODE == 0
@@ -108,7 +108,7 @@ int IKMCGetK(const ImgKMeansClusters* const that) {
 
 // Return the nb of criterion of the ImgSegmentor 'that'
 #if BUILDMODE != 0
-inline
+static inline
 #endif
 long ISGetNbCriterion(const ImgSegmentor* const that) {
 #if BUILDMODE == 0
@@ -123,7 +123,7 @@ long ISGetNbCriterion(const ImgSegmentor* const that) {
 
 // Return the nb of classes of the ImgSegmentor 'that'
 #if BUILDMODE != 0
-inline
+static inline
 #endif
 int ISGetNbClass(const ImgSegmentor* const that) {
 #if BUILDMODE == 0
@@ -138,7 +138,7 @@ int ISGetNbClass(const ImgSegmentor* const that) {
 
 // Return the nb of criterion of the ImgSegmentor 'that'
 #if BUILDMODE != 0
-inline
+static inline
 #endif
 const GenTree* ISCriteria(const ImgSegmentor* const that) {
 #if BUILDMODE == 0
@@ -156,7 +156,7 @@ const GenTree* ISCriteria(const ImgSegmentor* const that) {
 // If 'parent' is null it is inserted to the root of the ImgSegmentor
 // Return the added criterion if successful, null else
 #if BUILDMODE != 0
-inline
+static inline
 #endif
 ImgSegmentorCriterionRGB* ISAddCriterionRGB(ImgSegmentor* const that, 
   void* const parent) {
@@ -196,7 +196,7 @@ ImgSegmentorCriterionRGB* ISAddCriterionRGB(ImgSegmentor* const that,
 // If 'parent' is null it is inserted to the root of the ImgSegmentor
 // Return the added criterion if successful, null else
 #if BUILDMODE != 0
-inline
+static inline
 #endif
 ImgSegmentorCriterionTex* ISAddCriterionTex(ImgSegmentor* const that, 
   void* const parent, const int rank, const int size) {
@@ -236,7 +236,7 @@ ImgSegmentorCriterionTex* ISAddCriterionTex(ImgSegmentor* const that,
 // If 'parent' is null it is inserted to the root of the ImgSegmentor
 // Return the added criterion if successful, null else
 #if BUILDMODE != 0
-inline
+static inline
 #endif
 ImgSegmentorCriterionRGB2HSV* ISAddCriterionRGB2HSV(
   ImgSegmentor* const that, void* const parent) {
@@ -274,7 +274,7 @@ ImgSegmentorCriterionRGB2HSV* ISAddCriterionRGB2HSV(
 // Return the flag controlling the binarization of the result of 
 // prediction of the ImgSegmentor 'that'
 #if BUILDMODE != 0
-inline
+static inline
 #endif
 bool ISGetFlagBinaryResult(const ImgSegmentor* const that) {
 #if BUILDMODE == 0
@@ -290,7 +290,7 @@ bool ISGetFlagBinaryResult(const ImgSegmentor* const that) {
 // Return the threshold controlling the binarization of the result of 
 // prediction of the ImgSegmentor 'that'
 #if BUILDMODE != 0
-inline
+static inline
 #endif
 float ISGetThresholdBinaryResult(const ImgSegmentor* const that) {
 #if BUILDMODE == 0
@@ -306,7 +306,7 @@ float ISGetThresholdBinaryResult(const ImgSegmentor* const that) {
 // Set the flag controlling the binarization of the result of 
 // prediction of the ImgSegmentor 'that' to 'flag'
 #if BUILDMODE != 0
-inline
+static inline
 #endif
 void ISSetFlagBinaryResult(ImgSegmentor* const that, 
   const bool flag) {
@@ -323,7 +323,7 @@ void ISSetFlagBinaryResult(ImgSegmentor* const that,
 // Set the threshold controlling the binarization of the result of 
 // prediction of the ImgSegmentor 'that' to 'threshold'
 #if BUILDMODE != 0
-inline
+static inline
 #endif
 void ISSetThresholdBinaryResult(ImgSegmentor* const that,
   const float threshold) {
@@ -339,7 +339,7 @@ void ISSetThresholdBinaryResult(ImgSegmentor* const that,
 
 // Return the number of epoch for training the ImgSegmentor 'that'
 #if BUILDMODE != 0
-inline
+static inline
 #endif
 unsigned int ISGetNbEpoch(const ImgSegmentor* const that) {
 #if BUILDMODE == 0
@@ -354,7 +354,7 @@ unsigned int ISGetNbEpoch(const ImgSegmentor* const that) {
 
 // Set the number of epoch for training the ImgSegmentor 'that' to 'nb'
 #if BUILDMODE != 0
-inline
+static inline
 #endif
 void ISSetNbEpoch(ImgSegmentor* const that, unsigned int nb) {
 #if BUILDMODE == 0
@@ -369,7 +369,7 @@ void ISSetNbEpoch(ImgSegmentor* const that, unsigned int nb) {
 
 // Return the size of the pool for training the ImgSegmentor 'that'
 #if BUILDMODE != 0
-inline
+static inline
 #endif
 int ISGetSizePool(const ImgSegmentor* const that) {
 #if BUILDMODE == 0
@@ -384,7 +384,7 @@ int ISGetSizePool(const ImgSegmentor* const that) {
 
 // Set the size of the pool for training the ImgSegmentor 'that' to 'nb'
 #if BUILDMODE != 0
-inline
+static inline
 #endif
 void ISSetSizePool(ImgSegmentor* const that, int nb) {
 #if BUILDMODE == 0
@@ -399,7 +399,7 @@ void ISSetSizePool(ImgSegmentor* const that, int nb) {
 
 // Return the nb of elites for training the ImgSegmentor 'that'
 #if BUILDMODE != 0
-inline
+static inline
 #endif
 int ISGetNbElite(const ImgSegmentor* const that) {
 #if BUILDMODE == 0
@@ -414,7 +414,7 @@ int ISGetNbElite(const ImgSegmentor* const that) {
 
 // Set the nb of elites for training the ImgSegmentor 'that' to 'nb'
 #if BUILDMODE != 0
-inline
+static inline
 #endif
 void ISSetNbElite(ImgSegmentor* const that, int nb) {
 #if BUILDMODE == 0
@@ -429,7 +429,7 @@ void ISSetNbElite(ImgSegmentor* const that, int nb) {
 
 // Return the threshold controlling the stop of the training
 #if BUILDMODE != 0
-inline
+static inline
 #endif
 float ISGetTargetBestValue(const ImgSegmentor* const that) {
 #if BUILDMODE == 0
@@ -445,7 +445,7 @@ float ISGetTargetBestValue(const ImgSegmentor* const that) {
 // Set the threshold controlling the stop of the training to 'val'
 // Clip the value to [0.0, 1.0]
 #if BUILDMODE != 0
-inline
+static inline
 #endif
 void ISSetTargetBestValue(ImgSegmentor* const that, const float val) {
 #if BUILDMODE == 0
@@ -460,7 +460,7 @@ void ISSetTargetBestValue(ImgSegmentor* const that, const float val) {
 
 // Return the flag for the TextOMeter of the ImgSegmentor 'that'
 #if BUILDMODE != 0
-inline
+static inline
 #endif
 bool ISGetFlagTextOMeter(const ImgSegmentor* const that) {
 #if BUILDMODE == 0
@@ -475,7 +475,7 @@ bool ISGetFlagTextOMeter(const ImgSegmentor* const that) {
 
 // Return the max nb of adns of the ImgSegmentor 'that'
 #if BUILDMODE != 0
-inline
+static inline
 #endif
 int ISGetSizeMaxPool(const ImgSegmentor* const that) {
 #if BUILDMODE == 0
@@ -490,7 +490,7 @@ int ISGetSizeMaxPool(const ImgSegmentor* const that) {
 
 // Return the min nb of adns of the ImgSegmentor 'that'
 #if BUILDMODE != 0
-inline
+static inline
 #endif
 int ISGetSizeMinPool(const ImgSegmentor* const that) {
 #if BUILDMODE == 0
@@ -505,7 +505,7 @@ int ISGetSizeMinPool(const ImgSegmentor* const that) {
 
 // Set the min nb of adns of the ImgSegmentor 'that' to 'nb'
 #if BUILDMODE != 0
-inline
+static inline
 #endif
 void ISSetSizeMaxPool(ImgSegmentor* const that, const int nb) {
 #if BUILDMODE == 0
@@ -520,7 +520,7 @@ void ISSetSizeMaxPool(ImgSegmentor* const that, const int nb) {
 
 // Set the min nb of adns of the ImgSegmentor 'that' to 'nb'
 #if BUILDMODE != 0
-inline
+static inline
 #endif
 void ISSetSizeMinPool(ImgSegmentor* const that, const int nb) {
 #if BUILDMODE == 0
@@ -537,7 +537,7 @@ void ISSetSizeMinPool(ImgSegmentor* const that, const int nb) {
 // the ImgSegmentor 'that' to a copy of 'email'
 // If 'email' is null, no notification will be sent
 #if BUILDMODE != 0
-inline
+static inline
 #endif
 void ISSetEmailNotification(ImgSegmentor* const that, 
   const char* const email) {
@@ -558,7 +558,7 @@ void ISSetEmailNotification(ImgSegmentor* const that,
 
 // Get the email to which send notification during training
 #if BUILDMODE != 0
-inline
+static inline
 #endif
 const char* ISGetEmailNotification(ImgSegmentor* const that) {
 #if BUILDMODE == 0
@@ -574,7 +574,7 @@ const char* ISGetEmailNotification(ImgSegmentor* const that) {
 // Set the email subject for notification during training of 
 // the ImgSegmentor 'that' to a copy of 'subject'
 #if BUILDMODE != 0
-inline
+static inline
 #endif
 void ISSetEmailSubject(ImgSegmentor* const that, 
   const char* const subject) {
@@ -598,7 +598,7 @@ void ISSetEmailSubject(ImgSegmentor* const that,
 
 // Get the email subject for notification during training
 #if BUILDMODE != 0
-inline
+static inline
 #endif
 const char* ISGetEmailSubject(ImgSegmentor* const that) {
 #if BUILDMODE == 0
@@ -615,7 +615,7 @@ const char* ISGetEmailSubject(ImgSegmentor* const that) {
 
 // Return the NeuraNet of the ImgSegmentorCriterionRGB 'that'
 #if BUILDMODE != 0
-inline
+static inline
 #endif
 const NeuraNet* ISCRGBNeuraNet(
   const ImgSegmentorCriterionRGB* const that) {
@@ -633,7 +633,7 @@ const NeuraNet* ISCRGBNeuraNet(
 
 // Return the nb of class of the ImgSegmentorCriterion 'that'
 #if BUILDMODE != 0
-inline
+static inline
 #endif
 int _ISCGetNbClass(const ImgSegmentorCriterion* const that) {
 #if BUILDMODE == 0
@@ -649,7 +649,7 @@ int _ISCGetNbClass(const ImgSegmentorCriterion* const that) {
 // Return true if the ImgSegmentorCriterion 'that' can reused its input 
 // during training, else false
 #if BUILDMODE != 0
-inline
+static inline
 #endif
 bool _ISCIsReusedInput(const ImgSegmentorCriterion* const that) {
 #if BUILDMODE == 0
@@ -665,7 +665,7 @@ bool _ISCIsReusedInput(const ImgSegmentorCriterion* const that) {
 // Set the flag memorizing if the ImgSegmentor 'that' can reused  
 // to 'flag'
 #if BUILDMODE != 0
-inline
+static inline
 #endif
 void _ISCSetIsReusedInput(ImgSegmentorCriterion* const that,
   bool flag) {
@@ -681,7 +681,7 @@ void _ISCSetIsReusedInput(ImgSegmentorCriterion* const that,
 
 // Return the reused input of the ImgSegmentorCriterion 'that'
 #if BUILDMODE != 0
-inline
+static inline
 #endif
 const GSet* _ISCReusedInput(const ImgSegmentorCriterion* const that) {
 #if BUILDMODE == 0
@@ -699,7 +699,7 @@ const GSet* _ISCReusedInput(const ImgSegmentorCriterion* const that) {
 // Return the dust size of the ImgSegmentorCriterionDust 'that' for 
 // the class 'iClass'
 #if BUILDMODE != 0
-inline
+static inline
 #endif
 long ISCDustSize(
   const ImgSegmentorCriterionDust* const that, const int iClass) {
@@ -716,7 +716,7 @@ long ISCDustSize(
 // Set the dust size of the ImgSegmentorCriterionDust 'that' for 
 // the class 'iClass' to 'size'
 #if BUILDMODE != 0
-inline
+static inline
 #endif
 void ISCDustSetSize(
   const ImgSegmentorCriterionDust* const that, const int iClass, 
@@ -735,7 +735,7 @@ void ISCDustSetSize(
 
 // Return the NeuraNet of the ImgSegmentorCriterionTex 'that'
 #if BUILDMODE != 0
-inline
+static inline
 #endif
 const NeuraNet* ISCTexNeuraNet(
   const ImgSegmentorCriterionTex* const that) {
@@ -751,7 +751,7 @@ const NeuraNet* ISCTexNeuraNet(
 
 // Return the rank of the ImgSegmentorCriterionTex 'that'
 #if BUILDMODE != 0
-inline
+static inline
 #endif
 int ISCTexGetRank(const ImgSegmentorCriterionTex* const that) {
 #if BUILDMODE == 0
@@ -766,7 +766,7 @@ int ISCTexGetRank(const ImgSegmentorCriterionTex* const that) {
 
 // Return the size of the ImgSegmentorCriterionTex 'that'
 #if BUILDMODE != 0
-inline
+static inline
 #endif
 int ISCTexGetSize(const ImgSegmentorCriterionTex* const that) {
 #if BUILDMODE == 0
