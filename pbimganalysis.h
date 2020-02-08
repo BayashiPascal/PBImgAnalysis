@@ -15,8 +15,8 @@
 #include <signal.h>
 #include "pberr.h"
 #include "genbrush.h"
-#include "pbdataanalysis.h"
 #include "genalg.h"
+#include "pbdataanalysis.h"
 #include "neuranet.h"
 #include "gdataset.h"
 #include "respublish.h"

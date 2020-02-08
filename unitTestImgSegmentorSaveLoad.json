@@ -12,6 +12,7 @@
       "_criterion":{
         "_type":"0",
         "_nbClass":"2",
+        "_flagReusedInput":"0",
         "_neuranet":{
           "_nbInputVal":"3",
           "_nbOutputVal":"2",
@@ -33,13 +34,15 @@
     "_subtree_1":{
       "_criterion":{
         "_type":"1",
-        "_nbClass":"2"
+        "_nbClass":"2",
+        "_flagReusedInput":"0"
       },
       "_nbSubtree":"1",
       "_subtree_0":{
         "_criterion":{
           "_type":"0",
           "_nbClass":"2",
+          "_flagReusedInput":"0",
           "_neuranet":{
             "_nbInputVal":"3",
             "_nbOutputVal":"2",

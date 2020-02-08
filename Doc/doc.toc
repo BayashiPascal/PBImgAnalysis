@@ -2,12 +2,12 @@
 \contentsline {section}{\numberline {2}Code}{17}
 \contentsline {subsection}{\numberline {2.1}pbimganalysis.c}{17}
 \contentsline {subsection}{\numberline {2.2}pbimganalysis-inline.c}{70}
-\contentsline {section}{\numberline {3}Makefile}{82}
+\contentsline {section}{\numberline {3}Makefile}{83}
 \contentsline {section}{\numberline {4}Unit tests}{83}
 \contentsline {section}{\numberline {5}Unit tests output}{94}
 \contentsline {subsection}{\numberline {5.1}K-Means clustering on RGBA space}{95}
-\contentsline {subsection}{\numberline {5.2}ImgSegmentor}{100}
-\contentsline {subsubsection}{\numberline {5.2.1}Test 01}{100}
+\contentsline {subsection}{\numberline {5.2}ImgSegmentor}{101}
+\contentsline {subsubsection}{\numberline {5.2.1}Test 01}{101}
 \contentsline {subsubsection}{\numberline {5.2.2}Test 02}{101}
 \contentsline {subsubsection}{\numberline {5.2.3}Test 03}{102}
-\contentsline {subsubsection}{\numberline {5.2.4}Test 04}{103}
+\contentsline {subsubsection}{\numberline {5.2.4}Test 04}{104}
